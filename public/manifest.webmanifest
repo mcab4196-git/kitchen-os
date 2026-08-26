@@ -1,0 +1,12 @@
+{
+  "name": "Kitchen OS",
+  "short_name": "Kitchen OS",
+  "description": "Know what you have, what's about to expire, and what to cook.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#FBFAF7",
+  "theme_color": "#2F5D50",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

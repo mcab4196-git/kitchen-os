@@ -1,0 +1,413 @@
+// Kitchen OS — data model
+// Principle: inventory is the source of truth. AI-derived fields always carry a
+// source + confidence. Authorization is enforced in the service layer (every
+// query scoped to the authenticated user); RLS (prisma/rls.sql) is defense-in-depth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (PgBouncer) for runtime
+  directUrl = env("DIRECT_URL")   // direct for migrations
+}
+
+// ─────────────────────────── Enums ───────────────────────────
+
+enum StorageLocation {
+  REFRIGERATOR
+  FREEZER
+  PANTRY
+  CUPBOARD
+  OTHER
+}
+
+enum ExpirySource {
+  EXACT // from label or user
+  ESTIMATED // from shelf_life_rules — must be shown as an estimate
+  UNKNOWN // never fabricate
+}
+
+enum InventorySource {
+  RECEIPT
+  MANUAL
+  LEFTOVER
+}
+
+enum ReceiptStatus {
+  PENDING // uploaded, not yet parsed
+  PARSED // AI extracted, awaiting user review
+  COMMITTED // reviewed and written to inventory
+  FAILED
+}
+
+enum AliasSource {
+  SEED
+  LLM
+  USER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum ShoppingReason {
+  MANUAL
+  RECIPE
+  MEAL_PLAN
+}
+
+enum UnitKind {
+  MASS
+  VOLUME
+  COUNT
+}
+
+// ─────────────────────────── User ───────────────────────────
+
+// Mirrors auth.users (Supabase). A trigger in rls.sql inserts a row on signup.
+model Profile {
+  id        String   @id @db.Uuid // == auth.users.id
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  preferences      UserPreference?
+  receipts         Receipt[]
+  inventoryItems   InventoryItem[]
+  recipes          Recipe[]
+  mealPlans        MealPlan[]
+  shoppingLists    ShoppingList[]
+  notifications    Notification[]
+
+  @@map("profiles")
+}
+
+model UserPreference {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @unique @map("user_id") @db.Uuid
+  householdSize         Int      @default(2) @map("household_size")
+  diet                  String?  // "omnivore" | "vegetarian" | "vegan" | ...
+  allergies             String[] @default([])
+  dislikes              String[] @default([])
+  cuisines              String[] @default([])
+  skill                 String   @default("intermediate")
+  maxCookMinutes        Int      @default(45) @map("max_cook_minutes")
+  unitSystem            String   @default("metric") @map("unit_system")
+  currency              String   @default("EUR")
+  notificationThresholds Json    @default("{\"expiringDays\":2}") @map("notification_thresholds")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ─────────────────────── Reference / seed data ───────────────────────
+
+model Category {
+  id                     String   @id @default(uuid()) @db.Uuid
+  name                   String   @unique
+  defaultStorageLocation StorageLocation @default(PANTRY) @map("default_storage_location")
+
+  ingredients    Ingredient[]
+  inventoryItems InventoryItem[]
+
+  @@map("categories")
+}
+
+// Canonical ingredient (e.g. "penne pasta", "chicken breast").
+model Ingredient {
+  id                String  @id @default(uuid()) @db.Uuid
+  canonicalName     String  @unique @map("canonical_name")
+  categoryId        String? @map("category_id") @db.Uuid
+  defaultUnit       String  @default("g") @map("default_unit")
+  freezable         Boolean @default(false)
+  // Enables count <-> mass conversion (e.g. one chicken breast ~ 170g).
+  typicalPieceGrams Float?  @map("typical_piece_grams")
+
+  category       Category?           @relation(fields: [categoryId], references: [id])
+  aliases        IngredientAlias[]
+  shelfLifeRules ShelfLifeRule[]
+  inventoryItems InventoryItem[]
+  recipeItems    RecipeIngredient[]
+  shoppingItems  ShoppingListItem[]
+
+  @@map("ingredients")
+}
+
+// Normalization memory: every correction becomes an alias, improving over time.
+model IngredientAlias {
+  id           String      @id @default(uuid()) @db.Uuid
+  ingredientId String      @map("ingredient_id") @db.Uuid
+  aliasText    String      @map("alias_text") // stored lower-cased
+  source       AliasSource @default(SEED)
+  confidence   Float       @default(1)
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([aliasText])
+  @@index([ingredientId])
+  @@map("ingredient_aliases")
+}
+
+// The shelf-life "database" that powers estimated expiry. Ships seeded.
+model ShelfLifeRule {
+  id           String          @id @default(uuid()) @db.Uuid
+  ingredientId String?         @map("ingredient_id") @db.Uuid // null => category-level fallback
+  categoryName String?         @map("category_name")
+  storage      StorageLocation
+  opened       Boolean         @default(false)
+  typicalDays  Int             @map("typical_days")
+  minDays      Int             @map("min_days")
+  maxDays      Int             @map("max_days")
+  source       String          @default("seed")
+
+  ingredient Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@index([ingredientId, storage, opened])
+  @@index([categoryName, storage, opened])
+  @@map("shelf_life_rules")
+}
+
+// Unit conversion table (mass/volume/count families). Seeded with common units.
+model UnitConversion {
+  id          String   @id @default(uuid()) @db.Uuid
+  unit        String   @unique // "g", "kg", "ml", "l", "pcs", ...
+  kind        UnitKind
+  toBaseFactor Float   @map("to_base_factor") // multiply to reach base (g / ml / pcs)
+
+  @@map("unit_conversions")
+}
+
+// ─────────────────────────── Receipts ───────────────────────────
+
+model Receipt {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  imagePath    String?       @map("image_path") // Supabase Storage object path
+  imageHash    String?       @map("image_hash") // dedupe re-scans
+  store        String?
+  purchaseDate DateTime?     @map("purchase_date")
+  total        Float?
+  currency     String?
+  status       ReceiptStatus @default(PENDING)
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  user  Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ReceiptItem[]
+  inventoryItems InventoryItem[]
+
+  @@unique([userId, imageHash])
+  @@index([userId, createdAt])
+  @@map("receipts")
+}
+
+model ReceiptItem {
+  id                   String  @id @default(uuid()) @db.Uuid
+  receiptId            String  @map("receipt_id") @db.Uuid
+  rawName              String  @map("raw_name")
+  quantity             Float?
+  unit                 String?
+  price                Float?
+  categoryGuess        String? @map("category_guess")
+  ingredientId         String? @map("ingredient_id") @db.Uuid
+  extractionConfidence Float?  @map("extraction_confidence")
+  inventoryItemId      String? @unique @map("inventory_item_id") @db.Uuid
+
+  receipt       Receipt        @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([receiptId])
+  @@map("receipt_items")
+}
+
+// ─────────────────────── Inventory (source of truth) ───────────────────────
+
+model InventoryItem {
+  id               String          @id @default(uuid()) @db.Uuid
+  userId           String          @map("user_id") @db.Uuid
+  productName      String          @map("product_name")
+  ingredientId     String?         @map("ingredient_id") @db.Uuid
+  categoryId       String?         @map("category_id") @db.Uuid
+  quantity         Float
+  unit             String
+  purchaseDate     DateTime?       @map("purchase_date")
+  expiryDate       DateTime?       @map("expiry_date")
+  expirySource     ExpirySource    @default(UNKNOWN) @map("expiry_source")
+  expiryConfidence Float?          @map("expiry_confidence")
+  storageLocation  StorageLocation @default(PANTRY) @map("storage_location")
+  opened           Boolean         @default(false)
+  openedAt         DateTime?       @map("opened_at")
+  price            Float?
+  currency         String?
+  store            String?
+  notes            String?
+  source           InventorySource @default(MANUAL)
+  receiptId        String?         @map("receipt_id") @db.Uuid
+  isDeleted        Boolean         @default(false) @map("is_deleted") // soft delete for undo
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  user               Profile             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredient         Ingredient?         @relation(fields: [ingredientId], references: [id])
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  receipt            Receipt?            @relation(fields: [receiptId], references: [id])
+  receiptItem        ReceiptItem?
+  consumptionRecords ConsumptionRecord[]
+
+  @@index([userId, expiryDate])
+  @@index([userId, ingredientId])
+  @@index([userId, isDeleted])
+  @@map("inventory_items")
+}
+
+// ─────────────────────────── Recipes ───────────────────────────
+
+model Recipe {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String?    @map("user_id") @db.Uuid // null => global/system recipe
+  name         String
+  description  String?
+  prepMinutes  Int?       @map("prep_minutes")
+  cookMinutes  Int?       @map("cook_minutes")
+  difficulty   Difficulty @default(EASY)
+  servings     Int        @default(2)
+  instructions Json       @default("[]") // string[]
+  nutrition    Json? // { calories, protein, ... } — nullable, v1.1
+  storageNotes String?    @map("storage_notes")
+  leftoverNotes String?   @map("leftover_notes")
+  generatedBy  String     @default("ai") @map("generated_by")
+  saved        Boolean    @default(false)
+  lastSuggestedAt DateTime? @map("last_suggested_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  user               Profile?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients        RecipeIngredient[]
+  mealPlanItems      MealPlanItem[]
+  consumptionRecords ConsumptionRecord[]
+
+  @@index([userId])
+  @@index([userId, saved])
+  @@index([userId, lastSuggestedAt])
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id           String  @id @default(uuid()) @db.Uuid
+  recipeId     String  @map("recipe_id") @db.Uuid
+  ingredientId String  @map("ingredient_id") @db.Uuid
+  quantity     Float
+  unit         String
+  optional     Boolean @default(false)
+
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([recipeId])
+  @@map("recipe_ingredients")
+}
+
+// ─────────────────────── Meal plans (v1.1) ───────────────────────
+
+model MealPlan {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  startDate DateTime @map("start_date")
+  days      Int      @default(3)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  Profile        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MealPlanItem[]
+
+  @@index([userId, startDate])
+  @@map("meal_plans")
+}
+
+model MealPlanItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  mealPlanId   String   @map("meal_plan_id") @db.Uuid
+  date         DateTime
+  mealType     MealType @map("meal_type")
+  recipeId     String?  @map("recipe_id") @db.Uuid
+  isLeftoverOf String?  @map("is_leftover_of") @db.Uuid // references another MealPlanItem
+
+  mealPlan MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  recipe   Recipe?  @relation(fields: [recipeId], references: [id])
+
+  @@index([mealPlanId, date])
+  @@map("meal_plan_items")
+}
+
+// ─────────────────────── Shopping list ───────────────────────
+
+model ShoppingList {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @default("Shopping list")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  Profile            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ShoppingListItem[]
+
+  @@index([userId])
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id             String         @id @default(uuid()) @db.Uuid
+  shoppingListId String         @map("shopping_list_id") @db.Uuid
+  ingredientId   String?        @map("ingredient_id") @db.Uuid
+  label          String // free-text fallback when no ingredient match
+  quantityNeeded Float?         @map("quantity_needed")
+  unit           String?
+  reason         ShoppingReason @default(MANUAL)
+  checked        Boolean        @default(false)
+
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient?  @relation(fields: [ingredientId], references: [id])
+
+  @@index([shoppingListId])
+  @@map("shopping_list_items")
+}
+
+// ─────────────────────── Consumption (audit trail) ───────────────────────
+
+model ConsumptionRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  inventoryItemId String   @map("inventory_item_id") @db.Uuid
+  recipeId        String?  @map("recipe_id") @db.Uuid
+  quantityUsed    Float    @map("quantity_used")
+  unit            String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  recipe        Recipe?       @relation(fields: [recipeId], references: [id])
+
+  @@index([inventoryItemId])
+  @@map("consumption_records")
+}
+
+// ─────────────────────────── Notifications ───────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String
+  payload   Json     @default("{}")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
