@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { signIn, signUp, type AuthState } from "./actions";
 import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/field";
+import { Icon } from "@/components/ui/icon";
 
 const initial: AuthState = {};
 
@@ -10,73 +12,69 @@ export default function LoginPage() {
   const [signInState, signInAction, signInPending] = useActionState(signIn, initial);
   const [signUpState, signUpAction, signUpPending] = useActionState(signUp, initial);
 
+  const error = signInState.error ?? signUpState.error;
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-app flex-col justify-center px-6 py-10">
       <header className="mb-8">
-        <p className="text-sm font-medium uppercase tracking-wide text-brand">Kitchen OS</p>
-        <h1 className="mt-2 font-display text-3xl leading-tight text-ink">
-          Know what you have.
-          <br />
-          Cook before it expires.
+        <span className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-contrast">
+          <Icon name="leaf" size={20} />
+        </span>
+        <p className="text-2xs font-semibold uppercase tracking-[0.16em] text-brand">Kitchen OS</p>
+        <h1 className="mt-2 font-display text-title-lg leading-tight text-ink text-balance">
+          Know what you have. Cook before it expires.
         </h1>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-sm leading-6 text-muted">
           Sign in to track your inventory, expiry dates, and meals.
         </p>
       </header>
 
-      <form className="flex flex-col gap-3">
-        <label className="text-sm font-medium text-ink" htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          className="h-11 rounded-xl border border-line bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-brand"
-          placeholder="you@example.com"
-        />
+      <form className="flex flex-col gap-4">
+        <Field label="Email" htmlFor="email">
+          <Input id="email" name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+        </Field>
 
-        <label className="mt-2 text-sm font-medium text-ink" htmlFor="password">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="current-password"
-          className="h-11 rounded-xl border border-line bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-brand"
-          placeholder="At least 8 characters"
-        />
+        <Field label="Password" htmlFor="password" hint="At least 8 characters.">
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
+        </Field>
 
-        {(signInState.error || signUpState.error) && (
-          <p role="alert" className="text-sm text-status-critical">
-            {signInState.error ?? signUpState.error}
+        {error && (
+          <p
+            role="alert"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+          >
+            {error}
           </p>
         )}
         {signUpState.message && (
-          <p role="status" className="text-sm text-brand">
+          <p
+            role="status"
+            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-[13px] text-status-fresh-fg"
+          >
             {signUpState.message}
           </p>
         )}
 
-        <div className="mt-3 flex gap-3">
-          <Button type="submit" formAction={signInAction} disabled={signInPending} className="flex-1">
-            {signInPending ? "Signing in…" : "Sign in"}
-          </Button>
-          <Button
-            type="submit"
-            variant="ghost"
-            formAction={signUpAction}
-            disabled={signUpPending}
-            className="flex-1 border border-line"
-          >
-            {signUpPending ? "Creating…" : "Create account"}
-          </Button>
-        </div>
+        <Button type="submit" formAction={signInAction} loading={signInPending} size="lg" className="mt-1">
+          {signInPending ? "Signing in…" : "Sign in"}
+        </Button>
+        <Button
+          type="submit"
+          variant="secondary"
+          formAction={signUpAction}
+          loading={signUpPending}
+          size="lg"
+        >
+          {signUpPending ? "Creating account…" : "Create account"}
+        </Button>
       </form>
     </main>
   );

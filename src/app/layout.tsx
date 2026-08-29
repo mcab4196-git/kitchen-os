@@ -24,16 +24,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2F5D50",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FBFAF7" },
+    { media: "(prefers-color-scheme: dark)", color: "#161612" },
+  ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // avoid accidental zoom while cooking/shopping
+  // Pinch-zoom stays available — legibility with messy hands beats accidental zoom.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="min-h-dvh bg-surface font-sans text-[15px] leading-normal text-ink antialiased">
+        {children}
+      </body>
     </html>
   );
 }

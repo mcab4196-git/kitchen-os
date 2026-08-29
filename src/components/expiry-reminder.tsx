@@ -44,8 +44,8 @@ export function ExpiryReminder({ count, summary }: { count: number; summary: str
   return (
     <button
       onClick={enable}
-      className="mt-2 text-xs text-brand underline underline-offset-2"
       type="button"
+      className="mt-2 inline-flex items-center gap-1 text-2xs font-medium text-status-soon-fg underline decoration-status-soon-fg/40 underline-offset-2 transition-colors hover:decoration-status-soon-fg"
     >
       {perm === "denied" ? "Reminders blocked in browser settings" : "Enable expiry reminders on this device"}
     </button>

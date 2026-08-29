@@ -8,3 +8,4 @@ node_modules
 next-env.d.ts
 tsconfig.tsbuildinfo
 .vercel
+.claude/settings.local.json

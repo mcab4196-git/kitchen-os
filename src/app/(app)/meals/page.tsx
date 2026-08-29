@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { listCurrentSuggestions, listSaved } from "@/server/services/recipe";
 import { DinnerButton } from "./dinner-button";
 import { SaveToggle } from "@/components/recipe/save-toggle";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
 
@@ -20,18 +24,30 @@ type RecipeCardData = {
 function RecipeCard({ r }: { r: RecipeCardData }) {
   const time = (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
   return (
-    <li className="rounded-2xl border border-line bg-card p-4 shadow-card">
+    <Card as="li" interactive className="group list-none">
       <div className="flex items-start justify-between gap-3">
-        <Link href={`/meals/${r.id}`} className="min-w-0 flex-1">
-          <p className="font-medium text-ink">{r.name}</p>
-          {r.description && <p className="mt-1 line-clamp-2 text-sm text-muted">{r.description}</p>}
-          <p className="mt-2 text-xs text-muted">
-            {time > 0 ? `${time} min` : "quick"} · {DIFF_LABEL[r.difficulty] ?? r.difficulty} · serves {r.servings}
+        <Link href={`/meals/${r.id}`} className="min-w-0 flex-1 focus-visible:outline-none">
+          <p className="flex items-center gap-1 text-[15px] font-semibold text-ink">
+            <span className="min-w-0 truncate">{r.name}</span>
+            <Icon
+              name="chevron-right"
+              size={15}
+              className="shrink-0 -translate-x-1 text-faint opacity-0 transition-all duration-fast ease-out group-hover:translate-x-0 group-hover:opacity-100"
+            />
           </p>
+          {r.description && <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-muted">{r.description}</p>}
+          <div className="mt-2 flex items-center gap-3 text-2xs text-muted tabular">
+            <span className="inline-flex items-center gap-1">
+              <Icon name="clock" size={13} />
+              {time > 0 ? `${time} min` : "quick"}
+            </span>
+            <span>{DIFF_LABEL[r.difficulty] ?? r.difficulty}</span>
+            <span>serves {r.servings}</span>
+          </div>
         </Link>
         <SaveToggle recipeId={r.id} saved={r.saved} />
       </div>
-    </li>
+    </Card>
   );
 }
 
@@ -45,24 +61,26 @@ export default async function MealsPage() {
   const saved = await listSaved(user!.id, suggestions.map((s) => s.id));
 
   return (
-    <main>
-      <header className="mb-5 flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-2xl text-ink">Meals</h1>
-          <p className="mt-1 text-sm text-muted">
-            Your saved recipes come first; we ask the AI only to fill the rest.
-          </p>
-        </div>
-        <Link href="/plan" className="mt-1 whitespace-nowrap text-sm text-brand">
-          Plan week →
-        </Link>
-      </header>
+    <main className="animate-fade-in">
+      <PageHeader
+        title="Cook"
+        subtitle="Your saved recipes come first — the AI only fills the gaps."
+        actions={
+          <Link
+            href="/plan"
+            className="inline-flex h-9 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
+          >
+            <Icon name="calendar" size={15} />
+            Plan week
+          </Link>
+        }
+      />
 
       <DinnerButton />
 
       {suggestions.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 font-display text-lg text-ink">Tonight&apos;s ideas</h2>
+          <h2 className="mb-3 font-display text-title-sm text-ink">Tonight&apos;s ideas</h2>
           <ul className="flex flex-col gap-3">
             {suggestions.map((r) => (
               <RecipeCard key={r.id} r={r} />
@@ -73,13 +91,22 @@ export default async function MealsPage() {
 
       {saved.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 font-display text-lg text-ink">Saved recipes</h2>
+          <h2 className="mb-3 font-display text-title-sm text-ink">Saved recipes</h2>
           <ul className="flex flex-col gap-3">
             {saved.map((r) => (
               <RecipeCard key={r.id} r={r} />
             ))}
           </ul>
         </section>
+      )}
+
+      {suggestions.length === 0 && saved.length === 0 && (
+        <EmptyState
+          className="mt-8"
+          icon="cook"
+          title="No recipes yet"
+          description="Tap “What's for dinner?” for ideas built from what you have. Save the ones you like and they'll come back first next time."
+        />
       )}
     </main>
   );

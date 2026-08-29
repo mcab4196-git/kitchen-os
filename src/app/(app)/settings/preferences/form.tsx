@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import { savePreferences, type PrefsState } from "./actions";
 import { Button } from "@/components/ui/button";
-
-const field = "h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-brand";
+import { PageHeader } from "@/components/ui/page-header";
+import { Field, Input, Select } from "@/components/ui/field";
 
 export interface PrefsInitial {
   householdSize: number;
@@ -24,26 +23,21 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
   const [state, action, pending] = useActionState<PrefsState, FormData>(savePreferences, {});
 
   return (
-    <main>
-      <header className="mb-5 flex items-center gap-3">
-        <Link href="/settings" className="text-sm text-muted hover:text-ink">
-          ← Settings
-        </Link>
-        <h1 className="font-display text-2xl text-ink">Preferences</h1>
-      </header>
-
-      <p className="mb-5 text-sm text-muted">
-        These shape the recipes and meal plans we suggest. Allergies and disliked foods are used as
-        hard filters — we&apos;ll never suggest a recipe that contains them.
-      </p>
+    <main className="animate-fade-in">
+      <PageHeader
+        title="Preferences"
+        subtitle="These shape the recipes and plans we suggest. Allergies and disliked foods are hard filters — never suggested."
+        back="/settings"
+        size="md"
+      />
 
       <form action={action} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="People to cook for">
-            <input name="householdSize" type="number" min="1" defaultValue={initial.householdSize} className={field} />
+            <Input name="householdSize" type="number" min="1" inputMode="numeric" defaultValue={initial.householdSize} />
           </Field>
           <Field label="Diet">
-            <select name="diet" defaultValue={initial.diet} className={field}>
+            <Select name="diet" defaultValue={initial.diet}>
               <option value="">No preference</option>
               <option value="omnivore">Omnivore</option>
               <option value="vegetarian">Vegetarian</option>
@@ -51,76 +45,72 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
               <option value="pescatarian">Pescatarian</option>
               <option value="halal">Halal</option>
               <option value="kosher">Kosher</option>
-            </select>
+            </Select>
           </Field>
         </div>
 
         <Field label="Allergies" hint="Comma-separated, e.g. peanuts, shellfish. Never suggested.">
-          <input name="allergies" defaultValue={initial.allergies} className={field} placeholder="peanuts, shellfish" />
+          <Input name="allergies" defaultValue={initial.allergies} placeholder="peanuts, shellfish" />
         </Field>
 
         <Field label="Disliked foods" hint="Comma-separated. Avoided in suggestions.">
-          <input name="dislikes" defaultValue={initial.dislikes} className={field} placeholder="olives, cilantro" />
+          <Input name="dislikes" defaultValue={initial.dislikes} placeholder="olives, cilantro" />
         </Field>
 
         <Field label="Favourite cuisines" hint="Comma-separated. Nudges suggestions.">
-          <input name="cuisines" defaultValue={initial.cuisines} className={field} placeholder="italian, thai, filipino" />
+          <Input name="cuisines" defaultValue={initial.cuisines} placeholder="italian, thai, filipino" />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cooking skill">
-            <select name="skill" defaultValue={initial.skill} className={field}>
+            <Select name="skill" defaultValue={initial.skill}>
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Max cook time (min)">
-            <input name="maxCookMinutes" type="number" min="10" step="5" defaultValue={initial.maxCookMinutes} className={field} />
+            <Input name="maxCookMinutes" type="number" min="10" step="5" inputMode="numeric" defaultValue={initial.maxCookMinutes} />
           </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Units">
-            <select name="unitSystem" defaultValue={initial.unitSystem} className={field}>
+            <Select name="unitSystem" defaultValue={initial.unitSystem}>
               <option value="metric">Metric (g, ml)</option>
               <option value="imperial">Imperial (oz, cups)</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Currency">
-            <input name="currency" defaultValue={initial.currency} className={field} />
+            <Input name="currency" defaultValue={initial.currency} />
           </Field>
         </div>
 
         <Field label="Warn me this many days before expiry">
-          <input name="expiringDays" type="number" min="1" max="14" defaultValue={initial.expiringDays} className={field} />
+          <Input name="expiringDays" type="number" min="1" max="14" inputMode="numeric" defaultValue={initial.expiringDays} />
         </Field>
 
         {state.saved && (
-          <p role="status" className="text-sm text-status-fresh">
+          <p
+            role="status"
+            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-[13px] text-status-fresh-fg"
+          >
             Preferences saved.
           </p>
         )}
         {state.error && (
-          <p role="alert" className="text-sm text-status-critical">
+          <p
+            role="alert"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+          >
             {state.error}
           </p>
         )}
 
-        <Button type="submit" disabled={pending} className="mt-2 h-12">
+        <Button type="submit" loading={pending} size="lg" className="mt-1">
           {pending ? "Saving…" : "Save preferences"}
         </Button>
       </form>
     </main>
-  );
-}
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-ink">{label}</span>
-      {children}
-      {hint && <span className="text-xs text-muted">{hint}</span>}
-    </label>
   );
 }

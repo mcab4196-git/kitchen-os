@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useActionState } from "react";
 import { cookRecipe, type CookState } from "./actions";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Checkbox } from "@/components/ui/field";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export interface CookLine {
   inventoryItemId: string;
@@ -21,11 +24,17 @@ interface Row extends CookLine {
   useQuantity: number | null;
 }
 
-const field = "h-10 w-24 rounded-lg border border-line bg-card px-2.5 text-sm outline-none focus:ring-2 focus:ring-brand";
-
-export function CookForm({ recipeId, recipeName, initial }: { recipeId: string; recipeName: string; initial: CookLine[] }) {
+export function CookForm({
+  recipeId,
+  recipeName,
+  initial,
+}: {
+  recipeId: string;
+  recipeName: string;
+  initial: CookLine[];
+}) {
   const [rows, setRows] = useState<Row[]>(
-    initial.map((l) => ({ ...l, include: l.suggestedUse > 0, useQuantity: l.suggestedUse }))
+    initial.map((l) => ({ ...l, include: l.suggestedUse > 0, useQuantity: l.suggestedUse })),
   );
   const [state, action, pending] = useActionState<CookState, FormData>(cookRecipe, {});
 
@@ -42,21 +51,18 @@ export function CookForm({ recipeId, recipeName, initial }: { recipeId: string; 
   const count = rows.filter((r) => r.include && (r.useQuantity ?? 0) > 0).length;
 
   return (
-    <main>
-      <header className="mb-4 flex items-center gap-3">
-        <Link href={`/meals/${recipeId}`} className="text-sm text-muted hover:text-ink">
-          ← Back
-        </Link>
-        <h1 className="font-display text-2xl text-ink">Cook &amp; deduct</h1>
-      </header>
+    <main className="animate-fade-in pb-24">
+      <PageHeader title="Cook & deduct" back={`/meals/${recipeId}`} size="md" />
 
-      <p className="mb-4 text-sm text-muted">
-        Confirm what you used for <span className="font-medium text-ink">{recipeName}</span>. We&apos;ll subtract
-        these from your inventory. Adjust amounts or untick anything you didn&apos;t use.
+      <p className="mb-4 text-sm leading-6 text-muted">
+        Confirm what you used for <span className="font-semibold text-ink">{recipeName}</span>. We&apos;ll
+        subtract these from your inventory — adjust amounts or untick anything you didn&apos;t use.
       </p>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-muted">None of this recipe&apos;s ingredients match your current inventory.</p>
+        <p className="rounded-card border border-dashed border-line-strong bg-surface-2/60 p-6 text-center text-sm text-muted">
+          None of this recipe&apos;s ingredients match your current inventory.
+        </p>
       ) : (
         <form action={action} className="flex flex-col gap-3">
           <input type="hidden" name="recipeId" value={recipeId} />
@@ -65,53 +71,62 @@ export function CookForm({ recipeId, recipeName, initial }: { recipeId: string; 
           {rows.map((r, i) => (
             <div
               key={r.inventoryItemId}
-              className={`rounded-2xl border bg-card p-3 shadow-card ${r.include ? "border-line" : "border-dashed border-line opacity-60"}`}
+              className={cn(
+                "rounded-card border bg-card p-3.5 shadow-card transition duration-fast ease-out",
+                r.include ? "border-line" : "border-dashed border-line opacity-55",
+              )}
             >
               <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                <label className="flex items-center gap-2.5 text-sm">
+                  <Checkbox
                     checked={r.include}
                     onChange={(e) => update(i, { include: e.target.checked })}
-                    className="h-4 w-4 accent-[#2F5D50]"
                   />
-                  <span className="font-medium text-ink">{r.itemName}</span>
+                  <span className="font-semibold text-ink">{r.itemName}</span>
                 </label>
-                <span className="text-xs text-muted">
+                <span className="text-2xs text-muted tabular">
                   have {r.itemQuantity} {r.itemUnit}
                 </span>
               </div>
 
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-sm text-muted">Use</span>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[13px] text-muted">Use</span>
                 <input
                   type="number"
                   step="any"
                   min="0"
                   max={r.itemQuantity}
+                  inputMode="decimal"
                   value={r.useQuantity ?? ""}
-                  onChange={(e) => update(i, { useQuantity: e.target.value === "" ? null : Number(e.target.value) })}
-                  className={field}
+                  onChange={(e) =>
+                    update(i, { useQuantity: e.target.value === "" ? null : Number(e.target.value) })
+                  }
+                  className="h-9 w-24 rounded-control border border-line-strong bg-card px-2.5 text-sm text-ink tabular focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
                 />
-                <span className="text-sm text-muted">{r.itemUnit}</span>
+                <span className="text-[13px] text-muted">{r.itemUnit}</span>
                 {!r.convertible && (
-                  <span className="ml-1 rounded-full bg-status-soon/10 px-2 py-0.5 text-xs text-status-soon">
+                  <Badge tone="soon" className="ml-1">
                     check amount
-                  </span>
+                  </Badge>
                 )}
               </div>
             </div>
           ))}
 
           {state.error && (
-            <p role="alert" className="text-sm text-status-critical">
+            <p
+              role="alert"
+              className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+            >
               {state.error}
             </p>
           )}
 
-          <Button type="submit" disabled={pending || count === 0} className="mt-2 h-12">
-            {pending ? "Updating inventory…" : `Cook & deduct ${count} item${count === 1 ? "" : "s"}`}
-          </Button>
+          <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom)+0.75rem)] z-10 -mx-4 border-t border-line bg-surface/85 px-4 py-3 backdrop-blur-md lg:bottom-4 lg:mx-0 lg:rounded-card lg:border">
+            <Button type="submit" loading={pending} disabled={count === 0} size="lg" className="w-full">
+              {pending ? "Updating inventory…" : `Cook & deduct ${count} item${count === 1 ? "" : "s"}`}
+            </Button>
+          </div>
         </form>
       )}
     </main>

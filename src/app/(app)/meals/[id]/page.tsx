@@ -3,7 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getRecipeWithReconciliation } from "@/server/services/recipe";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
 import { SaveToggle } from "@/components/recipe/save-toggle";
+import { SubmitButton } from "@/components/ui/feedback";
 import { addRecipeMissingAction } from "@/app/(app)/shopping/actions";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
@@ -22,102 +26,102 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
   const availableSet = new Set(reconciliation.available);
   const time = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
   const steps = (recipe.instructions as string[]) ?? [];
+  const missingCount = reconciliation.missing.length;
 
   return (
-    <main>
-      <header className="mb-4 flex items-center gap-3">
-        <Link href="/meals" className="text-sm text-muted hover:text-ink">
-          ← Meals
-        </Link>
-      </header>
+    <main className="animate-fade-in pb-24">
+      <PageHeader
+        title={recipe.name}
+        back="/meals"
+        size="md"
+        actions={<SaveToggle recipeId={recipe.id} saved={recipe.saved} showLabel />}
+      />
 
-      <div className="flex items-start justify-between gap-3">
-        <h1 className="font-display text-2xl text-ink">{recipe.name}</h1>
-        <SaveToggle recipeId={recipe.id} saved={recipe.saved} showLabel />
+      {recipe.description && <p className="-mt-3 mb-2 text-sm leading-6 text-muted">{recipe.description}</p>}
+      <div className="flex items-center gap-3 text-[13px] text-muted tabular">
+        <span className="inline-flex items-center gap-1">
+          <Icon name="clock" size={14} />
+          {time > 0 ? `${time} min` : "quick"}
+        </span>
+        <span>{DIFF_LABEL[recipe.difficulty] ?? recipe.difficulty}</span>
+        <span>serves {recipe.servings}</span>
       </div>
-      {recipe.description && <p className="mt-1 text-sm text-muted">{recipe.description}</p>}
-      <p className="mt-2 text-xs text-muted">
-        {time > 0 ? `${time} min` : "quick"} · {DIFF_LABEL[recipe.difficulty] ?? recipe.difficulty} · serves{" "}
-        {recipe.servings}
-      </p>
 
-      <section className="mt-6">
-        <h2 className="mb-2 font-display text-lg text-ink">Ingredients</h2>
-        <ul className="flex flex-col gap-1.5">
+      <section className="mt-7">
+        <h2 className="mb-3 font-display text-title-sm text-ink">Ingredients</h2>
+        <ul className="flex flex-col divide-y divide-line rounded-card border border-line bg-card">
           {ingredients.map((ing, i) => {
             const have = availableSet.has(ing.name);
             return (
-              <li key={i} className="flex items-center justify-between gap-3 text-sm">
+              <li key={i} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
                 <span className="text-ink">
                   {ing.quantity ? `${ing.quantity} ` : ""}
                   {ing.unit ? `${ing.unit} ` : ""}
                   {ing.name}
                   {ing.optional && <span className="text-muted"> (optional)</span>}
                 </span>
-                <span
-                  className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
-                    have ? "bg-status-fresh/10 text-status-fresh" : "bg-accent-soft text-accent"
-                  }`}
-                >
+                <Badge tone={have ? "fresh" : "accent"} className="shrink-0">
                   {have ? "have" : "to buy"}
-                </span>
+                </Badge>
               </li>
             );
           })}
         </ul>
-        {reconciliation.missing.length > 0 && (
-          <p className="mt-3 text-sm text-muted">
-            You need to buy {reconciliation.missing.length} item
-            {reconciliation.missing.length === 1 ? "" : "s"}: {reconciliation.missing.join(", ")}.
+        {missingCount > 0 && (
+          <p className="mt-3 text-[13px] text-muted">
+            You need to buy {missingCount} item{missingCount === 1 ? "" : "s"}: {reconciliation.missing.join(", ")}.
           </p>
         )}
       </section>
 
-      <section className="mt-6">
-        <h2 className="mb-2 font-display text-lg text-ink">Steps</h2>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-ink">
+      <section className="mt-7">
+        <h2 className="mb-3 font-display text-title-sm text-ink">Steps</h2>
+        <ol className="flex flex-col gap-4">
           {steps.map((s, i) => (
-            <li key={i}>{s}</li>
+            <li key={i} className="flex gap-3">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand-ink tabular">
+                {i + 1}
+              </span>
+              <p className="text-read text-ink">{s}</p>
+            </li>
           ))}
         </ol>
       </section>
 
       {(recipe.storageNotes || recipe.leftoverNotes) && (
-        <section className="mt-6 rounded-2xl border border-line bg-card p-4 text-sm text-muted">
+        <section className="mt-7 rounded-card border border-line bg-surface-2/60 p-4 text-[13px] leading-5 text-muted">
           {recipe.storageNotes && (
             <p>
-              <span className="font-medium text-ink">Storage:</span> {recipe.storageNotes}
+              <span className="font-semibold text-ink">Storage:</span> {recipe.storageNotes}
             </p>
           )}
           {recipe.leftoverNotes && (
-            <p className="mt-1">
-              <span className="font-medium text-ink">Leftovers:</span> {recipe.leftoverNotes}
+            <p className="mt-1.5">
+              <span className="font-semibold text-ink">Leftovers:</span> {recipe.leftoverNotes}
             </p>
           )}
         </section>
       )}
 
-      <div className="mt-6 flex gap-3">
-        <Link href={`/meals/${recipe.id}/cook`} className="flex-1">
-          <Button className="w-full">Cook this</Button>
-        </Link>
-        <form action={addRecipeMissingAction} className="flex-1">
-          <input type="hidden" name="recipeId" value={recipe.id} />
-          <Button
-            type="submit"
-            variant="ghost"
-            className="w-full border border-line"
-            disabled={reconciliation.missing.length === 0}
-          >
-            {reconciliation.missing.length === 0
-              ? "Nothing to buy"
-              : `Add ${reconciliation.missing.length} to list`}
+      <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom)+0.75rem)] z-10 mt-8 -mx-4 border-t border-line bg-surface/85 px-4 py-3 backdrop-blur-md lg:bottom-4 lg:mx-0 lg:rounded-card lg:border">
+        <div className="flex gap-3">
+          <Button asChild className="flex-1">
+            <Link href={`/meals/${recipe.id}/cook`}>
+              <Icon name="flame" size={16} />
+              Cook this
+            </Link>
           </Button>
-        </form>
+          <form action={addRecipeMissingAction} className="flex-1">
+            <input type="hidden" name="recipeId" value={recipe.id} />
+            <SubmitButton variant="secondary" className="w-full" disabled={missingCount === 0}>
+              {missingCount === 0 ? "Nothing to buy" : `Add ${missingCount} to list`}
+            </SubmitButton>
+          </form>
+        </div>
+        <p className="mt-2 text-center text-2xs text-faint">
+          Cooking deducts ingredients from inventory · “Add to list” sends the missing ones to Shopping.
+        </p>
       </div>
-      <p className="mt-2 text-center text-xs text-muted">
-        Cooking deducts ingredients from inventory; &ldquo;Add to list&rdquo; sends the missing ones to Shopping.
-      </p>
     </main>
   );
 }

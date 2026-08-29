@@ -2,23 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────── Palette ───────────────────────────
+   Channel triples (r g b) so Tailwind's `/<alpha-value>` modifier keeps working
+   (e.g. `bg-status-soon/10`). Light is the base; dark is a single media swap. */
 :root {
   color-scheme: light;
+
+  --nav-h: 4rem;
+
+  --surface: 251 250 247;
+  --surface-2: 246 244 239;
+  --card: 255 255 255;
+  --ink: 28 27 25;
+  --muted: 106 104 98;
+  --faint: 141 139 131;
+  --line: 228 223 214;
+  --line-strong: 201 194 180;
+  --shadow: 28 27 25;
+
+  --brand: 43 88 76;
+  --brand-soft: 230 238 234;
+  --brand-ink: 30 62 54;
+  --brand-contrast: 255 255 255;
+
+  --accent: 232 131 58;
+  --accent-soft: 251 235 220;
+  --accent-fg: 149 71 22;
+
+  --status-critical: 198 74 59;
+  --status-critical-fg: 176 56 42;
+  --status-critical-bg: 247 233 230;
+  --status-critical-border: 230 199 192;
+
+  --status-soon: 217 147 46;
+  --status-soon-fg: 138 88 20;
+  --status-soon-bg: 247 236 218;
+  --status-soon-border: 231 211 172;
+
+  --status-fresh: 78 156 107;
+  --status-fresh-fg: 45 120 77;
+  --status-fresh-bg: 231 241 233;
+  --status-fresh-border: 193 221 201;
+
+  --status-unknown: 138 138 130;
+  --status-unknown-fg: 111 108 99;
+  --status-unknown-bg: 239 237 232;
+  --status-unknown-border: 219 214 204;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --surface: 22 22 18;
+    --surface-2: 28 28 23;
+    --card: 32 32 26;
+    --ink: 240 237 230;
+    --muted: 165 161 150;
+    --faint: 130 127 117;
+    --line: 51 50 43;
+    --line-strong: 76 74 64;
+    --shadow: 0 0 0;
+
+    --brand: 124 192 166;
+    --brand-soft: 34 50 44;
+    --brand-ink: 169 216 198;
+    --brand-contrast: 18 22 16;
+
+    --accent: 232 154 90;
+    --accent-soft: 58 42 28;
+    --accent-fg: 233 168 111;
+
+    --status-critical: 224 104 90;
+    --status-critical-fg: 240 147 138;
+    --status-critical-bg: 46 26 23;
+    --status-critical-border: 90 52 46;
+
+    --status-soon: 224 169 84;
+    --status-soon-fg: 230 185 120;
+    --status-soon-bg: 44 36 22;
+    --status-soon-border: 88 72 40;
+
+    --status-fresh: 95 185 133;
+    --status-fresh-fg: 132 201 162;
+    --status-fresh-bg: 22 39 29;
+    --status-fresh-border: 46 85 64;
+
+    --status-unknown: 154 150 140;
+    --status-unknown-fg: 166 162 150;
+    --status-unknown-bg: 38 37 31;
+    --status-unknown-border: 69 67 59;
+  }
 }
 
 html,
 body {
-  background: theme("colors.surface");
-  color: theme("colors.ink");
+  background: rgb(var(--surface));
+  color: rgb(var(--ink));
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Respect reduced-motion as a quality floor. */
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Consistent, mouse-quiet focus. Keyboard users get a clear ring; pointer
+   interaction stays clean. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:where(input, select, textarea):focus-visible {
+  outline-offset: 0;
+}
+
+/* Tap highlight is handled with real press states, not the platform flash. */
+a,
+button,
+[role="button"],
+label,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgb(var(--brand) / 0.16);
+}
+
+/* ─────────────────────────── Reduced motion ───────────────────────────
+   Remove motion that *moves*; keep motion that *informs* (spinners, progress). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-keep,
+  .motion-keep * {
+    animation-duration: revert !important;
+    animation-iteration-count: infinite !important;
+    transition-duration: revert !important;
+  }
+}
+
+@layer utilities {
+  /* Horizontal chip strips: hide the scrollbar but keep the scroll. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Fade the right edge of a scrollable strip so "more" is discoverable. */
+  .edge-fade-x {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 1.25rem, #000 calc(100% - 1.75rem), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 1.25rem, #000 calc(100% - 1.75rem), transparent 100%);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

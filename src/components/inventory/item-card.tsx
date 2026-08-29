@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ExpiryBadge } from "./expiry-badge";
 import type { ExpirySource } from "@/lib/expiry";
-import { deleteItem } from "@/app/(app)/inventory/actions";
+import { Card } from "@/components/ui/card";
+import { ItemActions } from "./item-actions";
 
 const STORAGE_LABEL: Record<string, string> = {
   REFRIGERATOR: "Fridge",
@@ -25,38 +25,38 @@ export interface ItemCardData {
 
 export function ItemCard({ item }: { item: ItemCardData }) {
   const usedUp = item.quantity <= 0;
+  const meta = [
+    `${item.quantity} ${item.unit}`,
+    item.category?.name,
+    STORAGE_LABEL[item.storageLocation] ?? item.storageLocation,
+    item.opened ? "opened" : null,
+  ].filter(Boolean);
+
   return (
-    <li className="rounded-2xl border border-line bg-card p-4 shadow-card">
+    <Card as="li" className="list-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-medium text-ink">
+          <p className="truncate text-[15px] font-semibold text-ink">
             {item.productName}
-            {usedUp && <span className="ml-2 text-xs font-normal text-status-unknown">used up</span>}
+            {usedUp && (
+              <span className="ml-2 align-middle text-2xs font-medium uppercase tracking-wide text-faint">
+                used up
+              </span>
+            )}
           </p>
-          <p className="mt-0.5 text-sm text-muted">
-            {item.quantity} {item.unit}
-            {item.category ? ` · ${item.category.name}` : ""}
-            {` · ${STORAGE_LABEL[item.storageLocation] ?? item.storageLocation}`}
-            {item.opened ? " · opened" : ""}
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted tabular">
+            {meta.map((m, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5">
+                {i > 0 && <span className="h-0.5 w-0.5 rounded-full bg-faint" aria-hidden />}
+                {m}
+              </span>
+            ))}
           </p>
         </div>
         <ExpiryBadge expiryDate={item.expiryDate} source={item.expirySource as ExpirySource} />
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-sm">
-        <Link href={`/inventory/${item.id}/use`} className="font-medium text-brand">
-          Use
-        </Link>
-        <Link href={`/inventory/${item.id}/edit`} className="text-muted hover:text-ink">
-          Edit
-        </Link>
-        <form action={deleteItem} className="ml-auto">
-          <input type="hidden" name="id" value={item.id} />
-          <button type="submit" className="text-muted hover:text-status-critical">
-            Remove
-          </button>
-        </form>
-      </div>
-    </li>
+      <ItemActions id={item.id} productName={item.productName} quantity={item.quantity} unit={item.unit} />
+    </Card>
   );
 }

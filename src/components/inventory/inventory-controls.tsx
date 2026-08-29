@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
+import { controlClass } from "@/components/ui/field";
 
 const FILTERS: [string, string][] = [
   ["all", "All"],
@@ -18,7 +20,8 @@ export function InventoryControls() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const stripRef = useRef<HTMLDivElement>(null);
 
   const activeFilter = params.get("filter") ?? "all";
   const sort = params.get("sort") ?? "expiry";
@@ -36,6 +39,13 @@ export function InventoryControls() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
+  // Keep the active chip in view when it changes (e.g. deep-linked filter).
+  useEffect(() => {
+    stripRef.current
+      ?.querySelector('[data-active="true"]')
+      ?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [activeFilter]);
+
   function setParam(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
     if (value && !(key === "filter" && value === "all")) next.set(key, value);
@@ -44,42 +54,56 @@ export function InventoryControls() {
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-3">
+    <div className={cn("mb-4 flex flex-col gap-3 transition-opacity", isPending && "opacity-60")}>
       <div className="flex gap-2">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search items…"
-          className="h-11 flex-1 rounded-xl border border-line bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-brand"
-          aria-label="Search inventory"
-        />
+        <div className="relative flex-1">
+          <Icon
+            name="search"
+            size={17}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
+          />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search items…"
+            className={cn(controlClass, "pl-9")}
+            aria-label="Search inventory"
+          />
+        </div>
         <select
           value={sort}
           onChange={(e) => setParam("sort", e.target.value)}
-          className="h-11 rounded-xl border border-line bg-card px-2 text-sm outline-none focus:ring-2 focus:ring-brand"
-          aria-label="Sort"
+          className={cn(controlClass, "w-auto min-w-[6.5rem]")}
+          aria-label="Sort inventory"
         >
-          <option value="expiry">Expiry</option>
-          <option value="name">Name</option>
+          <option value="expiry">By expiry</option>
+          <option value="name">By name</option>
           <option value="recent">Recent</option>
         </select>
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {FILTERS.map(([value, label]) => (
-          <button
-            key={value}
-            onClick={() => setParam("filter", value)}
-            className={cn(
-              "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-              activeFilter === value
-                ? "border-brand bg-brand text-white"
-                : "border-line bg-card text-muted hover:text-ink"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+      <div
+        ref={stripRef}
+        className="no-scrollbar edge-fade-x -mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 lg:-mx-1 lg:px-1"
+      >
+        {FILTERS.map(([value, label]) => {
+          const active = activeFilter === value;
+          return (
+            <button
+              key={value}
+              data-active={active}
+              onClick={() => setParam("filter", value)}
+              className={cn(
+                "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition duration-fast ease-out active:scale-95",
+                active
+                  ? "border-brand bg-brand text-brand-contrast shadow-xs"
+                  : "border-line bg-card text-muted hover:border-line-strong hover:text-ink",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

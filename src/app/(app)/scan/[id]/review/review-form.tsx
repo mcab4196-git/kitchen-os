@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { commitReceiptAction, type CommitState } from "./actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/field";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const UNITS = ["", "g", "kg", "ml", "l", "pcs", "clove", "slice", "tbsp", "tsp", "cup", "oz", "lb"];
 const STORAGE = [
@@ -31,8 +34,8 @@ export interface ReviewRow {
 type Category = { id: string; name: string };
 type Ingredient = { id: string; name: string; categoryId: string | null; defaultUnit: string };
 
-const field =
-  "h-10 w-full rounded-lg border border-line bg-card px-2.5 text-sm outline-none focus:ring-2 focus:ring-brand";
+const cell =
+  "h-10 w-full rounded-control border border-line-strong bg-card px-2.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 export function ReviewForm({
   receiptId,
@@ -63,7 +66,7 @@ export function ReviewForm({
   const includedCount = rows.filter((r) => r.include).length;
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <form action={action} className="flex flex-col gap-3 pb-24">
       <input type="hidden" name="receiptId" value={receiptId} />
       <input type="hidden" name="items" value={JSON.stringify(rows)} />
 
@@ -78,31 +81,27 @@ export function ReviewForm({
         return (
           <div
             key={r.receiptItemId}
-            className={`rounded-2xl border bg-card p-3 shadow-card ${
-              r.include ? "border-line" : "border-dashed border-line opacity-60"
-            }`}
+            className={cn(
+              "rounded-card border bg-card p-3.5 shadow-card transition duration-fast ease-out",
+              r.include ? "border-line" : "border-dashed border-line opacity-55",
+            )}
           >
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={r.include}
-                  onChange={(e) => update(i, { include: e.target.checked })}
-                  className="h-4 w-4 accent-[#2F5D50]"
-                />
-                <span className="text-muted">Add</span>
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2.5 text-[13px]">
+                <Checkbox checked={r.include} onChange={(e) => update(i, { include: e.target.checked })} />
+                <span className="text-muted">Add to inventory</span>
               </label>
               {low && (
-                <span className="rounded-full bg-status-soon/10 px-2 py-0.5 text-xs font-medium text-status-soon">
+                <Badge tone="soon" dot>
                   check this
-                </span>
+                </Badge>
               )}
             </div>
 
             <input
               value={r.productName}
               onChange={(e) => update(i, { productName: e.target.value })}
-              className={`${field} mb-2 font-medium`}
+              className={cn(cell, "mb-2 font-medium")}
               placeholder="Product name"
             />
 
@@ -111,12 +110,13 @@ export function ReviewForm({
                 type="number"
                 step="any"
                 min="0"
+                inputMode="decimal"
                 value={r.quantity ?? ""}
                 onChange={(e) => update(i, { quantity: e.target.value === "" ? null : Number(e.target.value) })}
-                className={field}
+                className={cn(cell, "tabular")}
                 placeholder="Qty"
               />
-              <select value={r.unit} onChange={(e) => update(i, { unit: e.target.value })} className={field}>
+              <select value={r.unit} onChange={(e) => update(i, { unit: e.target.value })} className={cell}>
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
                     {u || "unit"}
@@ -129,7 +129,7 @@ export function ReviewForm({
               list="rev-ingredients"
               value={r.ingredientName}
               onChange={(e) => onIngredient(i, e.target.value)}
-              className={`${field} mt-2`}
+              className={cn(cell, "mt-2")}
               placeholder="Ingredient (for expiry) — optional"
             />
 
@@ -137,7 +137,7 @@ export function ReviewForm({
               <select
                 value={r.categoryId}
                 onChange={(e) => update(i, { categoryId: e.target.value })}
-                className={field}
+                className={cell}
               >
                 <option value="">Category —</option>
                 {categories.map((c) => (
@@ -149,7 +149,7 @@ export function ReviewForm({
               <select
                 value={r.storageLocation}
                 onChange={(e) => update(i, { storageLocation: e.target.value })}
-                className={field}
+                className={cell}
               >
                 {STORAGE.map(([v, l]) => (
                   <option key={v} value={v}>
@@ -163,14 +163,19 @@ export function ReviewForm({
       })}
 
       {state.error && (
-        <p role="alert" className="text-sm text-status-critical">
+        <p
+          role="alert"
+          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+        >
           {state.error}
         </p>
       )}
 
-      <Button type="submit" disabled={pending || includedCount === 0} className="sticky bottom-24 h-12">
-        {pending ? "Adding…" : `Add ${includedCount} item${includedCount === 1 ? "" : "s"} to inventory`}
-      </Button>
+      <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom)+0.75rem)] z-10 -mx-4 border-t border-line bg-surface/85 px-4 py-3 backdrop-blur-md lg:bottom-4 lg:mx-0 lg:rounded-card lg:border">
+        <Button type="submit" loading={pending} disabled={includedCount === 0} size="lg" className="w-full">
+          {pending ? "Adding…" : `Add ${includedCount} item${includedCount === 1 ? "" : "s"} to inventory`}
+        </Button>
+      </div>
     </form>
   );
 }

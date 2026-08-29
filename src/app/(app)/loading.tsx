@@ -1,7 +1,13 @@
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
+
 export default function Loading() {
   return (
-    <main className="flex min-h-[50vh] items-center justify-center">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-brand" aria-label="Loading" />
-    </main>
+    <div className="animate-fade-in">
+      <div className="mb-6 space-y-2">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-40" />
+      </div>
+      <SkeletonList rows={5} />
+    </div>
   );
 }

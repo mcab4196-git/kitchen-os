@@ -6,16 +6,25 @@ import { getFormReference } from "@/server/services/reference";
 import { normalizeUnit } from "@/lib/units";
 import { ReviewForm, type ReviewRow } from "./review-form";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge, type Tone } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+
+const STATUS_TONE: Record<string, Tone> = {
+  COMMITTED: "fresh",
+  PARSED: "soon",
+  PENDING: "unknown",
+  FAILED: "critical",
+};
 
 export default async function ReviewPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ dup?: string }>;
 }) {
   const { id } = await params;
-  const { dup } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,11 +37,17 @@ export default async function ReviewPage({
   const committed = receipt.status === "COMMITTED";
 
   const meta = (
-    <div className="mb-4 rounded-xl border border-line bg-card px-4 py-3 text-sm text-muted">
-      {receipt.store ?? "Unknown store"}
-      {receipt.purchaseDate ? ` · ${new Date(receipt.purchaseDate).toLocaleDateString()}` : ""}
-      {receipt.total != null ? ` · ${receipt.total} ${receipt.currency ?? ""}` : ""}
-      <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-xs text-brand-ink">{receipt.status}</span>
+    <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line bg-card px-3.5 py-2.5 text-[13px] text-muted">
+      <span className="font-medium text-ink">{receipt.store ?? "Unknown store"}</span>
+      {receipt.purchaseDate && <span>· {new Date(receipt.purchaseDate).toLocaleDateString()}</span>}
+      {receipt.total != null && (
+        <span className="tabular">
+          · {receipt.total} {receipt.currency ?? ""}
+        </span>
+      )}
+      <Badge tone={STATUS_TONE[receipt.status] ?? "neutral"} className="ml-auto">
+        {receipt.status}
+      </Badge>
     </div>
   );
 
@@ -42,59 +57,53 @@ export default async function ReviewPage({
         href={imageUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mb-4 inline-flex items-center gap-2 rounded-xl border border-line bg-card px-4 py-3 text-sm text-brand"
+        className="mb-4 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2.5 text-[13px] font-medium text-brand transition-colors hover:bg-surface-2"
       >
-        📄 Open receipt PDF
+        <Icon name="external" size={15} />
+        Open receipt PDF
       </a>
     ) : (
-      <details className="mb-4 rounded-xl border border-line bg-card px-4 py-3">
-        <summary className="cursor-pointer text-sm text-muted">View receipt image</summary>
+      <details className="group mb-4 rounded-control border border-line bg-card px-3.5 py-2.5">
+        <summary className="flex cursor-pointer items-center justify-between text-[13px] text-muted marker:content-['']">
+          View receipt image
+          <Icon name="chevron-right" size={15} className="transition-transform duration-fast group-open:rotate-90" />
+        </summary>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="Receipt" className="mt-3 rounded-xl" />
+        <img src={imageUrl} alt="Receipt" className="mt-3 rounded-control" />
       </details>
     )
   ) : null;
 
   if (receipt.status === "FAILED") {
     return (
-      <main>
-        <header className="mb-4 flex items-center gap-3">
-          <Link href="/scan" className="text-sm text-muted hover:text-ink">
-            ← Back
-          </Link>
-          <h1 className="font-display text-2xl text-ink">Couldn&apos;t read that receipt</h1>
-        </header>
+      <main className="animate-fade-in">
+        <PageHeader title="Couldn't read that receipt" back="/scan" size="md" />
         {imageBlock}
-        <div className="mt-2 rounded-2xl border border-dashed border-line bg-status-critical/5 p-6 text-center">
-          <p className="font-display text-lg text-ink">Extraction failed</p>
-          <p className="mt-1 text-sm text-muted">
-            The AI couldn&apos;t read this one. Try a sharper, well-lit photo (or the original PDF),
-            and make sure the whole receipt is in frame.
-          </p>
-          <Link href="/scan" className="mt-4 inline-block">
-            <Button>Try again</Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon="scan"
+          title="Extraction failed"
+          description="The AI couldn't read this one. Try a sharper, well-lit photo (or the original PDF) with the whole receipt in frame."
+          action={
+            <Button asChild>
+              <Link href="/scan">Try again</Link>
+            </Button>
+          }
+        />
       </main>
     );
   }
 
   if (committed) {
     return (
-      <main>
-        <header className="mb-4 flex items-center gap-3">
-          <Link href="/receipts" className="text-sm text-muted hover:text-ink">
-            ← Receipts
-          </Link>
-          <h1 className="font-display text-2xl text-ink">Receipt</h1>
-        </header>
+      <main className="animate-fade-in">
+        <PageHeader title="Receipt" back="/receipts" size="md" />
         {meta}
         {imageBlock}
         <ul className="flex flex-col gap-2">
           {receipt.items.map((it) => (
-            <li key={it.id} className="rounded-xl border border-line bg-card p-3 text-sm">
+            <li key={it.id} className="rounded-control border border-line bg-card p-3 text-[13px]">
               <span className="font-medium text-ink">{it.rawName}</span>
-              <span className="text-muted">
+              <span className="text-muted tabular">
                 {" "}
                 · {it.quantity ?? "?"} {it.unit ?? ""}
                 {it.inventoryItemId ? " · added" : ""}
@@ -102,9 +111,9 @@ export default async function ReviewPage({
             </li>
           ))}
         </ul>
-        <Link href="/inventory" className="mt-6 inline-block">
-          <Button>Go to inventory</Button>
-        </Link>
+        <Button asChild className="mt-6">
+          <Link href="/inventory">Go to inventory</Link>
+        </Button>
       </main>
     );
   }
@@ -130,26 +139,15 @@ export default async function ReviewPage({
   });
 
   return (
-    <main>
-      <header className="mb-4 flex items-center gap-3">
-        <Link href="/scan" className="text-sm text-muted hover:text-ink">
-          ← Scan another
-        </Link>
-        <h1 className="font-display text-2xl text-ink">Review your groceries</h1>
-      </header>
-
-      {dup && (
-        <div className="mb-4 rounded-xl border border-line bg-accent-soft px-4 py-3 text-sm text-ink">
-          You&apos;ve scanned this receipt before — showing the existing extraction.
-        </div>
-      )}
+    <main className="animate-fade-in">
+      <PageHeader
+        title="Review groceries"
+        subtitle="Check each line, fix anything the AI got wrong, then add them. Attach an ingredient so we can estimate expiry."
+        back="/scan"
+        size="md"
+      />
       {meta}
       {imageBlock}
-
-      <p className="mb-3 text-sm text-muted">
-        Check each line, fix anything the AI got wrong, then add them to your inventory.
-        Add an ingredient to a line so we can estimate its expiry.
-      </p>
 
       <ReviewForm
         receiptId={receipt.id}
