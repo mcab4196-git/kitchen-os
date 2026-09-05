@@ -140,6 +140,16 @@ export async function commitReceipt(
   const included = items.filter((i) => i.include);
   if (included.length === 0) return { ok: false, error: "No items selected to add." };
 
+  // The receiptItemId values come from the client payload — never trust them.
+  // Every reviewed line must belong to THIS receipt, or a caller could point the
+  // update at another user's receipt_items row.
+  const ownItemIds = new Set(
+    (await prisma.receiptItem.findMany({ where: { receiptId: receipt.id }, select: { id: true } })).map((r) => r.id)
+  );
+  if (included.some((it) => !ownItemIds.has(it.receiptItemId))) {
+    return { ok: false, error: "Those items don't belong to this receipt." };
+  }
+
   let count = 0;
   for (const it of included) {
     const invItem = await createInventoryItem(userId, {
