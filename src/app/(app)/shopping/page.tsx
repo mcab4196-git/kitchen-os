@@ -1,14 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { listShopping } from "@/server/services/shopping";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { SubmitAction, SubmitButton } from "@/components/ui/feedback";
 import { controlClass } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
-import { addItemAction, toggleCheckedAction, removeItemAction, clearCheckedAction } from "./actions";
+import { addItemAction, clearCheckedAction } from "./actions";
+import { ShoppingList } from "./shopping-list";
 
 export default async function ShoppingPage() {
   const supabase = await createClient();
@@ -56,55 +55,7 @@ export default async function ShoppingPage() {
           description="Add items here, or send a recipe's missing ingredients over from its page."
         />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {items.map((it) => (
-            <li
-              key={it.id}
-              className={cn(
-                "flex items-center gap-3 rounded-control border border-line bg-card p-2.5 transition duration-fast ease-out",
-                it.checked && "opacity-55",
-              )}
-            >
-              <form action={toggleCheckedAction} className="flex">
-                <input type="hidden" name="itemId" value={it.id} />
-                <SubmitAction
-                  aria-label={it.checked ? "Uncheck" : "Check off"}
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition duration-fast ease-out",
-                    it.checked
-                      ? "border-brand bg-brand text-brand-contrast"
-                      : "border-line-strong hover:border-brand",
-                  )}
-                >
-                  {it.checked && <Icon name="check" size={14} strokeWidth={2.5} />}
-                </SubmitAction>
-              </form>
-
-              <div className="min-w-0 flex-1">
-                <span className={cn("text-[14px] text-ink tabular", it.checked && "line-through")}>
-                  {it.quantityNeeded ? `${it.quantityNeeded} ` : ""}
-                  {it.unit ? `${it.unit} ` : ""}
-                  {it.label}
-                </span>
-                {it.reason === "RECIPE" && (
-                  <Badge tone="brand" className="ml-2 align-middle">
-                    recipe
-                  </Badge>
-                )}
-              </div>
-
-              <form action={removeItemAction} className="flex">
-                <input type="hidden" name="itemId" value={it.id} />
-                <SubmitAction
-                  aria-label={`Remove ${it.label}`}
-                  className="rounded-md p-1.5 text-faint hover:bg-status-critical-bg hover:text-status-critical-fg"
-                >
-                  <Icon name="x" size={15} />
-                </SubmitAction>
-              </form>
-            </li>
-          ))}
-        </ul>
+        <ShoppingList items={items} />
       )}
     </main>
   );

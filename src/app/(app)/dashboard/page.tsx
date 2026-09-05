@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/server/db";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { ExpiryBadge } from "@/components/inventory/expiry-badge";
+import { statusRailClass } from "@/components/inventory/status-rail";
 import { ExpiryReminder } from "@/components/expiry-reminder";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PrimaryAction } from "@/components/ui/primary-action";
 import { getExpiryAlerts } from "@/server/services/notifications";
-import type { ExpirySource } from "@/lib/expiry";
+import { getPreferences, accessibilityPrefs } from "@/server/services/preferences";
+import { classifyStatus, type ExpirySource } from "@/lib/expiry";
 
 function greeting(d = new Date()) {
   const h = d.getHours();
@@ -40,20 +44,52 @@ export default async function DashboardPage() {
   ]);
 
   const alerts = await getExpiryAlerts(userId);
+  const { absoluteDates } = accessibilityPrefs(await getPreferences(userId));
   const isEmpty = total === 0;
+
+  const Greeting = (
+    <header className="mb-6">
+      <p className="text-2xs font-medium uppercase tracking-[0.14em] text-faint">{greeting()}</p>
+      <h1 className="mt-1 font-display text-title text-ink">Your kitchen</h1>
+    </header>
+  );
+
+  // Empty variant [1c]: lead straight with the two ways in, Scan first, stacked
+  // full-width. No zeroed counts, no floating action — nothing to act on yet.
+  if (isEmpty) {
+    return (
+      <main className="animate-fade-in">
+        {Greeting}
+        <EmptyState
+          icon="leaf"
+          title="Let's fill the shelves"
+          description="Scan the receipt from your last shop to add several items at once, or add one by hand."
+          action={
+            <div className="flex w-full flex-col gap-2.5">
+              <Button asChild size="lg">
+                <Link href="/scan">
+                  <Icon name="scan" size={18} />
+                  Scan a receipt
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" size="lg">
+                <Link href="/inventory/new">
+                  <Icon name="plus" size={18} />
+                  Add an item by hand
+                </Link>
+              </Button>
+            </div>
+          }
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="animate-fade-in">
-      <header className="mb-6">
-        <p className="text-2xs font-medium uppercase tracking-[0.14em] text-faint">{greeting()}</p>
-        <h1 className="mt-1 font-display text-title text-ink">Your kitchen</h1>
-      </header>
+      {Greeting}
 
-      {isEmpty ? (
-        <p className="mb-6 text-[15px] leading-6 text-ink">
-          Nothing in your inventory yet — add your first items or scan a receipt to get started.
-        </p>
-      ) : alerts.count > 0 ? (
+      {alerts.count > 0 ? (
         <div className="mb-6 rounded-card border border-status-soon-border bg-status-soon-bg p-4">
           <Link href="/alerts" className="group flex items-start gap-3">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-soon/15 text-status-soon-fg">
@@ -87,13 +123,13 @@ export default async function DashboardPage() {
       </section>
 
       <div className="mt-5 grid grid-cols-2 gap-2.5">
-        <Button asChild size="lg" className="h-14">
+        <Button asChild size="lg" className="min-h-14">
           <Link href="/scan">
             <Icon name="scan" size={18} />
             Scan receipt
           </Link>
         </Button>
-        <Button asChild variant="secondary" size="lg" className="h-14">
+        <Button asChild variant="secondary" size="lg" className="min-h-14">
           <Link href="/inventory/new">
             <Icon name="plus" size={18} />
             Add item
@@ -113,48 +149,47 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <ul className="flex flex-col gap-2">
-            {useSoonItems.map((it) => (
-              <li key={it.id}>
-                <Link
-                  href={`/inventory/${it.id}/use`}
-                  className="group flex items-center justify-between gap-3 rounded-control border border-line bg-card p-3 transition duration-fast ease-out hover:border-line-strong hover:shadow-card active:translate-y-px"
-                >
-                  <span className="min-w-0 truncate text-[14px] text-ink">
-                    {it.productName}{" "}
-                    <span className="text-muted tabular">
-                      · {it.quantity} {it.unit}
+            {useSoonItems.map((it) => {
+              const status = classifyStatus(it.expiryDate, it.expirySource as ExpirySource);
+              return (
+                <li key={it.id}>
+                  <Link
+                    href={`/inventory/${it.id}/use`}
+                    className={cn(
+                      "group flex min-h-[3.5rem] items-center justify-between gap-3 rounded-control border border-line bg-card p-3 transition duration-fast ease-out hover:border-line-strong hover:shadow-card active:translate-y-px",
+                      statusRailClass(status),
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 text-[14px] text-ink">
+                      {it.productName}{" "}
+                      <span className="text-muted tabular">
+                        · {it.quantity} {it.unit}
+                      </span>
                     </span>
-                  </span>
-                  <ExpiryBadge
-                    expiryDate={it.expiryDate}
-                    source={it.expirySource as ExpirySource}
-                    pulse
-                  />
-                </Link>
-              </li>
-            ))}
+                    <ExpiryBadge
+                      expiryDate={it.expiryDate}
+                      source={it.expirySource as ExpirySource}
+                      absoluteDates={absoluteDates}
+                      pulse
+                    />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
+
+          <Link
+            href="/meals"
+            className="mt-3 flex min-h-12 items-center gap-2.5 rounded-card border border-brand-soft bg-brand-soft px-3.5 py-3 text-[13px] font-medium text-brand-ink transition duration-fast ease-out hover:bg-brand-soft/70"
+          >
+            <Icon name="sparkles" size={18} className="shrink-0" />
+            <span className="flex-1">Cook these three tonight</span>
+            <Icon name="chevron-right" size={17} className="shrink-0" />
+          </Link>
         </section>
       )}
 
-      {isEmpty && (
-        <EmptyState
-          className="mt-8"
-          icon="leaf"
-          title="Let's fill the shelves"
-          description="Add items to track expiry, or scan a grocery receipt to add several at once."
-          action={
-            <div className="flex gap-2">
-              <Button asChild>
-                <Link href="/inventory/new">Add an item</Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/scan">Scan receipt</Link>
-              </Button>
-            </div>
-          }
-        />
-      )}
+      <PrimaryAction href="/inventory/new" label="Add" icon="plus" />
     </main>
   );
 }
@@ -170,14 +205,20 @@ function Stat({
   value: number;
   tone: "ink" | "soon" | "critical";
 }) {
-  const color =
-    tone === "soon" ? "text-status-soon-fg" : tone === "critical" ? "text-status-critical-fg" : "text-ink";
+  const t = {
+    ink: { border: "border-line", text: "text-ink" },
+    soon: { border: "border-status-soon-border", text: "text-status-soon-fg" },
+    critical: { border: "border-status-critical-border", text: "text-status-critical-fg" },
+  }[tone];
   return (
     <Link
       href={href}
-      className="group rounded-card border border-line bg-card p-3.5 shadow-card transition duration-fast ease-out hover:border-line-strong hover:shadow-pop active:translate-y-px"
+      className={cn(
+        "group rounded-card border bg-card p-3.5 shadow-xs transition duration-fast ease-out hover:shadow-card active:translate-y-px",
+        t.border,
+      )}
     >
-      <div className={`font-display text-title tabular ${color}`}>{value}</div>
+      <div className={cn("font-display text-title tabular", t.text)}>{value}</div>
       <div className="mt-0.5 flex items-center gap-0.5 text-2xs text-muted">
         {label}
         <Icon

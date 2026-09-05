@@ -13,17 +13,20 @@ export function ExpiryBadge({
   expiryDate,
   source,
   pulse = false,
+  absoluteDates = false,
   className,
 }: {
   expiryDate: Date | null;
   source: ExpirySource;
   /** Single attention beat on first paint — reserve for triage surfaces. */
   pulse?: boolean;
+  /** "Show expiry dates as text" preference — "7 Sep" instead of "in 2 days". */
+  absoluteDates?: boolean;
   className?: string;
 }) {
   const status = classifyStatus(expiryDate, source);
   const { tone, label } = MAP[status];
-  const rel = relativeLabel(expiryDate, source);
+  const rel = relativeLabel(expiryDate, source, undefined, { absolute: absoluteDates });
   const estimated = source === "ESTIMATED" && status !== "UNKNOWN";
   const urgent = status === "CRITICAL" || status === "EXPIRED";
 

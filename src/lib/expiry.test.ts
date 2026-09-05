@@ -75,6 +75,12 @@ describe("daysUntil / relativeLabel", () => {
     expect(relativeLabel(new Date("2026-08-22T12:00:00Z"), "EXACT", now)).toBe("tomorrow");
     expect(relativeLabel(null, "UNKNOWN", now)).toBe("No date");
   });
+  it("returns an absolute date when asked (accessibility preference)", () => {
+    const label = relativeLabel(new Date("2026-09-07T12:00:00Z"), "EXACT", now, { absolute: true });
+    expect(label).toMatch(/7/);
+    expect(label).not.toMatch(/day/);
+    expect(relativeLabel(null, "UNKNOWN", now, { absolute: true })).toBe("No date");
+  });
 });
 
 describe("estimateExpiry — category fallbacks across storage locations", () => {

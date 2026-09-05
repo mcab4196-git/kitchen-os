@@ -1,9 +1,11 @@
 import { ExpiryBadge } from "./expiry-badge";
-import type { ExpirySource } from "@/lib/expiry";
+import { statusRailClass } from "./status-rail";
+import { classifyStatus, type ExpirySource } from "@/lib/expiry";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { ItemActions } from "./item-actions";
 
-const STORAGE_LABEL: Record<string, string> = {
+export const STORAGE_LABEL: Record<string, string> = {
   REFRIGERATOR: "Fridge",
   FREEZER: "Freezer",
   PANTRY: "Pantry",
@@ -23,8 +25,9 @@ export interface ItemCardData {
   category: { name: string } | null;
 }
 
-export function ItemCard({ item }: { item: ItemCardData }) {
+export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; absoluteDates?: boolean }) {
   const usedUp = item.quantity <= 0;
+  const status = classifyStatus(item.expiryDate, item.expirySource as ExpirySource);
   const meta = [
     `${item.quantity} ${item.unit}`,
     item.category?.name,
@@ -33,7 +36,7 @@ export function ItemCard({ item }: { item: ItemCardData }) {
   ].filter(Boolean);
 
   return (
-    <Card as="li" className="list-none">
+    <Card as="li" className={cn("list-none", statusRailClass(status))}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[15px] font-semibold text-ink">
@@ -53,10 +56,20 @@ export function ItemCard({ item }: { item: ItemCardData }) {
             ))}
           </p>
         </div>
-        <ExpiryBadge expiryDate={item.expiryDate} source={item.expirySource as ExpirySource} />
+        <ExpiryBadge
+          expiryDate={item.expiryDate}
+          source={item.expirySource as ExpirySource}
+          absoluteDates={absoluteDates}
+        />
       </div>
 
-      <ItemActions id={item.id} productName={item.productName} quantity={item.quantity} unit={item.unit} />
+      <ItemActions
+        id={item.id}
+        productName={item.productName}
+        quantity={item.quantity}
+        unit={item.unit}
+        storageLabel={STORAGE_LABEL[item.storageLocation] ?? item.storageLocation}
+      />
     </Card>
   );
 }

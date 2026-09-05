@@ -16,7 +16,11 @@ const FILTERS: [string, string][] = [
   ["cupboard", "Cupboard"],
 ];
 
-export function InventoryControls() {
+/**
+ * `counts` is passed only when the full live set is on screen (no search, no
+ * active filter) so a chip's number is never a lie about a filtered subset.
+ */
+export function InventoryControls({ counts }: { counts?: Record<string, number> }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -40,10 +44,14 @@ export function InventoryControls() {
   }, [q]);
 
   // Keep the active chip in view when it changes (e.g. deep-linked filter).
+  // Scroll the strip itself — `scrollIntoView` on a horizontal strip can also
+  // scroll the whole page up/down.
   useEffect(() => {
-    stripRef.current
-      ?.querySelector('[data-active="true"]')
-      ?.scrollIntoView({ inline: "center", block: "nearest" });
+    const strip = stripRef.current;
+    const active = strip?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!strip || !active) return;
+    const left = active.offsetLeft - strip.clientWidth / 2 + active.clientWidth / 2;
+    strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
   }, [activeFilter]);
 
   function setParam(key: string, value: string) {
@@ -63,6 +71,8 @@ export function InventoryControls() {
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
           />
           <input
+            type="search"
+            enterKeyHint="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search items…"
@@ -88,19 +98,23 @@ export function InventoryControls() {
       >
         {FILTERS.map(([value, label]) => {
           const active = activeFilter === value;
+          const count = counts?.[value];
           return (
             <button
               key={value}
               data-active={active}
               onClick={() => setParam("filter", value)}
               className={cn(
-                "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition duration-fast ease-out active:scale-95",
+                "inline-flex min-h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition duration-fast ease-out active:scale-95",
                 active
                   ? "border-brand bg-brand text-brand-contrast shadow-xs"
                   : "border-line bg-card text-muted hover:border-line-strong hover:text-ink",
               )}
             >
               {label}
+              {count != null && (
+                <span className={cn("tabular", active ? "text-brand-contrast/75" : "text-faint")}>{count}</span>
+              )}
             </button>
           );
         })}

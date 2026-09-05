@@ -98,52 +98,60 @@ export function Toaster() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, pathname]);
 
-  if (toasts.length === 0) return null;
+  // Persistent live region: always in the DOM so PRs 3–5 (quantity, check-off,
+  // undo) can announce through a stable node even before the first toast renders.
+  const announcement = toasts[toasts.length - 1]?.message ?? "";
 
   return (
-    <div
-      className="pointer-events-none fixed inset-x-0 z-[60] mx-auto flex max-w-app flex-col items-center gap-2 px-4"
-      style={{ bottom: "calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem)" }}
-      role="status"
-      aria-live="polite"
-    >
-      {toasts.map((t) => (
+    <>
+      <span className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </span>
+
+      {toasts.length > 0 && (
         <div
-          key={t.id}
-          className={cn(
-            "pointer-events-auto flex w-full items-center gap-2.5 rounded-control border px-3.5 py-2.5 text-[13px] shadow-pop animate-toast-in",
-            t.tone === "success"
-              ? "border-status-fresh-border bg-status-fresh-bg text-status-fresh-fg"
-              : "border-line-strong bg-card text-ink",
-          )}
+          className="pointer-events-none fixed inset-x-0 z-[60] mx-auto flex max-w-app flex-col items-center gap-2 px-4"
+          style={{ bottom: "calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem)" }}
         >
-          <Icon
-            name={t.tone === "success" ? "check" : "sparkles"}
-            size={16}
-            className="shrink-0"
-          />
-          <span className="min-w-0 flex-1">{t.message}</span>
-          {t.undoId && (
-            <form action={restoreItem}>
-              <input type="hidden" name="id" value={t.undoId} />
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              className={cn(
+                "pointer-events-auto flex w-full items-center gap-2.5 rounded-control border px-3.5 py-2.5 text-[13px] shadow-pop animate-toast-in",
+                t.tone === "success"
+                  ? "border-status-fresh-border bg-status-fresh-bg text-status-fresh-fg"
+                  : "border-line-strong bg-card text-ink",
+              )}
+            >
+              <Icon
+                name={t.tone === "success" ? "check" : "sparkles"}
+                size={16}
+                className="shrink-0"
+              />
+              <span className="min-w-0 flex-1">{t.message}</span>
+              {t.undoId && (
+                <form action={restoreItem}>
+                  <input type="hidden" name="id" value={t.undoId} />
+                  <button
+                    type="submit"
+                    className="rounded px-2 py-0.5 text-[13px] font-semibold text-brand underline underline-offset-2 hover:no-underline"
+                  >
+                    Undo
+                  </button>
+                </form>
+              )}
               <button
-                type="submit"
-                className="rounded px-2 py-0.5 text-[13px] font-semibold text-brand underline underline-offset-2 hover:no-underline"
+                type="button"
+                onClick={() => dismiss(t.id)}
+                aria-label="Dismiss"
+                className="-mr-1 shrink-0 rounded p-1 opacity-60 transition-opacity hover:opacity-100"
               >
-                Undo
+                <Icon name="x" size={14} />
               </button>
-            </form>
-          )}
-          <button
-            type="button"
-            onClick={() => dismiss(t.id)}
-            aria-label="Dismiss"
-            className="-mr-1 shrink-0 rounded p-1 opacity-60 transition-opacity hover:opacity-100"
-          >
-            <Icon name="x" size={14} />
-          </button>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }

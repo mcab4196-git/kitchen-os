@@ -295,6 +295,49 @@ export async function getInventoryItem(userId: string, id: string) {
   });
 }
 
+export interface RecentItemChip {
+  productName: string;
+  quantity: number;
+  unit: string;
+  storageLocation: StorageLocation;
+  ingredientName: string | null;
+  categoryId: string | null;
+}
+
+/**
+ * Distinct items the user added in the last 30 days, newest first — the source
+ * for the "quick add from your usuals" chips [1q]C. Deduped by product name so a
+ * weekly staple shows once. Includes used-up items on purpose: milk and eggs are
+ * exactly what gets re-bought.
+ */
+export async function getRecentlyAddedItems(userId: string, limit = 6): Promise<RecentItemChip[]> {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const rows = await prisma.inventoryItem.findMany({
+    where: { userId, createdAt: { gte: since } },
+    orderBy: { createdAt: "desc" },
+    include: { ingredient: true },
+    take: 60,
+  });
+
+  const seen = new Set<string>();
+  const out: RecentItemChip[] = [];
+  for (const r of rows) {
+    const key = r.productName.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      productName: r.productName,
+      quantity: r.quantity,
+      unit: r.unit,
+      storageLocation: r.storageLocation,
+      ingredientName: r.ingredient?.canonicalName ?? null,
+      categoryId: r.categoryId ?? null,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /**
  * Re-estimate expiry for a user's existing items using the current shelf-life
  * rules. Skips items whose expiry was set exactly by the user (source EXACT) so

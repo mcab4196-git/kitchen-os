@@ -1,9 +1,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-/** One shared control surface. Height 44px (comfortable touch target). */
+/** One shared control surface. Min height 44px (comfortable touch target). */
 export const controlClass =
-  "h-11 w-full rounded-control border border-line-strong bg-card px-3 text-sm text-ink " +
+  "min-h-11 w-full rounded-control border border-line-strong bg-card px-3 text-sm text-ink " +
   "placeholder:text-faint transition duration-fast ease-out " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 " +
   "disabled:opacity-50";

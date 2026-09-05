@@ -34,30 +34,42 @@ export type IconName =
   | "external";
 
 const PATHS: Record<IconName, React.ReactNode> = {
-  home: <path d="M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />,
+  // Kitchen-specific marks tuned to hold up at ~22px (see PR 7). Geometry only —
+  // the wrapper below owns viewBox, stroke, caps and aria-hidden.
+  home: (
+    <>
+      <path d="M3.8 10.6 12 4.2l8.2 6.4" />
+      <path d="M6.3 9.3V19a1 1 0 0 0 1 1h9.4a1 1 0 0 0 1-1V9.3" />
+      <path d="M10 20v-4.3h4V20" />
+    </>
+  ),
   inventory: (
     <>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <path d="M4 9.5h16M9.5 4v16" />
+      <rect x="5" y="3" width="14" height="18" rx="2.6" />
+      <path d="M5 10.2h14" />
+      <path d="M8.6 6v2.2M8.6 12.6v2.6" />
     </>
   ),
   cook: (
     <>
-      <path d="M6 13.5a4 4 0 0 1-1-7.9A4.5 4.5 0 0 1 14 4a4 4 0 0 1 4 9.5" />
-      <path d="M6 13.5h12v4a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z" />
+      <path d="M3.8 10.9h14.4v4.6a3.5 3.5 0 0 1-3.5 3.5H7.3a3.5 3.5 0 0 1-3.5-3.5z" />
+      <path d="M18.2 12.1h2.1a1.35 1.35 0 0 1 0 2.7h-2.1" />
+      <path d="M9.1 7.6c0-1.2 1.5-1.5 1.5-2.7M13.2 7.6c0-1.5 1.6-1.8 1.6-3.1" />
     </>
   ),
   cart: (
     <>
-      <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.2a1 1 0 0 0 1-.8L20 7H6" />
-      <circle cx="9.5" cy="20" r="1.4" />
-      <circle cx="17" cy="20" r="1.4" />
+      <path d="M3.4 8.6h17.2l-1.7 9.3a2 2 0 0 1-2 1.6H7.1a2 2 0 0 1-2-1.6z" />
+      <path d="M8.7 4.4 7 8.6M15.3 4.4 17 8.6" />
+      <path d="M9.6 12.2v3.6M14.4 12.2v3.6" />
     </>
   ),
   settings: (
     <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19 12a7 7 0 0 0-.14-1.4l1.9-1.48-2-3.46-2.24.9a7 7 0 0 0-2.42-1.4L11.7 2h-4l-.4 2.36a7 7 0 0 0-2.42 1.4l-2.24-.9-2 3.46 1.9 1.48A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-1.9 1.48 2 3.46 2.24-.9a7 7 0 0 0 2.42 1.4L7.7 22h4l.4-2.36a7 7 0 0 0 2.42-1.4l2.24.9 2-3.46-1.9-1.48A7 7 0 0 0 19 12Z" />
+      <path d="M4.5 8.4h8.6M17.9 8.4H19.5" />
+      <circle cx="15.5" cy="8.4" r="2.4" />
+      <path d="M4.5 15.6h3.2M12.1 15.6h7.4" />
+      <circle cx="9.9" cy="15.6" r="2.4" />
     </>
   ),
   scan: (

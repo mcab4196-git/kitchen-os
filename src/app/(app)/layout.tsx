@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/server/db";
 import { BottomNav, SideNav } from "@/components/bottom-nav";
 import { Toaster } from "@/components/ui/toaster";
+import { PrefsEffect } from "@/components/prefs-effect";
+import { accessibilityPrefs } from "@/server/services/preferences";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,17 +18,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // First-load safety net: the DB trigger creates the profile, but ensure a
   // preferences row exists so downstream screens can rely on it.
-  await prisma.userPreference.upsert({
+  const prefs = await prisma.userPreference.upsert({
     where: { userId: user.id },
     update: {},
     create: { userId: user.id },
   });
+  const a11y = accessibilityPrefs(prefs);
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-6xl">
+      <PrefsEffect largerText={a11y.largerText} reduceMotion={a11y.reduceMotion} />
       <SideNav />
       <div className="w-full min-w-0 flex-1 lg:border-r lg:border-line">
-        <div className="mx-auto w-full max-w-app px-4 pt-6 pb-[calc(var(--nav-h)+env(safe-area-inset-bottom)+1.5rem)] lg:max-w-content lg:px-8 lg:pb-16">
+        <div className="mx-auto w-full max-w-app px-4 pt-6 pb-[calc(var(--nav-h)+env(safe-area-inset-bottom)+5.5rem)] lg:max-w-content lg:px-8 lg:pb-16">
           {children}
         </div>
       </div>

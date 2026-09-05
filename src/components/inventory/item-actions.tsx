@@ -16,11 +16,13 @@ export function ItemActions({
   productName,
   quantity,
   unit,
+  storageLabel,
 }: {
   id: string;
   productName: string;
   quantity: number;
   unit: string;
+  storageLabel?: string;
 }) {
   const [useOpen, setUseOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -55,10 +57,17 @@ export function ItemActions({
       <Sheet
         open={useOpen}
         onOpenChange={setUseOpen}
-        title={productName}
+        title={`Use some ${productName.toLowerCase()}`}
         description={`In stock: ${quantity} ${unit}`}
       >
-        <ConsumeFields id={id} currentQuantity={quantity} unit={unit} autoFocus />
+        <ConsumeFields
+          id={id}
+          currentQuantity={quantity}
+          unit={unit}
+          storageLabel={storageLabel}
+          onCancel={() => setUseOpen(false)}
+          autoFocus
+        />
       </Sheet>
 
       <Dialog

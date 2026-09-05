@@ -150,6 +150,29 @@ summary {
   }
 }
 
+/* ─────────────────────────── Accessibility preferences ───────────────────────────
+   Set on <html> by PrefsEffect from the user's saved toggles. "Larger text"
+   nudges the root scale (everything is rem-based); "Reduce motion" applies the
+   same treatment as the OS media query above, on demand. */
+:root[data-larger-text="true"] {
+  font-size: 106.25%;
+}
+
+:root[data-reduce-motion="true"] *,
+:root[data-reduce-motion="true"] *::before,
+:root[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+:root[data-reduce-motion="true"] .motion-keep,
+:root[data-reduce-motion="true"] .motion-keep * {
+  animation-duration: revert !important;
+  animation-iteration-count: infinite !important;
+  transition-duration: revert !important;
+}
+
 @layer utilities {
   /* Horizontal chip strips: hide the scrollbar but keep the scroll. */
   .no-scrollbar {

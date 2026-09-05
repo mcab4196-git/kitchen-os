@@ -118,8 +118,9 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
             </SubmitButton>
           </form>
         </div>
-        <p className="mt-2 text-center text-2xs text-faint">
-          Cooking deducts ingredients from inventory · “Add to list” sends the missing ones to Shopping.
+        <p className="mt-2 text-center text-2xs leading-4 text-faint">
+          Cooking deducts these amounts from your inventory — you&apos;ll confirm each one first.
+          “Add to list” sends the missing ones to Shopping.
         </p>
       </div>
     </main>

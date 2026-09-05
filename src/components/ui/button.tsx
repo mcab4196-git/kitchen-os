@@ -21,9 +21,9 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-[13px]",
-  md: "h-11 px-4 text-sm",
-  lg: "h-12 px-5 text-[15px]",
+  sm: "min-h-11 px-3 text-[13px]",
+  md: "min-h-11 px-4 text-sm",
+  lg: "min-h-12 px-5 text-[15px]",
 };
 
 interface Common {

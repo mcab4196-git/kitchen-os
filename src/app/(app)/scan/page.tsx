@@ -27,6 +27,17 @@ export default function ScanPage() {
     setPreview(f && !pdf ? URL.createObjectURL(f) : null);
   }
 
+  // One hidden input feeds the form; the two buttons only differ by whether they
+  // ask the OS for the camera. On desktop `capture` is ignored and both open the
+  // file picker — drag-and-drop onto the preview area still works too.
+  function pick(useCamera: boolean) {
+    const el = inputRef.current;
+    if (!el) return;
+    if (useCamera) el.setAttribute("capture", "environment");
+    else el.removeAttribute("capture");
+    el.click();
+  }
+
   return (
     <main className="animate-fade-in">
       <PageHeader
@@ -36,7 +47,7 @@ export default function ScanPage() {
         actions={
           <Link
             href="/receipts"
-            className="inline-flex h-9 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
+            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
           >
             <Icon name="clock" size={15} />
             History
@@ -45,7 +56,8 @@ export default function ScanPage() {
       />
 
       <form action={action} className="flex flex-col gap-4">
-        <label
+        <div
+          onClick={() => !pending && pick(false)}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -61,16 +73,16 @@ export default function ScanPage() {
             }
           }}
           className={cn(
-            "relative flex min-h-[15rem] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed p-6 text-center transition duration-fast ease-out",
+            "relative flex min-h-[13rem] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed p-6 text-center transition duration-fast ease-out",
             pending && "pointer-events-none",
             dragOver ? "border-brand bg-brand-soft" : "border-line-strong bg-card hover:border-brand/50",
           )}
         >
           <div key={preview ?? fileName ?? "empty"} className="flex animate-fade-in flex-col items-center gap-2">
             {preview ? (
-              <div className="flex max-h-64 items-center justify-center">
+              <div className="flex max-h-56 items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview} alt="Receipt preview" className="max-h-64 rounded-control object-contain" />
+                <img src={preview} alt="Receipt preview" className="max-h-56 rounded-control object-contain" />
               </div>
             ) : isPdf ? (
               <>
@@ -85,7 +97,7 @@ export default function ScanPage() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand-ink">
                   <Icon name="camera" size={20} />
                 </span>
-                <span className="font-medium text-ink">Take a photo or choose a file</span>
+                <span className="font-medium text-ink">Photograph the whole receipt, flat and lit</span>
                 <span className="text-[13px] text-muted">JPEG, PNG, WebP or PDF · up to 10&nbsp;MB</span>
               </>
             )}
@@ -94,7 +106,9 @@ export default function ScanPage() {
           {pending && (
             <div className="absolute inset-0 flex animate-fade-in flex-col items-center justify-center gap-3 bg-card/85 px-8 backdrop-blur-sm">
               <IndeterminateBar className="max-w-[12rem]" />
-              <span className="text-[13px] font-medium text-ink">Reading your receipt…</span>
+              <p role="status" aria-live="polite" className="text-[13px] font-medium text-ink">
+                Reading your receipt…
+              </p>
             </div>
           )}
 
@@ -103,10 +117,11 @@ export default function ScanPage() {
             name="receipt"
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
+            capture="environment"
             onChange={(e) => accept(e.target.files?.[0])}
             className="hidden"
           />
-        </label>
+        </div>
 
         {state.error && (
           <p
@@ -118,9 +133,31 @@ export default function ScanPage() {
         )}
 
         <p className="text-2xs leading-4 text-muted">
-          We send the image to the AI only to read the items. The photo is stored privately in your
-          account and you can delete it any time.
+          The photo goes to the AI only to read the line items. It is stored privately in your account
+          and you can delete it from Receipt history at any time.
         </p>
+
+        <div className="grid grid-cols-3 items-center">
+          <button
+            type="button"
+            onClick={() => pick(false)}
+            disabled={pending}
+            className="flex min-h-11 flex-col items-center gap-1.5 justify-self-start rounded-control px-2 py-1.5 text-[12px] font-medium text-muted transition-colors duration-fast hover:text-ink disabled:opacity-40"
+          >
+            <Icon name="external" size={22} />
+            Choose file
+          </button>
+          <button
+            type="button"
+            onClick={() => pick(true)}
+            disabled={pending}
+            aria-label="Take a photo"
+            className="flex h-[76px] w-[76px] items-center justify-center justify-self-center rounded-full border-4 border-brand bg-brand text-brand-contrast shadow-pop transition duration-fast ease-out hover:bg-brand-ink active:scale-95 disabled:opacity-40"
+          >
+            <Icon name="camera" size={30} />
+          </button>
+          <span aria-hidden />
+        </div>
 
         <Button type="submit" loading={pending} disabled={!hasFile} size="lg">
           {pending ? "Reading receipt…" : "Extract items"}

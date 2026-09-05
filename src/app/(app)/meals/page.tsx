@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/server/db";
 import { listCurrentSuggestions, listSaved } from "@/server/services/recipe";
+import { reconcileRecipe, type RecipeIngredientLite } from "@/lib/recipe";
+import { classifyStatus, type ExpirySource } from "@/lib/expiry";
 import { DinnerButton } from "./dinner-button";
 import { SaveToggle } from "@/components/recipe/save-toggle";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
+const SOON = new Set(["CRITICAL", "SOON", "EXPIRED"]);
 
 type RecipeCardData = {
   id: string;
@@ -19,7 +24,14 @@ type RecipeCardData = {
   difficulty: string;
   servings: number;
   saved: boolean;
+  missing: number;
+  usesExpiring: number;
 };
+
+function ingredientsOf(nutrition: unknown): RecipeIngredientLite[] {
+  const n = (nutrition ?? {}) as { ingredientList?: RecipeIngredientLite[] };
+  return n.ingredientList ?? [];
+}
 
 function RecipeCard({ r }: { r: RecipeCardData }) {
   const time = (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
@@ -36,13 +48,31 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
             />
           </p>
           {r.description && <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-muted">{r.description}</p>}
-          <div className="mt-2 flex items-center gap-3 text-2xs text-muted tabular">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-2xs text-muted tabular">
             <span className="inline-flex items-center gap-1">
               <Icon name="clock" size={13} />
               {time > 0 ? `${time} min` : "quick"}
             </span>
             <span>{DIFF_LABEL[r.difficulty] ?? r.difficulty}</span>
             <span>serves {r.servings}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {r.usesExpiring > 0 ? (
+              <Badge tone="fresh">
+                <Icon name="check" size={12} strokeWidth={2.5} />
+                Uses {r.usesExpiring} expiring
+              </Badge>
+            ) : r.missing === 0 ? (
+              <Badge tone="fresh">
+                <Icon name="check" size={12} strokeWidth={2.5} />
+                Nothing to buy
+              </Badge>
+            ) : (
+              <Badge tone="accent">
+                Buy {r.missing} item{r.missing === 1 ? "" : "s"}
+              </Badge>
+            )}
+            <Badge tone="neutral">{r.saved ? "Saved recipe" : "AI suggestion"}</Badge>
           </div>
         </Link>
         <SaveToggle recipeId={r.id} saved={r.saved} />
@@ -56,9 +86,54 @@ export default async function MealsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const userId = user!.id;
 
-  const suggestions = await listCurrentSuggestions(user!.id);
-  const saved = await listSaved(user!.id, suggestions.map((s) => s.id));
+  const [suggestions, inv] = await Promise.all([
+    listCurrentSuggestions(userId),
+    prisma.inventoryItem.findMany({
+      where: { userId, isDeleted: false, quantity: { gt: 0 } },
+      include: { ingredient: true },
+    }),
+  ]);
+  const saved = await listSaved(userId, suggestions.map((s) => s.id));
+
+  // Inventory tokens for per-card reconciliation — the same matching the recipe
+  // detail page and the suggestion pipeline use.
+  const now = new Date();
+  const tokens: string[] = [];
+  const soonTokens: string[] = [];
+  for (const i of inv) {
+    const t = [i.productName, i.ingredient?.canonicalName].filter(Boolean) as string[];
+    tokens.push(...t);
+    const soon =
+      i.expiryDate != null &&
+      i.expirySource !== "UNKNOWN" &&
+      SOON.has(classifyStatus(i.expiryDate, i.expirySource as ExpirySource, now));
+    if (soon) soonTokens.push(...t.map((x) => x.toLowerCase()));
+  }
+
+  const toCard = (r: (typeof suggestions)[number]): RecipeCardData => {
+    const ings = ingredientsOf(r.nutrition);
+    const usesExpiring = ings.filter((ing) => {
+      const nm = ing.name.toLowerCase();
+      return soonTokens.some((s) => nm.includes(s) || s.includes(nm));
+    }).length;
+    return {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      prepMinutes: r.prepMinutes,
+      cookMinutes: r.cookMinutes,
+      difficulty: r.difficulty,
+      servings: r.servings,
+      saved: r.saved,
+      missing: reconcileRecipe(ings, tokens).missing.length,
+      usesExpiring,
+    };
+  };
+
+  const suggestionCards = suggestions.map(toCard);
+  const savedCards = saved.map(toCard);
 
   return (
     <main className="animate-fade-in">
@@ -68,7 +143,7 @@ export default async function MealsPage() {
         actions={
           <Link
             href="/plan"
-            className="inline-flex h-9 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
+            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
           >
             <Icon name="calendar" size={15} />
             Plan week
@@ -76,31 +151,31 @@ export default async function MealsPage() {
         }
       />
 
-      <DinnerButton />
+      <DinnerButton itemCount={inv.length} />
 
-      {suggestions.length > 0 && (
+      {suggestionCards.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 font-display text-title-sm text-ink">Tonight&apos;s ideas</h2>
           <ul className="flex flex-col gap-3">
-            {suggestions.map((r) => (
+            {suggestionCards.map((r) => (
               <RecipeCard key={r.id} r={r} />
             ))}
           </ul>
         </section>
       )}
 
-      {saved.length > 0 && (
+      {savedCards.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 font-display text-title-sm text-ink">Saved recipes</h2>
           <ul className="flex flex-col gap-3">
-            {saved.map((r) => (
+            {savedCards.map((r) => (
               <RecipeCard key={r.id} r={r} />
             ))}
           </ul>
         </section>
       )}
 
-      {suggestions.length === 0 && saved.length === 0 && (
+      {suggestionCards.length === 0 && savedCards.length === 0 && (
         <EmptyState
           className="mt-8"
           icon="cook"

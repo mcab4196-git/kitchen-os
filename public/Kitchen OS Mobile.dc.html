@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics=""><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:#F0EEE9;font-family:Inter,system-ui,sans-serif}
+a{color:#2B584C}a:hover{color:#1E3E36}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 Inter,system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 12px/1.3 Inter,system-ui,sans-serif;color:rgba(0,0,0,.6);max-width:390px}
+.dv-note{max-width:390px;font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45)}
+.dv-card{max-width:100%;overflow:hidden}
+.dv-opt:target .dv-oid{background:#2B584C;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.6 Inter,system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style></helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Kitchen OS — mobile redesign, full screen set + variations</span></div>
+
+  <div style="max-width:760px;margin:0 0 30px;font:400 13.5px/1.7 Inter,system-ui,sans-serif;color:#3a3a37">
+    <p style="margin:0 0 12px"><strong style="font-weight:600">What I read.</strong> The live app already ships everything in scope: dashboard, inventory list with search/filter/sort, add + edit, quick-use sheet, receipt scan + review, meals with AI suggestions, recipe detail with inventory reconciliation, weekly plan, shopping list, preferences. So this is a redesign of the mobile surface, not new features. Every route, action and state below maps to something that exists in <code>src/app/(app)/</code>.</p>
+    <p style="margin:0 0 12px"><strong style="font-weight:600">Design system, unchanged.</strong> I kept your tokens verbatim — basil brand <code>#2B584C</code>, warm surface <code>#FBFAF7</code>, the four-role status scale (critical / soon / fresh / unknown), Fraunces display + Inter UI, 0.7rem control and 1rem card radii, 44px control height, the 480px app column. No new colors, no new fonts.</p>
+    <p style="margin:0 0 12px"><strong style="font-weight:600">The three moves.</strong> (1) <em>Triage before inventory</em> — home leads with what needs eating today, not counts. (2) <em>Grouped inventory</em> — expiry buckets with sticky headers replace one flat list, so 60 items stay scannable one-handed. (3) <em>A reachable primary action</em> — a raised Add/Scan button above the tab bar, because the current header "Add" sits in the hardest-to-reach corner of a phone. The five labelled tabs stay exactly as they are.</p>
+    <p style="margin:0"><strong style="font-weight:600">Accessibility, held as constraints not polish.</strong> Status is always a word plus a shape, never color alone. Every hit target ≥44px. Labels are real <code>&lt;label&gt;</code>s above fields, not placeholders. Quantity changes and undo speak through a live region. Type scales with the OS and reflows at 200% zoom — no fixed-height text boxes. Focus rings use your existing brand outline.</p>
+  </div>
+
+  <div class="dv-opts">
+
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Sign in</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Visible labels · 48px inputs · error region above the button</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:44px 24px 28px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="display:flex;width:38px;height:38px;align-items:center;justify-content:center;border-radius:11px;background:#2B584C;color:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-8 6-14 16-15 0 10-6 16-14 16a4 4 0 0 1-2-1ZM9 15c2-3 5-5 8-6"></path></svg></span>
+            <span style="font:600 16px/1 Fraunces,Georgia,serif;color:#1C1B19">Kitchen OS</span>
+          </div>
+          <h1 style="margin:36px 0 8px;font:600 34px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.024em;color:#1C1B19;text-wrap:pretty">Know what you have.</h1>
+          <p style="margin:0 0 32px;font:400 15px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Track what's in the kitchen, catch things before they expire, cook from what's already there.</p>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label for="k-email" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Email</label>
+              <input id="k-email" type="email" value="mica@example.com" style="height:48px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label for="k-pass" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Password</label>
+              <div style="position:relative;display:flex">
+                <input id="k-pass" type="password" value="passphrase" style="flex:1;height:48px;border:2px solid #2B584C;border-radius:11px;background:#fff;padding:0 76px 0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+                <button type="button" style="position:absolute;right:5px;top:5px;height:38px;min-width:58px;border:0;background:transparent;border-radius:9px;font:500 13px/1 Inter,system-ui,sans-serif;color:#2B584C">Show</button>
+              </div>
+            </div>
+            <button type="button" style="height:50px;border:0;border-radius:11px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Sign in</button>
+            <button type="button" style="height:50px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;color:#1C1B19;font:500 15px/1 Inter,system-ui,sans-serif">Create an account</button>
+            <a href="#1a" style="align-self:center;padding:12px;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#2B584C;text-decoration:none">Forgot your password?</a>
+          </div>
+          <p style="margin:auto 0 0;font:400 11.5px/1.6 Inter,system-ui,sans-serif;color:#8D8B83">Your kitchen data stays in your account. Receipt photos are private and deletable at any time.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Onboarding — step 2 of 3</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Every step skippable · writes to user_preferences · chips are 44px tall toggles</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:12px 20px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px 0 0;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Back</button>
+            <button type="button" style="min-height:44px;padding:0 8px;border:0;background:transparent;font:500 14px/1 Inter,system-ui,sans-serif;color:#2B584C">Skip</button>
+          </div>
+          <div style="display:flex;gap:6px;margin:8px 0 22px" role="img" aria-label="Step 2 of 3">
+            <span style="flex:1;height:4px;border-radius:2px;background:#2B584C"></span>
+            <span style="flex:1;height:4px;border-radius:2px;background:#2B584C"></span>
+            <span style="flex:1;height:4px;border-radius:2px;background:#E4DFD6"></span>
+          </div>
+          <p style="margin:0 0 4px;font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:0.14em;text-transform:uppercase;color:#8D8B83">Step 2 of 3</p>
+          <h1 style="margin:0 0 6px;font:600 28px/1.15 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">How do you eat?</h1>
+          <p style="margin:0 0 26px;font:400 14px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Used to filter recipe suggestions. You can change any of this later in Preferences.</p>
+
+          <p style="margin:0 0 10px;font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Household size</p>
+          <div style="display:flex;align-items:center;gap:14px;margin:0 0 26px">
+            <button type="button" aria-label="Fewer people" style="width:48px;height:48px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+            <span style="min-width: 52px; text-align: center; font: 600 26px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">2</span>
+            <button type="button" aria-label="More people" style="width:48px;height:48px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+            <span style="font:400 13px/1.4 Inter,system-ui,sans-serif;color:#6A6862">people at dinner</span>
+          </div>
+
+          <p style="margin:0 0 10px;font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Diet <span style="color:#8D8B83;font-weight:400">— optional, pick any</span></p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px">
+            <span style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #2B584C;background:#2B584C;color:#fff;font:500 14px/1 Inter,system-ui,sans-serif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>Low waste</span>
+            <span style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Vegetarian</span>
+            <span style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Pescatarian</span>
+            <span style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">High protein</span>
+            <span style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Gluten free</span>
+          </div>
+
+          <p style="margin:0 0 10px;font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Units</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px;background:#F6F4EF;border:1px solid #E4DFD6;border-radius:13px;margin:0 0 auto">
+            <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#fff;border:1px solid #C9C2B4;font:600 14px/1 Inter,system-ui,sans-serif;color:#1C1B19">Metric · g / ml</span>
+            <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;font:500 14px/1 Inter,system-ui,sans-serif;color:#6A6862">Imperial · oz</span>
+          </div>
+
+          <button type="button" style="margin-top:24px;height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Home — triage first</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Alert banner → counts → actions → use-soon list · raised Add button in thumb reach</div></sc-if>
+      <div class="dv-card" style="position:relative;width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:10px 16px 76px">
+          <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 18px">
+            <div>
+              <p style="margin:0;font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:0.14em;text-transform:uppercase;color:#8D8B83">Good evening</p>
+              <h1 style="margin:5px 0 0;font:600 28px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Your kitchen</h1>
+            </div>
+            <button type="button" aria-label="Receipt history" style="width:44px;height:44px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;color:#6A6862;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg></button>
+          </header>
+
+          <sc-if value="{{ populated }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <a href="#1c" style="display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid #E7D3AC;border-radius:16px;background:#F7ECDA;text-decoration:none">
+              <span style="display:flex;width:34px;height:34px;flex:none;align-items:center;justify-content:center;border-radius:17px;background:rgba(217,147,46,.18);color:#8A5814"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19H3z"></path><path d="M12 10v4M12 17h.01"></path></svg></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#8A5814">3 items to use up</span>
+                <span style="display:block;margin-top:3px;font:400 13px/1.45 Inter,system-ui,sans-serif;color:#8A5814;opacity:.85">Chicken breast today · spinach and yoghurt within 2 days</span>
+              </span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A5814" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:6px;flex:none;opacity:.6"><path d="m9 6 6 6-6 6"></path></svg>
+            </a>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 0">
+              <a href="#1d" style="padding:12px 12px 10px;border:1px solid #E4DFD6;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+                <span style="display: block; font: 600 26px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">24</span>
+                <span style="display:block;margin-top:4px;font:500 11px/1.3 Inter,system-ui,sans-serif;color:#6A6862">In stock</span>
+              </a>
+              <a href="#1d" style="padding:12px 12px 10px;border:1px solid #E7D3AC;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+                <span style="display: block; font: 600 26px/1 Fraunces,Georgia,serif; color: #8A5814; font-variant-numeric: tabular-nums; font-family: Helvetica">3</span>
+                <span style="display:block;margin-top:4px;font:500 11px/1.3 Inter,system-ui,sans-serif;color:#8A5814">Use soon</span>
+              </a>
+              <a href="#1d" style="padding:12px 12px 10px;border:1px solid #E6C7C0;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+                <span style="display: block; font: 600 26px/1 Fraunces,Georgia,serif; color: #B0382A; font-variant-numeric: tabular-nums; font-family: Helvetica">1</span>
+                <span style="display:block;margin-top:4px;font:500 11px/1.3 Inter,system-ui,sans-serif;color:#B0382A">Expired</span>
+              </a>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0">
+              <button type="button" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 14.5px/1 Inter,system-ui,sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M7 12h10"></path></svg>Scan receipt</button>
+              <button type="button" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;font:500 14.5px/1 Inter,system-ui,sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add item</button>
+            </div>
+
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px">
+              <h2 style="margin:0;font:600 21px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Use soon</h2>
+              <a href="#1d" style="font:500 13px/1 Inter,system-ui,sans-serif;color:#2B584C;text-decoration:none;padding:6px 0">All inventory</a>
+            </div>
+            <ul style="display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none">
+              <li><a href="#1f" style="display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 12px;border:1px solid #E4DFD6;border-left:4px solid #C64A3B;border-radius:12px;background:#fff;text-decoration:none">
+                <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken breast</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">500 g · Fridge</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E6C7C0;border-radius:11px;background:#F7E9E6;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:6px;height:6px;border-radius:3px;background:#C64A3B"></span>Use now · today <span style="opacity:.7">est.</span></span>
+              </a></li>
+              <li><a href="#1f" style="display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 12px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px;background:#fff;text-decoration:none">
+                <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Baby spinach</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">200 g · Fridge · opened</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>Use soon · 2 days</span>
+              </a></li>
+              <li><a href="#1f" style="display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 12px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px;background:#fff;text-decoration:none">
+                <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Greek yoghurt</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">450 g · Fridge</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>Use soon · 2 days</span>
+              </a></li>
+            </ul>
+            <a href="#1i" style="display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:13px 14px;border:1px solid #E6EEEA;border-radius:14px;background:#E6EEEA;text-decoration:none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E3E36" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6z"></path><path d="M18 15l.7 1.9L20.6 18l-1.9.7L18 20.6l-.7-1.9L15.4 18l1.9-.7z"></path></svg>
+              <span style="flex:1;font:500 13.5px/1.4 Inter,system-ui,sans-serif;color:#1E3E36">Cook these three tonight</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E3E36" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
+            </a>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 12px 0">
+            <span style="display:flex;width:56px;height:56px;align-items:center;justify-content:center;border-radius:28px;background:#E6EEEA;color:#1E3E36"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-8 6-14 16-15 0 10-6 16-14 16a4 4 0 0 1-2-1ZM9 15c2-3 5-5 8-6"></path></svg></span>
+            <h2 style="margin:16px 0 6px;font:600 22px/1.2 Fraunces,Georgia,serif;color:#1C1B19">Let's fill the shelves</h2>
+            <p style="margin:0 0 22px;max-width:38ch;font:400 14px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Scan the receipt from your last shop to add several items at once, or add one by hand.</p>
+            <button type="button" style="width:100%;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Scan a receipt</button>
+            <button type="button" style="width:100%;margin-top:10px;min-height:52px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;font:500 15px/1 Inter,system-ui,sans-serif">Add an item by hand</button>
+          </div>
+          </sc-if>
+        </div>
+        <div style="position:absolute;right:18px;bottom:90px;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <button type="button" style="display:flex;align-items:center;gap:8px;height:56px;padding:0 20px;border:0;border-radius:28px;background:#2B584C;color:#fff;font:600 14.5px/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(28,27,25,.14),0 16px 40px rgba(28,27,25,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+        </div>
+        <dc-import name="KOS Nav" active="home" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Inventory — grouped by urgency</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Sticky search + chips · buckets carry counts · rail + word + dot, never color alone</div></sc-if>
+      <div class="dv-card" style="position:relative;width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:10px 16px 76px;overflow:hidden">
+          <header style="margin:0 0 14px">
+            <h1 style="margin:0;font:600 28px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Inventory</h1>
+            <p style="margin:4px 0 0;font:400 13px/1.4 Inter,system-ui,sans-serif;color:#6A6862">24 items in stock · 3 need using</p>
+          </header>
+          <div style="display:flex;gap:8px;margin:0 0 10px">
+            <div style="position:relative;flex:1;display:flex">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:14px"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-3.5-3.5"></path></svg>
+              <input type="search" placeholder="Search items…" style="flex:1;height:46px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 12px 0 36px;font:400 14.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+            </div>
+            <button type="button" aria-label="Sort and group" style="display:flex;align-items:center;gap:6px;height:46px;padding:0 12px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">Expiry<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+          </div>
+          <div style="display:flex;gap:8px;margin:0 0 16px;overflow:hidden">
+            <span style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid #2B584C;background:#2B584C;color:#fff;font:500 13px/1 Inter,system-ui,sans-serif;white-space:nowrap">All 24</span>
+            <span style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 13px/1 Inter,system-ui,sans-serif;white-space:nowrap">Use soon 3</span>
+            <span style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 13px/1 Inter,system-ui,sans-serif;white-space:nowrap">Expired 1</span>
+            <span style="display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 13px/1 Inter,system-ui,sans-serif;white-space:nowrap">Fridge</span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 2px;margin:0 0 8px">
+            <span style="width:8px;height:8px;border-radius:4px;background:#C64A3B"></span>
+            <h2 style="margin:0;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#B0382A">Use now · 2</h2>
+          </div>
+          <ul style="display:flex;flex-direction:column;gap:10px;margin:0 0 18px;padding:0;list-style:none">
+            <li style="border:1px solid #E6C7C0;border-left:4px solid #C64A3B;border-radius:14px;background:#fff;padding:12px 13px;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="min-width:0">
+                  <p style="margin:0;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken breast</p>
+                  <p style="margin:4px 0 0;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">500 g · Meat &amp; fish · Fridge</p>
+                </div>
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E6C7C0;border-radius:11px;background:#F7E9E6;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:6px;height:6px;border-radius:3px;background:#C64A3B"></span>Use now · today <span style="opacity:.7">est.</span></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;margin:12px 0 0;padding:10px 0 0;border-top:1px solid #E4DFD6">
+                <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:0;border-radius:11px;background:#E6EEEA;color:#1E3E36;font:600 13px/1 Inter,system-ui,sans-serif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg>Use</button>
+                <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:#6A6862;font:500 13px/1 Inter,system-ui,sans-serif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2 2 0 0 0-2.83-2.83L5 17v3zM14.5 6.5l3 3"></path></svg>Edit</button>
+                <button type="button" aria-label="Remove chicken breast" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin-left:auto;border:0;border-radius:11px;background:transparent;color:#8D8B83;font:500 13px/1 Inter,system-ui,sans-serif"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6"></path></svg>Remove</button>
+              </div>
+            </li>
+            <li style="border:1px solid #E6C7C0;border-left:4px solid #C64A3B;border-radius:14px;background:#fff;padding:12px 13px;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="min-width:0">
+                  <p style="margin:0;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Single cream</p>
+                  <p style="margin:4px 0 0;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">300 ml · Dairy · Fridge · opened</p>
+                </div>
+                <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E6C7C0;border-radius:11px;background:#F7E9E6;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:6px;height:6px;border-radius:3px;background:#C64A3B"></span>Expired · 1 day ago</span>
+              </div>
+            </li>
+          </ul>
+
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 2px;margin:0 0 8px">
+            <span style="width:8px;height:8px;border-radius:4px;background:#D9932E"></span>
+            <h2 style="margin:0;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#8A5814">This week · 3</h2>
+          </div>
+          <ul style="display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none">
+            <li style="display:flex;align-items:center;gap:10px;min-height:60px;padding:11px 13px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px;background:#fff">
+              <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Baby spinach</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">200 g · Fridge · opened</span></span>
+              <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>2 days</span>
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;min-height:60px;padding:11px 13px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px;background:#fff">
+              <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Greek yoghurt</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">450 g · Fridge</span></span>
+              <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>2 days</span>
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;min-height:60px;padding:11px 13px;border:1px solid #E4DFD6;border-left:4px solid #4E9C6B;border-radius:12px;background:#fff">
+              <span style="flex:1;min-width:0"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Cheddar</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">250 g · Fridge</span></span>
+              <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><span style="width:6px;height:6px;border-radius:3px;background:#4E9C6B"></span>Fresh · 3 wks</span>
+            </li>
+          </ul>
+        </div>
+        <div style="position:absolute;right:18px;bottom:90px">
+          <button type="button" style="display:flex;align-items:center;gap:8px;height:56px;padding:0 20px;border:0;border-radius:28px;background:#2B584C;color:#fff;font:600 14.5px/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(28,27,25,.14),0 16px 40px rgba(28,27,25,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+        </div>
+        <dc-import name="KOS Nav" active="inventory" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Add item — one form, honest estimate</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Estimate shown before saving and labelled (est.) · sticky save bar clears the keyboard</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px 0 0;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Inventory</button>
+          </div>
+          <h1 style="margin:6px 0 18px;font:600 24px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Add an item</h1>
+
+          <p style="margin:0 0 8px;font:500 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">Quick add from your usuals</p>
+          <div style="display:flex;gap:8px;margin:0 0 20px;overflow:hidden">
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19;white-space:nowrap">Milk 2 L</span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19;white-space:nowrap">Eggs 12</span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19;white-space:nowrap">Rice 2 kg</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label for="k-name" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Item name</label>
+              <input id="k-name" value="Chicken breast" style="height:48px;border:2px solid #2B584C;border-radius:11px;background:#fff;padding:0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              <span style="font:400 11.5px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Matched to ingredient <strong style="font-weight:600;color:#1C1B19">chicken breast</strong> — used for shelf life and recipes.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <label for="k-qty" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Quantity</label>
+                <input id="k-qty" value="500" inputmode="decimal" style="min-width:0;width:100%;height:48px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <label for="k-unit" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Unit</label>
+                <div style="position:relative;display:flex">
+                  <input id="k-unit" value="g" style="flex:1;min-width:0;width:100%;height:48px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 34px 0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6A6862" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:11px;top:15px"><path d="m6 9 6 6 6-6"></path></svg>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Where is it?</span>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+                <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #2B584C;background:#2B584C;color:#fff;font:600 14px/1 Inter,system-ui,sans-serif">Fridge</span>
+                <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Freezer</span>
+                <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Pantry</span>
+                <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;color:#6A6862;font:500 14px/1 Inter,system-ui,sans-serif">Cupboard</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label for="k-exp" style="font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Expiry date <span style="color:#8D8B83;font-weight:400">— optional</span></label>
+              <input id="k-exp" placeholder="dd / mm / yyyy" style="height:48px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 14px;font:400 15px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              <div style="display:flex;align-items:flex-start;gap:9px;margin-top:4px;padding:11px 12px;border:1px solid #E7D3AC;border-radius:12px;background:#F7ECDA">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A5814" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex:none"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg>
+                <p style="margin:0;font:400 12.5px/1.5 Inter,system-ui,sans-serif;color:#8A5814">Left blank we'll estimate <strong style="font-weight:600">7 Sep</strong> — 1–2 days for raw chicken in the fridge. It will be marked <strong style="font-weight:600">(est.)</strong> until you set a real date.</p>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:12px;min-height:48px;padding:0 14px;border:1px solid #E4DFD6;border-radius:12px;background:#fff">
+              <input type="checkbox" style="width:20px;height:20px;accent-color:#2B584C">
+              <span style="font:500 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19">Already opened <span style="font-weight:400;color:#6A6862">— shortens the estimate</span></span>
+            </label>
+          </div>
+        </div>
+        <div style="border-top:1px solid #E4DFD6;background:rgba(251,250,247,.95);padding:12px 16px">
+          <button type="button" style="width:100%;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Save item</button>
+          <p style="margin:8px 0 0;text-align:center;font:400 11.5px/1.4 Inter,system-ui,sans-serif;color:#8D8B83">Saves and returns to Inventory, with undo</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1f">
+      <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Item detail with the Use sheet open</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Stepper + fraction presets · remaining amount announced in a live region · scrim dismissable</div></sc-if>
+      <div class="dv-card" style="position:relative;width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 0">
+          <div style="display:flex;align-items:center;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Inventory</button>
+          </div>
+          <h1 style="margin:6px 0 10px;font:600 26px/1.15 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Chicken breast</h1>
+          <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:7px;padding:6px 11px;border:1px solid #E6C7C0;border-radius:13px;background:#F7E9E6;font:500 12.5px/1.4 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:7px;height:7px;border-radius:4px;background:#C64A3B"></span>Use now · today <span style="opacity:.7">est.</span></span>
+          <dl style="display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:18px 0 0;padding:0;border:1px solid #E4DFD6;border-radius:14px;background:#E4DFD6;overflow:hidden">
+            <div style="background:#fff;padding:12px 14px"><dt style="margin:0;font:400 11.5px/1 Inter,system-ui,sans-serif;color:#8D8B83">In stock</dt><dd style="margin:5px 0 0;font:600 16px/1 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">500 g</dd></div>
+            <div style="background:#fff;padding:12px 14px"><dt style="margin:0;font:400 11.5px/1 Inter,system-ui,sans-serif;color:#8D8B83">Storage</dt><dd style="margin:5px 0 0;font:600 16px/1 Inter,system-ui,sans-serif;color:#1C1B19">Fridge</dd></div>
+            <div style="background:#fff;padding:12px 14px"><dt style="margin:0;font:400 11.5px/1 Inter,system-ui,sans-serif;color:#8D8B83">Category</dt><dd style="margin:5px 0 0;font:600 16px/1 Inter,system-ui,sans-serif;color:#1C1B19">Meat &amp; fish</dd></div>
+            <div style="background:#fff;padding:12px 14px"><dt style="margin:0;font:400 11.5px/1 Inter,system-ui,sans-serif;color:#8D8B83">Added</dt><dd style="margin:5px 0 0;font:600 16px/1 Inter,system-ui,sans-serif;color:#1C1B19">5 Sep</dd></div>
+          </dl>
+          <p style="margin:14px 0 0;font:400 12.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Estimated from the shelf-life rule for raw poultry in a fridge (1–2 days). Set a date yourself and the estimate is replaced.</p>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:30px;background:rgba(28,27,25,.42);display:flex;flex-direction:column;justify-content:flex-end">
+          <div style="border-radius:24px 24px 30px 30px;background:#FBFAF7;border-top:1px solid #E4DFD6;padding:10px 18px 22px;box-shadow:0 -16px 48px rgba(28,27,25,.18)">
+            <span style="display:block;width:40px;height:4px;margin:0 auto 14px;border-radius:2px;background:#C9C2B4"></span>
+            <h2 style="margin:0;font:600 20px/1.2 Fraunces,Georgia,serif;color:#1C1B19">Use some chicken breast</h2>
+            <p style="margin:4px 0 18px;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">In stock: 500 g</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <button type="button" aria-label="Less" style="width:56px;height:56px;flex:none;border:1px solid #C9C2B4;border-radius:16px;background:#fff;color:#1C1B19;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+              <div style="flex:1;text-align:center">
+                <span style="display: block; font: 600 34px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">250</span>
+                <span style="display:block;margin-top:4px;font:500 13px/1 Inter,system-ui,sans-serif;color:#6A6862">grams</span>
+              </div>
+              <button type="button" aria-label="More" style="width:56px;height:56px;flex:none;border:1px solid #C9C2B4;border-radius:16px;background:#fff;color:#1C1B19;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 0">
+              <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#6A6862">¼</span>
+              <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px;border:1px solid #2B584C;background:#E6EEEA;font:600 13.5px/1 Inter,system-ui,sans-serif;color:#1E3E36">½</span>
+              <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#6A6862">¾</span>
+              <span style="display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#6A6862">All</span>
+            </div>
+            <p role="status" style="margin:16px 0 0;padding:11px 13px;border:1px solid #C1DDC9;border-radius:12px;background:#E7F1E9;font:500 13px/1.5 Inter,system-ui,sans-serif;color:#2D784D;font-variant-numeric:tabular-nums">250 g will be left in the fridge.</p>
+            <div style="display:flex;gap:10px;margin:16px 0 0">
+              <button type="button" style="flex:1;min-height:52px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;font:500 15px/1 Inter,system-ui,sans-serif">Cancel</button>
+              <button type="button" style="flex:2;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Use 250 g</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Scan receipt — capture</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Camera first, file picker equal-weight · privacy stated before upload · progress is announced, not just animated</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Home</button>
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid #E4DFD6;border-radius:11px;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg>History</button>
+          </div>
+          <h1 style="margin:6px 0 6px;font:600 24px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Scan receipt</h1>
+          <p style="margin:0 0 16px;font:400 13.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Photograph the whole receipt, flat and in good light. Long receipts can be taken in two shots.</p>
+
+          <div style="position:relative;flex:none;height:330px;border-radius:18px;background:#26251F;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;inset:26px;border-radius:12px;border:2px dashed rgba(255,255,255,.35)"></div>
+            <span style="position:absolute;top:20px;left:22px;width:26px;height:26px;border-top:3px solid #fff;border-left:3px solid #fff;border-radius:6px 0 0 0"></span>
+            <span style="position:absolute;top:20px;right:22px;width:26px;height:26px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 6px 0 0"></span>
+            <span style="position:absolute;bottom:20px;left:22px;width:26px;height:26px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 6px"></span>
+            <span style="position:absolute;bottom:20px;right:22px;width:26px;height:26px;border-bottom:3px solid #fff;border-right:3px solid #fff;border-radius:0 0 6px 0"></span>
+            <p style="margin:0;padding:0 30px;text-align:center;font:500 13px/1.6 Inter,system-ui,sans-serif;color:rgba(255,255,255,.8)">Live camera preview — fit the receipt inside the frame</p>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin:20px 0 0">
+            <button type="button" style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:64px;min-height:56px;border:0;background:transparent;font:500 12px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"></path></svg>Choose file</button>
+            <button type="button" aria-label="Take photo" style="width:76px;height:76px;border:4px solid #2B584C;border-radius:38px;background:#2B584C;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(28,27,25,.14)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.6a1 1 0 0 1 .84-.4h5.32a1 1 0 0 1 .84.4l1 1.6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><circle cx="12" cy="12.5" r="3.2"></circle></svg></button>
+            <button type="button" style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:64px;min-height:56px;border:0;background:transparent;font:500 12px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add page</button>
+          </div>
+
+          <div style="margin:20px 0 0;padding:13px 14px;border:1px solid #E4DFD6;border-radius:13px;background:#F6F4EF">
+            <p style="margin:0;font:400 12px/1.6 Inter,system-ui,sans-serif;color:#6A6862">The photo goes to the AI only to read the line items. It is stored privately in your account and you can delete it from Receipt history at any time.</p>
+          </div>
+          <div style="margin:14px 0 0;padding:13px 14px;border:1px solid #E6EEEA;border-radius:13px;background:#E6EEEA">
+            <p style="margin:0 0 8px;font:500 13px/1 Inter,system-ui,sans-serif;color:#1E3E36" role="status">Reading your receipt… step 2 of 3</p>
+            <span style="display:block;height:6px;border-radius:3px;background:rgba(43,88,76,.18);overflow:hidden"><span style="display:block;width:62%;height:6px;border-radius:3px;background:#2B584C"></span></span>
+          </div>
+        </div>
+        <div style="border-top:1px solid #E4DFD6;background:rgba(251,250,247,.95);padding:12px 16px">
+          <button type="button" style="width:100%;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Extract items</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Scan review — confirm before it lands</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Low-confidence rows flagged in words · every field editable inline · nothing is saved until you confirm</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 0;overflow:hidden">
+          <div style="display:flex;align-items:center;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Scan</button>
+          </div>
+          <h1 style="margin:6px 0 4px;font:600 24px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">6 items found</h1>
+          <p style="margin:0 0 14px;font:400 13.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Sainsbury's · 5 Sep · £42.18. Check the two flagged rows, then add.</p>
+
+          <div style="display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:11px 13px;border:1px solid #E7D3AC;border-radius:12px;background:#F7ECDA">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A5814" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3.5 21 19H3z"></path><path d="M12 10v4M12 17h.01"></path></svg>
+            <p style="margin:0;font:400 12.5px/1.5 Inter,system-ui,sans-serif;color:#8A5814">2 rows need a check — we couldn't read the quantity clearly.</p>
+          </div>
+
+          <ul style="display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none">
+            <li style="border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" checked="" style="width:22px;height:22px;flex:none;accent-color:#2B584C">
+                <input value="Chicken breast" style="flex:1;min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 11px;font:500 14px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin:9px 0 0;padding-left:32px">
+                <input value="500" style="min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">
+                <input value="g" style="min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+                <input value="Fridge" style="min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              </div>
+            </li>
+            <li style="border:1px solid #E7D3AC;border-left:4px solid #D9932E;border-radius:14px;background:#fff;padding:12px 13px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" checked="" style="width:22px;height:22px;flex:none;accent-color:#2B584C">
+                <input value="Bnna loose" style="flex:1;min-width:0;width:100%;height:40px;border:2px solid #D9932E;border-radius:10px;background:#fff;padding:0 11px;font:500 14px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin:9px 0 0;padding-left:32px">
+                <input placeholder="qty?" style="min-width:0;width:100%;height:40px;border:2px solid #D9932E;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+                <input value="pcs" style="min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+                <input value="Cupboard" style="min-width:0;width:100%;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff;padding:0 10px;font:400 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+              </div>
+              <p style="margin:9px 0 0;padding-left:32px;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#8A5814">Read as “Bnna loose” — did you mean <strong style="font-weight:600">bananas</strong>? Quantity unclear.</p>
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+              <input type="checkbox" checked="" style="width:22px;height:22px;flex:none;accent-color:#2B584C">
+              <span style="flex:1;min-width:0"><span style="display:block;font:500 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Greek yoghurt</span><span style="display:block;margin-top:3px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">450 g · Fridge · est. 12 Sep</span></span>
+              <button type="button" aria-label="Edit Greek yoghurt" style="width:44px;height:44px;flex:none;border:0;border-radius:11px;background:transparent;color:#6A6862;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2 2 0 0 0-2.83-2.83L5 17v3zM14.5 6.5l3 3"></path></svg></button>
+            </li>
+            <li style="display:flex;align-items:center;gap:10px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+              <input type="checkbox" style="width:22px;height:22px;flex:none;accent-color:#2B584C">
+              <span style="flex:1;min-width:0"><span style="display:block;font:500 14px/1.3 Inter,system-ui,sans-serif;color:#8D8B83;text-decoration:line-through">Carrier bag</span><span style="display:block;margin-top:3px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#8D8B83">Not food — excluded</span></span>
+            </li>
+          </ul>
+        </div>
+        <div style="border-top:1px solid #E4DFD6;background:rgba(251,250,247,.95);padding:12px 16px">
+          <div style="display:flex;gap:10px">
+            <button type="button" style="flex:1;min-height:52px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;font:500 15px/1 Inter,system-ui,sans-serif">Discard</button>
+            <button type="button" style="flex:2;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif">Add 5 items</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1i">
+      <div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Cook — suggestions from what you have</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">AI suggestions labelled as such · “uses 3 expiring” is the real reason to tap · save star is a 44px toggle</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:10px 16px 8px;overflow:hidden">
+          <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 16px">
+            <div>
+              <h1 style="margin:0;font:600 28px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Cook</h1>
+              <p style="margin:5px 0 0;max-width:30ch;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Your saved recipes come first — the AI only fills the gaps.</p>
+            </div>
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid #E4DFD6;border-radius:11px;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Plan</button>
+          </header>
+
+          <button type="button" style="display:flex;align-items:center;gap:12px;width:100%;padding:16px;border:0;border-radius:18px;background:#2B584C;color:#fff;text-align:left">
+            <span style="display:flex;width:40px;height:40px;flex:none;align-items:center;justify-content:center;border-radius:20px;background:rgba(255,255,255,.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6z"></path><path d="M18 15l.7 1.9L20.6 18l-1.9.7L18 20.6l-.7-1.9L15.4 18l1.9-.7z"></path></svg></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:600 16.5px/1.3 Inter,system-ui,sans-serif">What's for dinner?</span>
+              <span style="display:block;margin-top:3px;font:400 12.5px/1.4 Inter,system-ui,sans-serif;opacity:.82">3 ideas from your 24 items, expiring first</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.8"><path d="m9 6 6 6-6 6"></path></svg>
+          </button>
+
+          <h2 style="margin:26px 0 10px;font:600 21px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Tonight's ideas</h2>
+          <ul style="display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none">
+            <li style="border:1px solid #E4DFD6;border-radius:16px;background:#fff;padding:14px;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="min-width:0">
+                  <p style="margin:0;font:600 15.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken, spinach &amp; yoghurt traybake</p>
+                  <p style="margin:5px 0 0;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862">One tray, marinated in the yoghurt, spinach wilted in at the end.</p>
+                </div>
+                <button type="button" aria-label="Save recipe" style="width:44px;height:44px;flex:none;border:0;border-radius:11px;background:transparent;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9 6.75 19.6l1-5.85L3.5 9.65l5.9-.85z"></path></svg></button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:11px 0 0">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>Uses 3 expiring</span>
+                <span style="font:400 11.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">40 min · Easy · serves 2</span>
+                <span style="padding:3px 8px;border:1px solid #E4DFD6;border-radius:10px;font:500 10.5px/1.5 Inter,system-ui,sans-serif;color:#8D8B83">AI suggestion</span>
+              </div>
+            </li>
+            <li style="border:1px solid #E4DFD6;border-radius:16px;background:#fff;padding:14px;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="min-width:0">
+                  <p style="margin:0;font:600 15.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Creamy spinach rice</p>
+                  <p style="margin:5px 0 0;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Uses the open cream before it turns. Pantry rice, no shopping.</p>
+                </div>
+                <button type="button" aria-label="Saved recipe" style="width:44px;height:44px;flex:none;border:0;border-radius:11px;background:transparent;color:#E8833A;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m12 3.5 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9 6.75 19.6l1-5.85L3.5 9.65l5.9-.85z"></path></svg></button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:11px 0 0">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>Nothing to buy</span>
+                <span style="font:400 11.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">25 min · Easy · serves 2</span>
+                <span style="padding:3px 8px;border:1px solid #E4DFD6;border-radius:10px;font:500 10.5px/1.5 Inter,system-ui,sans-serif;color:#8D8B83">Saved</span>
+              </div>
+            </li>
+            <li style="border:1px solid #E4DFD6;border-radius:16px;background:#fff;padding:14px;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="min-width:0">
+                  <p style="margin:0;font:600 15.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Cheddar &amp; egg breakfast hash</p>
+                  <p style="margin:5px 0 0;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Needs 2 potatoes — everything else is in.</p>
+                </div>
+                <button type="button" aria-label="Save recipe" style="width:44px;height:44px;flex:none;border:0;border-radius:11px;background:transparent;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9 6.75 19.6l1-5.85L3.5 9.65l5.9-.85z"></path></svg></button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:11px 0 0">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid #E8833A;border-radius:11px;background:#FBEBDC;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#954716">Buy 1 item</span>
+                <span style="font:400 11.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">30 min · Easy · serves 2</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <dc-import name="KOS Nav" active="cook" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1j">
+      <div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Recipe — have / to buy, then cook</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Steps at 17px/1.7 for reading mid-cook · sticky action bar states its consequence</div></sc-if>
+      <div class="dv-card" style="position:relative;width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Cook</button>
+            <button type="button" style="display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 12px;border:1px solid #E4DFD6;border-radius:11px;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9 6.75 19.6l1-5.85L3.5 9.65l5.9-.85z"></path></svg>Save</button>
+          </div>
+          <h1 style="margin:6px 0 8px;font:600 26px/1.15 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19;text-wrap:pretty">Chicken, spinach &amp; yoghurt traybake</h1>
+          <p style="margin:0 0 10px;font:400 14px/1.6 Inter,system-ui,sans-serif;color:#6A6862">One tray, marinated in the yoghurt, spinach wilted in at the end.</p>
+          <p style="margin:0 0 20px;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">40 min · Easy · serves 2</p>
+
+          <h2 style="margin:0 0 10px;font:600 21px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Ingredients</h2>
+          <ul style="margin:0;padding:0;list-style:none;border:1px solid #E4DFD6;border-radius:14px;background:#fff;overflow:hidden">
+            <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #E4DFD6"><span style="font:400 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">500 g chicken breast</span><span style="display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>have</span></li>
+            <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #E4DFD6"><span style="font:400 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">200 g baby spinach</span><span style="display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>have</span></li>
+            <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #E4DFD6"><span style="font:400 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">150 g Greek yoghurt</span><span style="display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 9px;border:1px solid #C1DDC9;border-radius:11px;background:#E7F1E9;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>have</span></li>
+            <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #E4DFD6"><span style="font:400 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">2 tsp cumin</span><span style="flex:none;padding:3px 9px;border:1px solid #E8833A;border-radius:11px;background:#FBEBDC;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#954716">to buy</span></li>
+            <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px"><span style="font:400 14px/1.4 Inter,system-ui,sans-serif;color:#1C1B19">1 lemon <span style="color:#6A6862">(optional)</span></span><span style="flex:none;padding:3px 9px;border:1px solid #E8833A;border-radius:11px;background:#FBEBDC;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#954716">to buy</span></li>
+          </ul>
+
+          <h2 style="margin:24px 0 10px;font:600 21px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Steps</h2>
+          <ol style="display:flex;flex-direction:column;gap:16px;margin:0;padding:0;list-style:none">
+            <li style="display:flex;gap:12px"><span style="display:flex;width:26px;height:26px;flex:none;align-items:center;justify-content:center;border-radius:13px;background:#E6EEEA;font:600 13px/1 Inter,system-ui,sans-serif;color:#1E3E36">1</span><p style="margin:0;font:400 17px/1.7 Inter,system-ui,sans-serif;color:#1C1B19">Heat the oven to 200°C. Mix the yoghurt with the cumin and a good pinch of salt.</p></li>
+            <li style="display:flex;gap:12px"><span style="display:flex;width:26px;height:26px;flex:none;align-items:center;justify-content:center;border-radius:13px;background:#E6EEEA;font:600 13px/1 Inter,system-ui,sans-serif;color:#1E3E36">2</span><p style="margin:0;font:400 17px/1.7 Inter,system-ui,sans-serif;color:#1C1B19">Coat the chicken, spread it on a tray and roast for 25 minutes until cooked through.</p></li>
+            <li style="display:flex;gap:12px"><span style="display:flex;width:26px;height:26px;flex:none;align-items:center;justify-content:center;border-radius:13px;background:#E6EEEA;font:600 13px/1 Inter,system-ui,sans-serif;color:#1E3E36">3</span><p style="margin:0;font:400 17px/1.7 Inter,system-ui,sans-serif;color:#1C1B19">Fold the spinach through the hot tray so it wilts. Rest 5 minutes and serve.</p></li>
+          </ol>
+        </div>
+        <div style="border-top:1px solid #E4DFD6;background:rgba(251,250,247,.96);padding:12px 16px">
+          <div style="display:flex;gap:10px">
+            <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 15px/1 Inter,system-ui,sans-serif"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-1.5.6-2.8 1.4-3.8C9 10 10 11 10 11s-.5-3 2-8Z"></path></svg>Cook this</button>
+            <button type="button" style="flex:1;min-height:52px;border:1px solid #C9C2B4;border-radius:12px;background:#fff;color:#1C1B19;font:500 15px/1 Inter,system-ui,sans-serif">Add 2 to list</button>
+          </div>
+          <p style="margin:9px 0 0;text-align:center;font:400 11.5px/1.5 Inter,system-ui,sans-serif;color:#8D8B83">Cooking deducts these amounts from your inventory — you'll confirm each one first.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1k">
+      <div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Meal plan — week from the shelves</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Length control as a real radio group · honest partial plans, no filler days</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:8px 16px 8px;overflow:hidden">
+          <div style="display:flex;align-items:center;min-height:44px">
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:transparent;font:400 14px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Cook</button>
+          </div>
+          <h1 style="margin:6px 0 6px;font:600 24px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Meal plan</h1>
+          <p style="margin:0 0 18px;font:400 13.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Dinners built from your inventory — expiring items first, no ingredient twice.</p>
+
+          <fieldset style="border:0;padding:0;margin:0 0 14px">
+            <legend style="padding:0;margin:0 0 8px;font:500 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Plan length</legend>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;font:500 14px/1 Inter,system-ui,sans-serif;color:#6A6862">3 days</span>
+              <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #2B584C;background:#2B584C;font:600 14px/1 Inter,system-ui,sans-serif;color:#fff">5 days</span>
+              <span style="display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:11px;border:1px solid #E4DFD6;background:#fff;font:500 14px/1 Inter,system-ui,sans-serif;color:#6A6862">7 days</span>
+            </div>
+          </fieldset>
+          <button type="button" style="width:100%;min-height:50px;border:0;border-radius:12px;background:#2B584C;color:#fff;font:600 14.5px/1 Inter,system-ui,sans-serif">Build the plan</button>
+
+          <h2 style="margin:24px 0 10px;font:600 21px/1.2 Fraunces,Georgia,serif;letter-spacing:-0.014em;color:#1C1B19">Your plan <span style="font:400 13px/1 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">from 6 Sep</span></h2>
+          <ol style="display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none">
+            <li style="display:flex;gap:10px">
+              <div style="display:flex;width:52px;flex:none;flex-direction:column;align-items:center;justify-content:center;border:1px solid #E4DFD6;border-radius:12px;background:#fff;padding:8px 0"><span style="font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862">Sun</span><span style="margin-top: 3px; font: 600 20px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">6</span></div>
+              <div style="flex:1;display:flex;align-items:center;gap:10px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+                <span style="flex:1;min-width:0"><span style="display:block;font:600 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken, spinach &amp; yoghurt traybake</span><span style="display:block;margin-top:3px;font:400 11.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">Day 1 · 40 min · uses 3 expiring</span></span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+              </div>
+            </li>
+            <li style="display:flex;gap:10px">
+              <div style="display:flex;width:52px;flex:none;flex-direction:column;align-items:center;justify-content:center;border:1px solid #E4DFD6;border-radius:12px;background:#fff;padding:8px 0"><span style="font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862">Mon</span><span style="margin-top: 3px; font: 600 20px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">7</span></div>
+              <div style="flex:1;display:flex;align-items:center;gap:10px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+                <span style="flex:1;min-width:0"><span style="display:block;font:600 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Creamy spinach rice</span><span style="display:block;margin-top:3px;font:400 11.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">Day 2 · 25 min · nothing to buy</span></span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+              </div>
+            </li>
+            <li style="display:flex;gap:10px">
+              <div style="display:flex;width:52px;flex:none;flex-direction:column;align-items:center;justify-content:center;border:1px solid #E4DFD6;border-radius:12px;background:#fff;padding:8px 0"><span style="font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862">Tue</span><span style="margin-top: 3px; font: 600 20px/1 Fraunces,Georgia,serif; color: #1C1B19; font-variant-numeric: tabular-nums; font-family: Helvetica">8</span></div>
+              <div style="flex:1;display:flex;align-items:center;gap:10px;border:1px solid #E4DFD6;border-radius:14px;background:#fff;padding:12px 13px">
+                <span style="flex:1;min-width:0"><span style="display:block;font:600 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Cheddar &amp; egg breakfast hash</span><span style="display:block;margin-top:3px;font:400 11.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">Day 3 · 30 min · buy 1 item</span></span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+              </div>
+            </li>
+            <li style="display:flex;gap:10px">
+              <div style="display:flex;width:52px;flex:none;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #C9C2B4;border-radius:12px;padding:8px 0"><span style="font:500 11px/1 Inter,system-ui,sans-serif;color:#8D8B83">Wed</span><span style="margin-top: 3px; font: 600 20px/1 Fraunces,Georgia,serif; color: #8D8B83; font-variant-numeric: tabular-nums; font-family: Helvetica">9</span></div>
+              <div style="flex:1;display:flex;align-items:center;border:1px dashed #C9C2B4;border-radius:14px;padding:12px 13px;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Not enough left to plan — scan a receipt</div>
+            </li>
+          </ol>
+          <p style="margin:12px 0 0;font:400 12.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Planned 3 of 5 days. Add more ingredients for a fuller week.</p>
+        </div>
+        <dc-import name="KOS Nav" active="cook" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1l">
+      <div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Shopping — grouped by aisle</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">Add field stays at the top of the thumb zone · check-off is 44px · undo toast, no silent deletes</div></sc-if>
+      <div class="dv-card" style="position:relative;width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:10px 16px 8px;overflow:hidden">
+          <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px">
+            <div>
+              <h1 style="margin:0;font:600 28px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Shopping</h1>
+              <p style="margin:5px 0 0;font:400 13px/1.4 Inter,system-ui,sans-serif;color:#6A6862">5 to buy · 2 done</p>
+            </div>
+            <button type="button" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid #E4DFD6;border-radius:11px;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#6A6862;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6"></path></svg>Clear 2</button>
+          </header>
+          <div style="display:flex;gap:8px;margin:0 0 18px">
+            <input placeholder="Add an item…" style="flex:1;height:48px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;padding:0 14px;font:400 14.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">
+            <button type="button" style="display:flex;align-items:center;gap:6px;min-height:48px;padding:0 16px;border:0;border-radius:11px;background:#2B584C;color:#fff;font:600 14px/1 Inter,system-ui,sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+          </div>
+
+          <h2 style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#8D8B83">Produce · 2</h2>
+          <ul style="display:flex;flex-direction:column;gap:8px;margin:0 0 18px;padding:0;list-style:none">
+            <li style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:1px solid #E4DFD6;border-radius:12px;background:#fff">
+              <span style="width:26px;height:26px;flex:none;border:1.5px solid #C9C2B4;border-radius:8px"></span>
+              <span style="flex:1;font:400 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">1 lemon</span>
+              <span style="flex:none;padding:3px 9px;border:1px solid rgba(43,88,76,.2);border-radius:11px;background:#E6EEEA;font:500 10.5px/1.5 Inter,system-ui,sans-serif;color:#1E3E36">recipe</span>
+              <button type="button" aria-label="Remove lemon" style="width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:11px;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </li>
+            <li style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:1px solid #E4DFD6;border-radius:12px;background:#fff">
+              <span style="width:26px;height:26px;flex:none;border:1.5px solid #C9C2B4;border-radius:8px"></span>
+              <span style="flex:1;font:400 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">2 potatoes</span>
+              <button type="button" aria-label="Remove potatoes" style="width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:11px;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </li>
+          </ul>
+
+          <h2 style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#8D8B83">Store cupboard · 3</h2>
+          <ul style="display:flex;flex-direction:column;gap:8px;margin:0 0 18px;padding:0;list-style:none">
+            <li style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:1px solid #E4DFD6;border-radius:12px;background:#fff">
+              <span style="width:26px;height:26px;flex:none;border:1.5px solid #C9C2B4;border-radius:8px"></span>
+              <span style="flex:1;font:400 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;font-variant-numeric:tabular-nums">2 tsp cumin</span>
+              <span style="flex:none;padding:3px 9px;border:1px solid rgba(43,88,76,.2);border-radius:11px;background:#E6EEEA;font:500 10.5px/1.5 Inter,system-ui,sans-serif;color:#1E3E36">recipe</span>
+              <button type="button" aria-label="Remove cumin" style="width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:11px;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </li>
+            <li style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:1px solid #E4DFD6;border-radius:12px;background:#fff;opacity:.55">
+              <span style="display:flex;width:26px;height:26px;flex:none;align-items:center;justify-content:center;border:1.5px solid #2B584C;border-radius:8px;background:#2B584C;color:#fff"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg></span>
+              <span style="flex:1;font:400 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19;text-decoration:line-through;font-variant-numeric:tabular-nums">1 kg basmati rice</span>
+              <button type="button" aria-label="Remove rice" style="width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:11px;color:#8D8B83;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </li>
+          </ul>
+        </div>
+        <div style="position:absolute;left:16px;right:16px;bottom:88px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#26251F;box-shadow:0 8px 28px rgba(28,27,25,.28)">
+          <span role="status" style="flex:1;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#fff">Basmati rice checked off</span>
+          <button type="button" style="min-height:40px;padding:0 12px;border:0;border-radius:10px;background:rgba(255,255,255,.14);color:#fff;font:600 13px/1 Inter,system-ui,sans-serif">Undo</button>
+        </div>
+        <dc-import name="KOS Nav" active="shopping" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1m">
+      <div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Settings — with an accessibility group</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">New group exposes what the CSS already respects: reduced motion, larger text, high contrast</div></sc-if>
+      <div class="dv-card" style="width:390px;min-height:800px;display:flex;flex-direction:column;background:#FBFAF7;border-radius:30px;border:1px solid #C9C2B4">
+        <dc-import name="KOS StatusBar" hint-size="390px,40px"></dc-import>
+        <div style="flex:1;display:flex;flex-direction:column;padding:10px 16px 8px;overflow:hidden">
+          <header style="margin:0 0 18px">
+            <h1 style="margin:0;font:600 28px/1.1 Fraunces,Georgia,serif;letter-spacing:-0.02em;color:#1C1B19">Settings</h1>
+            <p style="margin:5px 0 0;font:400 13px/1.4 Inter,system-ui,sans-serif;color:#6A6862">Signed in as mica@example.com</p>
+          </header>
+
+          <ul style="display:flex;flex-direction:column;gap:10px;margin:0 0 22px;padding:0;list-style:none">
+            <li><a href="#1m" style="display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border:1px solid #E4DFD6;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <span style="display:flex;width:38px;height:38px;flex:none;align-items:center;justify-content:center;border-radius:19px;background:#E6EEEA;color:#1E3E36"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.4h8.6M17.9 8.4H19.5"></path><circle cx="15.5" cy="8.4" r="2.4"></circle><path d="M4.5 15.6h3.2M12.1 15.6h7.4"></path><circle cx="9.9" cy="15.6" r="2.4"></circle></svg></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Preferences</span><span style="display:block;margin-top:3px;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862">Household, diet, allergies, cuisines, units</span></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+            </a></li>
+            <li><a href="#1m" style="display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border:1px solid #E4DFD6;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <span style="display:flex;width:38px;height:38px;flex:none;align-items:center;justify-content:center;border-radius:19px;background:#F7ECDA;color:#8A5814"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 19H3z"></path><path d="M12 10v4M12 17h.01"></path></svg></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Expiry reminders</span><span style="display:block;margin-top:3px;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862">Daily at 18:00 · 3 days ahead</span></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+            </a></li>
+            <li><a href="#1m" style="display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border:1px solid #E4DFD6;border-radius:16px;background:#fff;text-decoration:none;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+              <span style="display:flex;width:38px;height:38px;flex:none;align-items:center;justify-content:center;border-radius:19px;background:#F6F4EF;color:#6A6862"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Receipt history</span><span style="display:block;margin-top:3px;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862">7 scans · delete any photo</span></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8D8B83" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 6 6 6-6 6"></path></svg>
+            </a></li>
+          </ul>
+
+          <h2 style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#8D8B83">Accessibility</h2>
+          <ul style="display:flex;flex-direction:column;gap:1px;margin:0 0 22px;padding:0;list-style:none;border:1px solid #E4DFD6;border-radius:16px;background:#E4DFD6;overflow:hidden">
+            <li style="display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 14px;background:#fff">
+              <span style="flex:1;font:500 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19">Larger text <span style="display:block;font:400 12px/1.4 Inter,system-ui,sans-serif;color:#6A6862">Follows your phone's text size</span></span>
+              <span style="display:flex;width:52px;height:32px;flex:none;padding:3px;border-radius:16px;background:#2B584C;justify-content:flex-end"><span style="width:26px;height:26px;border-radius:13px;background:#fff"></span></span>
+            </li>
+            <li style="display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 14px;background:#fff">
+              <span style="flex:1;font:500 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19">Reduce motion <span style="display:block;font:400 12px/1.4 Inter,system-ui,sans-serif;color:#6A6862">Keeps progress indicators, drops the rest</span></span>
+              <span style="display:flex;width:52px;height:32px;flex:none;padding:3px;border-radius:16px;background:#C9C2B4"><span style="width:26px;height:26px;border-radius:13px;background:#fff"></span></span>
+            </li>
+            <li style="display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 14px;background:#fff">
+              <span style="flex:1;font:500 14.5px/1.4 Inter,system-ui,sans-serif;color:#1C1B19">Show expiry dates as text <span style="display:block;font:400 12px/1.4 Inter,system-ui,sans-serif;color:#6A6862">“7 Sep” instead of “in 2 days”</span></span>
+              <span style="display:flex;width:52px;height:32px;flex:none;padding:3px;border-radius:16px;background:#C9C2B4"><span style="width:26px;height:26px;border-radius:13px;background:#fff"></span></span>
+            </li>
+          </ul>
+
+          <div style="padding:14px;border:1px solid #E4DFD6;border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(28,27,25,.04)">
+            <p style="margin:0;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Expiry estimates</p>
+            <p style="margin:6px 0 12px;font:400 12.5px/1.6 Inter,system-ui,sans-serif;color:#6A6862">Re-estimate every item from the latest shelf-life data. Dates you set yourself are left untouched.</p>
+            <button type="button" style="min-height:44px;padding:0 14px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">Recalculate estimates</button>
+          </div>
+
+          <button type="button" style="display:inline-flex;align-self:flex-start;align-items:center;gap:8px;min-height:48px;margin:22px 0 0;padding:0 14px;border:0;border-radius:12px;background:#F7E9E6;color:#B0382A;font:600 14px/1 Inter,system-ui,sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>Sign out</button>
+        </div>
+        <dc-import name="KOS Nav" active="settings" hint-size="390px,80px"></dc-import>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1n">
+      <div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>Primary action — three models</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">A is used in the flow above. B costs a tab. C hides the action behind a gesture — worst for screen readers.</div></sc-if>
+      <div class="dv-card" style="width:390px;display:flex;flex-direction:column;gap:14px;padding:16px;background:#fff;border:1px solid #E4DFD6;border-radius:20px">
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">A · Raised button, 5 tabs kept</p>
+          <div style="position:relative;border:1px solid #E4DFD6;border-radius:14px;background:#FBFAF7;padding-top:34px;overflow:hidden">
+            <button type="button" style="position:absolute;right:12px;top:-2px;display:flex;align-items:center;gap:7px;height:48px;padding:0 16px;border:0;border-radius:24px;background:#2B584C;color:#fff;font:600 13.5px/1 Inter,system-ui,sans-serif;box-shadow:0 4px 12px rgba(28,27,25,.16)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add</button>
+            <dc-import name="KOS Nav" active="home" hint-size="100%,80px"></dc-import>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Nothing is lost, the action is in thumb reach, and it can carry a label. Overlaps the last list row by ~8px.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">B · Centre slot takes a tab</p>
+          <div style="border:1px solid #E4DFD6;border-radius:14px;background:#FBFAF7;overflow:hidden">
+            <ul style="display:grid;grid-template-columns:repeat(5,1fr);margin:0;padding:6px 4px 10px;list-style:none;border-top:1px solid #E4DFD6">
+              <li style="display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px/1 Inter,system-ui,sans-serif;color:#2B584C"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 10.6 12 4.2l8.2 6.4"></path><path d="M6.3 9.3V19a1 1 0 0 0 1 1h9.4a1 1 0 0 0 1-1V9.3"></path><path d="M10 20v-4.3h4V20"></path></svg>Home</li>
+              <li style="display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.6"></rect><path d="M5 10.2h14"></path><path d="M8.6 6v2.2M8.6 12.6v2.6"></path></svg>Stock</li>
+              <li style="display:flex;flex-direction:column;align-items:center;gap:4px"><span style="display:flex;width:50px;height:50px;margin-top:-14px;align-items:center;justify-content:center;border-radius:25px;background:#2B584C;color:#fff;box-shadow:0 4px 12px rgba(28,27,25,.16)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span><span style="font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862">Add</span></li>
+              <li style="display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 10.9h14.4v4.6a3.5 3.5 0 0 1-3.5 3.5H7.3a3.5 3.5 0 0 1-3.5-3.5z"></path><path d="M18.2 12.1h2.1a1.35 1.35 0 0 1 0 2.7h-2.1"></path><path d="M9.1 7.6c0-1.2 1.5-1.5 1.5-2.7M13.2 7.6c0-1.5 1.6-1.8 1.6-3.1"></path></svg>Cook</li>
+              <li style="display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px/1 Inter,system-ui,sans-serif;color:#6A6862"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 8.6h17.2l-1.7 9.3a2 2 0 0 1-2 1.6H7.1a2 2 0 0 1-2-1.6z"></path><path d="M8.7 4.4 7 8.6M15.3 4.4 17 8.6"></path><path d="M9.6 12.2v3.6M14.4 12.2v3.6"></path></svg>Shop</li>
+            </ul>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Balanced and familiar, but Settings gets pushed into a header menu and "Inventory" shortens to fit.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">C · Add sheet from a long-press</p>
+          <div style="border:1px solid #E4DFD6;border-radius:14px;background:#FBFAF7;padding:12px">
+            <div style="border:1px solid #E4DFD6;border-radius:12px;background:#fff;padding:10px">
+              <p style="margin:0 0 8px;font:600 13px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Add to kitchen</p>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border-radius:10px;background:#F6F4EF;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M7 12h10"></path></svg>Scan a receipt</span>
+                <span style="display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border-radius:10px;background:#F6F4EF;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Add one item</span>
+                <span style="display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border-radius:10px;background:#F6F4EF;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.2a1 1 0 0 0 1-.8L20 7H6"></path></svg>To shopping list</span>
+              </div>
+            </div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Cleanest bar, but a hidden gesture is not a control. Only viable with a visible equivalent — so it becomes A anyway.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1o">
+      <div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Inventory row density — three anatomies</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">B is used in the flow above for non-urgent buckets, A for urgent ones. C fits ~14 rows a screen.</div></sc-if>
+      <div class="dv-card" style="width:390px;display:flex;flex-direction:column;gap:16px;padding:16px;background:#fff;border:1px solid #E4DFD6;border-radius:20px">
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">A · Card with actions — 5 per screen</p>
+          <div style="border:1px solid #E6C7C0;border-left:4px solid #C64A3B;border-radius:14px;background:#fff;padding:12px 13px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+              <div><p style="margin:0;font:600 15px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken breast</p><p style="margin:4px 0 0;font:400 12.5px/1.4 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">500 g · Fridge</p></div>
+              <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E6C7C0;border-radius:11px;background:#F7E9E6;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:6px;height:6px;border-radius:3px;background:#C64A3B"></span>Use now</span>
+            </div>
+            <div style="display:flex;gap:4px;margin:12px 0 0;padding:10px 0 0;border-top:1px solid #E4DFD6"><span style="min-height:44px;display:inline-flex;align-items:center;padding:0 12px;border-radius:11px;background:#E6EEEA;font:600 13px/1 Inter,system-ui,sans-serif;color:#1E3E36">Use</span><span style="min-height:44px;display:inline-flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,system-ui,sans-serif;color:#6A6862">Edit</span></div>
+          </div>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">B · Two-line row with rail — 9 per screen</p>
+          <div style="display:flex;align-items:center;gap:10px;min-height:60px;padding:11px 13px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px;background:#fff">
+            <span style="flex:1"><span style="display:block;font:500 14.5px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Baby spinach</span><span style="display:block;margin-top:2px;font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">200 g · Fridge · opened</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;flex:none;padding:4px 9px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA;font:500 11px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>2 days</span>
+          </div>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">C · Single line, date column — 14 per screen</p>
+          <ul style="margin:0;padding:0;list-style:none;border:1px solid #E4DFD6;border-radius:12px;background:#fff;overflow:hidden">
+            <li style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 13px;border-bottom:1px solid #E4DFD6"><span style="width:4px;height:22px;flex:none;border-radius:2px;background:#D9932E"></span><span style="flex:1;font:400 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Baby spinach</span><span style="font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">200 g</span><span style="min-width:56px;text-align:right;font:500 12.5px/1.3 Inter,system-ui,sans-serif;color:#8A5814;font-variant-numeric:tabular-nums">2 days</span></li>
+            <li style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 13px;border-bottom:1px solid #E4DFD6"><span style="width:4px;height:22px;flex:none;border-radius:2px;background:#4E9C6B"></span><span style="flex:1;font:400 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Cheddar</span><span style="font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">250 g</span><span style="min-width:56px;text-align:right;font:500 12.5px/1.3 Inter,system-ui,sans-serif;color:#2D784D;font-variant-numeric:tabular-nums">3 wks</span></li>
+            <li style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 13px"><span style="width:4px;height:22px;flex:none;border-radius:2px;background:#8A8A82"></span><span style="flex:1;font:400 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Olive oil</span><span style="font:400 12.5px/1.3 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">500 ml</span><span style="min-width:56px;text-align:right;font:500 12.5px/1.3 Inter,system-ui,sans-serif;color:#6F6C63">no date</span></li>
+          </ul>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Densest, but actions move behind a tap and the rail carries more of the meaning — needs the date column to stay legible.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1p">
+      <div class="dv-olabel"><a class="dv-oid" href="#1p">1p</a>Expiry expression — badge, rail, meter</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">All three keep the word. The meter adds proportion — good for triage, noisy at list scale.</div></sc-if>
+      <div class="dv-card" style="width:390px;display:flex;flex-direction:column;gap:16px;padding:16px;background:#fff;border:1px solid #E4DFD6;border-radius:20px">
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">A · Badge with dot — today's app</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #E6C7C0;border-radius:12px;background:#F7E9E6;font:500 11.5px/1.45 Inter,system-ui,sans-serif;color:#B0382A"><span style="width:6px;height:6px;border-radius:3px;background:#C64A3B"></span>Use now · today <span style="opacity:.7">est.</span></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #E7D3AC;border-radius:12px;background:#F7ECDA;font:500 11.5px/1.45 Inter,system-ui,sans-serif;color:#8A5814"><span style="width:6px;height:6px;border-radius:3px;background:#D9932E"></span>Use soon · 2 days</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #C1DDC9;border-radius:12px;background:#E7F1E9;font:500 11.5px/1.45 Inter,system-ui,sans-serif;color:#2D784D"><span style="width:6px;height:6px;border-radius:3px;background:#4E9C6B"></span>Fresh · 3 wks</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #DBD6CC;border-radius:12px;background:#EFEDE8;font:500 11.5px/1.45 Inter,system-ui,sans-serif;color:#6F6C63"><span style="width:6px;height:6px;border-radius:3px;background:#8A8A82"></span>No date</span>
+          </div>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">B · Rail + badge — used above</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 12px;border:1px solid #E4DFD6;border-left:4px solid #C64A3B;border-radius:12px"><span style="flex:1;font:500 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Chicken breast</span><span style="font:500 11.5px/1.4 Inter,system-ui,sans-serif;color:#B0382A">Use now</span></div>
+            <div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 12px;border:1px solid #E4DFD6;border-left:4px solid #D9932E;border-radius:12px"><span style="flex:1;font:500 14px/1.3 Inter,system-ui,sans-serif;color:#1C1B19">Baby spinach</span><span style="font:500 11.5px/1.4 Inter,system-ui,sans-serif;color:#8A5814">2 days</span></div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">The rail survives a glance at arm's length; the word survives greyscale and screen readers.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">C · Shelf-life meter</p>
+          <div style="display:flex;flex-direction:column;gap:12px;padding:12px 13px;border:1px solid #E4DFD6;border-radius:12px">
+            <div>
+              <div style="display:flex;justify-content:space-between;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#1C1B19"><span>Chicken breast</span><span style="color:#B0382A">Use now · today</span></div>
+              <span style="display:block;height:6px;margin-top:7px;border-radius:3px;background:#EFEDE8;overflow:hidden"><span style="display:block;width:96%;height:6px;border-radius:3px;background:#C64A3B"></span></span>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#1C1B19"><span>Baby spinach</span><span style="color:#8A5814">2 days left</span></div>
+              <span style="display:block;height:6px;margin-top:7px;border-radius:3px;background:#EFEDE8;overflow:hidden"><span style="display:block;width:72%;height:6px;border-radius:3px;background:#D9932E"></span></span>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#1C1B19"><span>Cheddar</span><span style="color:#2D784D">3 weeks left</span></div>
+              <span style="display:block;height:6px;margin-top:7px;border-radius:3px;background:#EFEDE8;overflow:hidden"><span style="display:block;width:22%;height:6px;border-radius:3px;background:#4E9C6B"></span></span>
+            </div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Reads well on the alerts screen. At 24 rows it turns into a bar chart nobody asked for.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1q">
+      <div class="dv-olabel"><a class="dv-oid" href="#1q">1q</a>Add-item flow — form, steps, or quick-add</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">A ships (fewest taps, one screen for a screen reader). C is worth adding on top for the after-shop moment.</div></sc-if>
+      <div class="dv-card" style="width:390px;display:flex;flex-direction:column;gap:16px;padding:16px;background:#fff;border:1px solid #E4DFD6;border-radius:20px">
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">A · One scrolling form <span style="color:#2D784D">— recommended</span></p>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7">
+            <span style="display:block;height:40px;border:1px solid #C9C2B4;border-radius:10px;background:#fff"></span>
+            <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px"><span style="display:block;height:40px;border:1px solid #C9C2B4;border-radius:10px;background:#fff"></span><span style="display:block;height:40px;border:1px solid #C9C2B4;border-radius:10px;background:#fff"></span></div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"><span style="display:block;height:40px;border:1px solid #2B584C;border-radius:10px;background:#2B584C"></span><span style="display:block;height:40px;border:1px solid #E4DFD6;border-radius:10px;background:#fff"></span></div>
+            <span style="display:block;height:44px;border-radius:10px;background:#2B584C"></span>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">6 taps to save. Everything visible at once, one submit, one undo.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">B · Three steps</p>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;padding:10px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7"><p style="margin:0 0 8px;font:500 11px/1 Inter,system-ui,sans-serif;color:#8D8B83">What</p><span style="display:block;height:34px;border:1px solid #C9C2B4;border-radius:9px;background:#fff"></span></div>
+            <div style="flex:1;padding:10px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7"><p style="margin:0 0 8px;font:500 11px/1 Inter,system-ui,sans-serif;color:#8D8B83">How much</p><span style="display:block;height:34px;border:1px solid #C9C2B4;border-radius:9px;background:#fff"></span></div>
+            <div style="flex:1;padding:10px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7"><p style="margin:0 0 8px;font:500 11px/1 Inter,system-ui,sans-serif;color:#8D8B83">Where</p><span style="display:block;height:34px;border:1px solid #C9C2B4;border-radius:9px;background:#fff"></span></div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Kinder on a small screen, but 3 screens and 3 focus resets per item. Wrong for adding six things after a shop.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">C · Quick-add from usuals <span style="color:#2D784D">— add alongside A</span></p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7">
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19">Milk 2 L</span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19">Eggs 12</span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19">Spinach 200 g</span>
+            <span style="display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border-radius:20px;border:1px solid #E4DFD6;background:#fff;font:500 13px/1 Inter,system-ui,sans-serif;color:#1C1B19">Yoghurt 450 g</span>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">One tap re-adds a past item with its last quantity, storage and estimate. Needs a "last 30 days" query, nothing more.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1r">
+      <div class="dv-olabel"><a class="dv-oid" href="#1r">1r</a>Home hierarchy — what leads</div>
+      <sc-if value="{{ annotations }}" hint-placeholder-val="{{ true }}"><div class="dv-note">A ships. B is today's app. C is the boldest and the one to test against A.</div></sc-if>
+      <div class="dv-card" style="width:390px;display:flex;flex-direction:column;gap:16px;padding:16px;background:#fff;border:1px solid #E4DFD6;border-radius:20px">
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">A · Alert, then counts <span style="color:#2D784D">— recommended</span></p>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7">
+            <span style="display:block;height:52px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA"></span>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><span style="display:block;height:46px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span><span style="display:block;height:46px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span><span style="display:block;height:46px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="display:block;height:42px;border-radius:11px;background:#2B584C"></span><span style="display:block;height:42px;border:1px solid #C9C2B4;border-radius:11px;background:#fff"></span></div>
+            <span style="display:block;height:38px;border:1px solid #E4DFD6;border-radius:10px;background:#fff"></span>
+            <span style="display:block;height:38px;border:1px solid #E4DFD6;border-radius:10px;background:#fff"></span>
+          </div>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">B · Counts first — today's app</p>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><span style="display:block;height:58px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span><span style="display:block;height:58px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span><span style="display:block;height:58px;border:1px solid #E4DFD6;border-radius:11px;background:#fff"></span></div>
+            <span style="display:block;height:46px;border:1px solid #E7D3AC;border-radius:11px;background:#F7ECDA"></span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="display:block;height:42px;border-radius:11px;background:#2B584C"></span><span style="display:block;height:42px;border:1px solid #C9C2B4;border-radius:11px;background:#fff"></span></div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Numbers are pleasant and useless at 6pm. "24 in stock" doesn't tell you what to cook.</p>
+        </div>
+        <div>
+          <p style="margin:0 0 8px;font:600 12px/1 Inter,system-ui,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#8D8B83">C · One hero item, swipe for next</p>
+          <div style="padding:12px;border:1px solid #E4DFD6;border-radius:12px;background:#FBFAF7">
+            <div style="padding:16px;border:1px solid #E6C7C0;border-radius:14px;background:#fff">
+              <p style="margin:0;font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#B0382A">Use today</p>
+              <p style="margin:10px 0 4px;font:600 24px/1.15 Fraunces,Georgia,serif;color:#1C1B19">Chicken breast</p>
+              <p style="margin:0 0 14px;font:400 13px/1.5 Inter,system-ui,sans-serif;color:#6A6862;font-variant-numeric:tabular-nums">500 g · fridge · estimated today</p>
+              <div style="display:flex;gap:8px"><span style="flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px;background:#2B584C;color:#fff;font:600 13.5px/1 Inter,system-ui,sans-serif">Cook it</span><span style="flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #C9C2B4;border-radius:11px;background:#fff;font:500 13.5px/1 Inter,system-ui,sans-serif;color:#1C1B19">Used it</span></div>
+            </div>
+            <div style="display:flex;justify-content:center;gap:6px;margin:12px 0 0"><span style="width:7px;height:7px;border-radius:4px;background:#2B584C"></span><span style="width:7px;height:7px;border-radius:4px;background:#C9C2B4"></span><span style="width:7px;height:7px;border-radius:4px;background:#C9C2B4"></span></div>
+          </div>
+          <p style="margin:8px 0 0;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#6A6862">Strongest push toward zero waste. Needs paging controls that aren't swipe-only, and buries the rest of the kitchen one tap deeper.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: "ship <a class="dv-oid" href="#1n">1n</a>A and <a class="dv-oid" href="#1o">1o</a>B, drop the meter" · "show <a class="dv-oid" href="#1r">1r</a>C as a full screen" · "add the alerts and cook-confirm screens" · "tighten the Claude Code prompts to PR-sized chunks"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;annotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Review&quot;},&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;populated&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;populated&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Review&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.demoState ?? "populated";
+    return {
+      annotations: this.props.annotations ?? true,
+      populated: state === "populated",
+      empty: state === "empty",
+    };
+  }
+}
+</script>
+</body>
+</html>

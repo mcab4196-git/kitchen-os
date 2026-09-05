@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getInventoryItem } from "@/server/services/inventory";
+import { STORAGE_LABEL } from "@/components/inventory/item-card";
 import { ConsumeForm } from "./consume-form";
 
 export default async function UseItemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +15,12 @@ export default async function UseItemPage({ params }: { params: Promise<{ id: st
   if (!item) notFound();
 
   return (
-    <ConsumeForm id={item.id} productName={item.productName} currentQuantity={item.quantity} unit={item.unit} />
+    <ConsumeForm
+      id={item.id}
+      productName={item.productName}
+      currentQuantity={item.quantity}
+      unit={item.unit}
+      storageLabel={STORAGE_LABEL[item.storageLocation] ?? item.storageLocation}
+    />
   );
 }

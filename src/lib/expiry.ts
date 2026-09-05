@@ -160,9 +160,23 @@ export function classifyStatus(
   return "FRESH";
 }
 
-/** Human-friendly relative label, e.g. "in 2 days", "today", "3 days ago". */
-export function relativeLabel(expiryDate: Date | null, source: ExpirySource, now: Date = new Date()): string {
+/**
+ * Human-friendly label for an expiry date. Relative by default ("in 2 days",
+ * "today", "3 days ago"); with `{ absolute: true }` it returns a plain calendar
+ * date ("7 Sep") for the "show expiry dates as text" accessibility preference.
+ * The preference flows through here so every surface stays consistent — never
+ * fork this function.
+ */
+export function relativeLabel(
+  expiryDate: Date | null,
+  source: ExpirySource,
+  now: Date = new Date(),
+  opts: { absolute?: boolean } = {},
+): string {
   if (!expiryDate || source === "UNKNOWN") return "No date";
+  if (opts.absolute) {
+    return expiryDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  }
   const d = daysUntil(expiryDate, now);
   if (d < -1) return `${Math.abs(d)} days ago`;
   if (d === -1 || d === 0) return "today";
