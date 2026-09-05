@@ -369,8 +369,8 @@ _Everything unverified, and what it would take to verify it._
 ## 12. Production Build
 
 - **Result:** PASS
-- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23, on `qa/pre-deploy` at commit `04e3fe7` (after the P1 fix). Also `npm run typecheck` (`tsc --noEmit`) → exit 0.
-- **Output summary:** `✓ Compiled successfully in ~6s`, `✓ Generating static pages (18/18)`, `✓ Collecting build traces`. 18 routes: `/`, `/login`, `/robots.txt`, `/_not-found` static; the rest server-rendered on demand. Shared JS ≈ 103 kB; largest route bundle `/scan/[id]/review` at 6.38 kB. No `EPERM` from `prisma generate` this run. No warnings other than the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — see §11).
+- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run twice: on the baseline `c18eca3` and again on `04e3fe7` **after** the ISSUE-001 fix — both green. `npm run typecheck` (`tsc --noEmit`) → exit 0 both times.
+- **Output summary:** `✓ Compiled successfully`, `✓ Generating static pages (18/18)`, `✓ Collecting build traces`. 18 routes: `/`, `/login`, `/robots.txt`, `/_not-found` static; the rest server-rendered on demand. Shared JS ≈ 103 kB; largest route bundle `/scan/[id]/review` at 6.38 kB. No `EPERM` from `prisma generate`. No warnings other than the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — see §11).
 
 ---
 
