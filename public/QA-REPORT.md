@@ -4,15 +4,15 @@
 > context resets. Every `PASS` must cite a `file:line`, a command's output, or a test
 > result. Anything unverified goes under **Not Tested** — never under Passed.
 
-**Branch:** `qa/pre-deploy` — NOT yet created. ~30 files from the recent redesign (PRs 1–7) sit uncommitted on `main` (`git status`). Decide before Stage 2 whether to commit that WIP first; QA fixes should branch from whatever state you intend to deploy.
+**Branch:** `qa/pre-deploy` — CREATED off `main`. The ~30 uncommitted redesign files were snapshotted first as `c18eca3 chore(qa): baseline uncommitted redesign WIP before QA pass` so QA fixes produce a clean diff. Deploy target = this branch. Local git identity set to `mark.cabelloit@gmail.com` (repo had none).
 **Started:** 2026-09-06 (Stage 1)
-**Last updated:** 2026-09-06 — Stage 1 recon complete
+**Last updated:** 2026-09-06 — Stage 2 blocks A, B, C complete (1 P1 fixed)
 
 ---
 
 ## Overall Status
 
-`NOT ASSESSED` — Stage 1 (recon only) done; no verification or fixes yet.
+`IN PROGRESS` — Stage 2 A–C done. Static health green (typecheck + prod build pass; no lint tooling exists). Data layer: schema ↔ migrations ↔ live DB all consistent, no drift. Auth/isolation: service layer scopes every query by server-derived `userId`; RLS + Storage policies fully applied on the live DB. **1 P1 found and fixed** (receipt-commit write IDOR). 2 P2 and several P3 open — see Issues. Blocks D–G not yet run.
 
 ---
 
@@ -148,9 +148,9 @@
 | Block | Status | Session |
 |-------|--------|---------|
 | Stage 1 — Recon | ✅ | 2026-09-06 |
-| A — Static health | ⬜ | |
-| B — Data layer | ⬜ | |
-| C — Auth & isolation | ⬜ | |
+| A — Static health | ✅ | 2026-09-06 |
+| B — Data layer | ✅ | 2026-09-06 |
+| C — Auth & isolation | ✅ | 2026-09-06 |
 | D — Core logic tests | ⬜ | |
 | E — Receipt pipeline | ⬜ | |
 | F — Errors & secrets | ⬜ | |
@@ -165,7 +165,23 @@ _Each line needs evidence: a `file:line`, a command output, or a test name + res
 
 | # | Area | What was verified | Evidence |
 |---|------|-------------------|----------|
-| | | | |
+| A1 | Static — typecheck | `tsc --noEmit` clean, before and after the P1 fix | `npm run typecheck` → exit 0, no output (2026-09-06) |
+| A2 | Static — production build | `prisma generate && next build` succeeds; 18 routes compiled, static + dynamic split as expected; no `EPERM` this run | `npm run build` → "✓ Compiled successfully", "✓ Generating static pages (18/18)", route table printed |
+| A3 | Static — no debug/mock cruft | No `console.log/debug/info`; no `TODO/FIXME/HACK/XXX`; no `mock/fixture/dummy/seed` arrays in `src/app`, `src/components`, `src/server`; only benign `console.error` in `env.ts:25` (server, pre-throw) and `error.tsx:8` (client boundary) | `grep` runs, 2026-09-06 |
+| A4 | Static — no floating promises | Every `prisma.*` call in services/actions is `await`ed, `return`ed, or an element of `$transaction([...])` / `Promise.all([...])` | read of `inventory.ts:214`, `receipt.ts:69,76`, `reference.ts:5`; grep of all `actions.ts` |
+| A5 | Static — client/server boundary | 26 `'use client'` files; none import `@/server/*` or `prisma` at runtime (only `item-form.tsx` has 2 `import type` — erased); no `async` client components | `grep` + read `item-form.tsx:5,7` |
+| A6 | Loading/error coverage | 9 `loading.tsx` (incl. `(app)/loading.tsx` as nested fallback); `(app)/error.tsx` + `app/global-error.tsx` boundaries; `app/not-found.tsx`. `error.tsx` renders a generic message, leaks no `error` detail to the user | `find` + read `error.tsx` |
+| B1 | Schema validity | `prisma validate` → "schema is valid"; `prisma migrate status` → "Database schema is up to date!" (3 migrations, all applied) | command output, 2026-09-06 |
+| B2 | No schema/DB drift | `prisma migrate diff --from-schema-datasource --to-schema-datamodel --exit-code` → "No difference detected." Live DB matches `schema.prisma` exactly; the 3 accessibility booleans live in `user_preferences.notification_thresholds` JSON by design, not as columns — no drift | command output |
+| B3 | Inventory UI reads the DB | Live DB holds 70 `inventory_items`, 8 `recipes`, 3 `receipts`, 2 `profiles`; `inventory/page.tsx:3` → `listInventory` (Prisma), `dashboard/page.tsx:34-40` → `prisma.inventoryItem`; no seeded array rendered | `$queryRaw` row counts + import grep |
+| B4 | Cascade safety | `Receipt`→`InventoryItem` FK is nullable, no rule → `SetNull` (deleting a stale receipt keeps items); `ConsumptionRecord`→`InventoryItem` is `Cascade` but app soft-deletes (`isDeleted`), so audit trail survives normal use; `MealPlanItem`/`ConsumptionRecord`→`Recipe` are `SetNull` | `schema.prisma:227,263,343,344,392,393` |
+| C1 | Middleware re-verifies user | `middleware.ts` → `updateSession` calls `supabase.auth.getUser()` (validates JWT, not just cookie); `(app)/layout.tsx:12-16` re-checks `user` server-side and `redirect("/login")` — "never trust a single gate" | read both files |
+| C2 | Actions derive userId server-side | All 10 `actions.ts` + every server-rendered page get the id from `supabase.auth.getUser()` and pass `user.id` to services; none accept a client-supplied userId. `requireUserId()` / `uid()` helpers `redirect("/login")` when absent | grep + read of every action file |
+| C3 | Service-layer scoping | `inventory.ts`, `shopping.ts`, `recipe.ts`, `preferences.ts`, `notifications.ts`: every read/write filtered by `userId` (or parent id already proven owned). "findFirst-then-update-by-id" spots (`updateInventoryItem:131`, `consumeInventoryItem:183`, `toggleSaved:214`, `toggleChecked:82`, `commitReceipt:136`) all gate on an ownership `findFirst`/`updateMany` first | full read of all 5 service files |
+| C4 | RLS applied on live DB | All 13 user tables + 5 reference tables have `rowsecurity = ON`; every policy from `rls.sql` is present with matching `USING`/`WITH CHECK` (`auth.uid() = user_id`, child tables via `EXISTS` on parent) | `pg_class` / `pg_policies` query, 2026-09-06 |
+| C5 | Storage isolation | Bucket `receipts` exists and is `public = false`; 4 `storage.objects` policies restrict every op to `(storage.foldername(name))[1] = auth.uid()::text`; images served only via 10-min signed URLs from the user's cookie client | `storage.buckets` / `pg_policies` query |
+| C6 | Signup trigger | `on_auth_user_created` AFTER INSERT on `auth.users` is enabled; `handle_new_user()` is `SECURITY DEFINER` and upserts `profiles` | `pg_trigger` / `pg_proc` query |
+| C7 | No service-role key | No `SUPABASE_SERVICE_ROLE_KEY` / `service_role` reference anywhere in `src`; all Supabase clients use `NEXT_PUBLIC_SUPABASE_ANON_KEY` + cookies | `grep -rn` |
 
 ---
 
@@ -175,14 +191,91 @@ _One block per issue. Copy the template._
 
 ### ISSUE-001
 
-- **Severity:** P0 / P1 / P2 / P3 / P4
-- **Feature:**
-- **Problem:**
-- **Root cause:**
-- **Fix:**
-- **Files changed:**
-- **Verified by:**
-- **Status:** OPEN / FIXED / WON'T FIX
+- **Severity:** P1 (security — cross-user write / broken isolation)
+- **Feature:** Receipt review → commit to inventory
+- **Problem:** `commitReceipt(userId, receiptId, items)` verified ownership of the parent **receipt**, then looped the client-supplied `items` and ran `prisma.receiptItem.update({ where: { id: it.receiptItemId }, data: { inventoryItemId: … } })`. `receiptItemId` is `z.string()` from the review form's hidden JSON payload with no server cross-check. An authenticated user could submit their own valid `receiptId` (passes the check) plus `receiptItemId` values belonging to **another user's** `receipt_items`, repointing those rows' `inventoryItemId`. Prisma connects with a privileged role and **bypasses RLS**, so the `own via receipt` policy did not stop it. `ReceiptItem.inventoryItemId` is `@unique`, so a collision also throws mid-loop → partial commit. No data is read back to the attacker (return value ignored) — this is write-side tampering / integrity, not disclosure.
+- **Root cause:** Trusting an id from the client payload for a write, instead of constraining the update to the already-verified parent.
+- **Fix:** Before the commit loop, load the id set of `receipt_items` for the verified receipt and reject the whole request if any included line's `receiptItemId` isn't in it (`"Those items don't belong to this receipt."`). Smallest diff; no behaviour change for legitimate submissions.
+- **Files changed:** `src/server/services/receipt.ts` (commit `04e3fe7`)
+- **Verified by:** `npm run typecheck` → exit 0 after the change; logic review (bogus/foreign `receiptItemId` now returns an error before any write). Live two-user exploit attempt: `NOT TESTED` (needs the browser anon client + a forged payload) — see §11.
+- **Status:** FIXED
+
+---
+
+### ISSUE-002
+
+- **Severity:** P2
+- **Feature:** "What's for dinner?" suggestions vs. Meal plan
+- **Problem:** `generateSuggestions` ends with `prisma.recipe.deleteMany({ where: { userId, saved: false, id: { notIn: currentSetIds } } })` (`recipe.ts:158`). It deletes **every** unsaved recipe not in the fresh suggestion set — with no guard for recipes referenced by a `meal_plan_items` row. Recipes created by `generateMealPlan` are `saved: false` and `lastSuggestedAt: null` (`persistRecipe` never stamps it). So opening the meals screen and regenerating suggestions **hard-deletes the recipes in an existing meal plan**; `MealPlanItem.recipe` is `SetNull`, so `getLatestPlan` then returns items with `recipe: null` and the plan silently loses its dinners. Same delete also nulls `ConsumptionRecord.recipeId` (SetNull), losing the recipe link in the "audit trail". `generateMealPlan`'s own cleanup (`recipe.ts:389`) is correctly scoped (`lastSuggestedAt: null` AND `id in newIds` from that call) and is not affected.
+- **Root cause:** The prune predicate treats "not in the current suggestion set" as "safe to delete", ignoring other references (meal plans, consumption history).
+- **Fix (proposed, not yet applied):** Exclude ids referenced by `meal_plan_items` (and optionally `consumption_records`) from the `deleteMany`, e.g. add `AND id NOT IN (SELECT recipe_id FROM meal_plan_items WHERE recipe_id IS NOT NULL)` via a Prisma `NOT: { mealPlanItems: { some: {} } }` relation filter. Needs a ruling: this is pre-existing service logic (the redesign was UI-only), and "smallest diff" vs. a broader "don't delete referenced recipes" cleanup.
+- **Files changed:** none yet
+- **Verified by:** code + schema read (`recipe.ts:82-165,318-392`, `schema.prisma:293,340-344,387,393`); reproduction is deterministic from the code path. Runtime repro `NOT TESTED` (needs AI key to generate recipes + a plan).
+- **Status:** OPEN
+
+---
+
+### ISSUE-003
+
+- **Severity:** P3 (was flagged in recon; confirmed)
+- **Feature:** `/api/health` readiness probe
+- **Problem:** `middleware.ts` matcher runs on `/api/*` (only `_next/static`, `_next/image`, `favicon.ico`, and image extensions are excluded). `updateSession` treats `/api/health` as a normal route: no session → **307 redirect to `/login`**. Uptime monitors / load-balancer health checks get a redirect, not the `SELECT 1` `200`. `/robots.txt` is gated the same way (P4).
+- **Root cause:** `updateSession`'s allow-list (`isAuthRoute`, `isPublicAsset`) has no entry for `/api` public endpoints.
+- **Fix (proposed, not yet applied):** add `path === "/api/health"` (or `path.startsWith("/api/")` for genuinely public API routes) to the allow-list in `src/lib/supabase/middleware.ts`, or exclude it in the matcher. One line.
+- **Files changed:** none yet
+- **Verified by:** read of `src/middleware.ts` + `src/lib/supabase/middleware.ts:34-46`; build output confirms `/api/health` and `/robots.txt` are routes. Live `curl` `NOT TESTED` (needs the running server).
+- **Status:** OPEN
+
+---
+
+### ISSUE-004
+
+- **Severity:** P3
+- **Feature:** Server-rendered pages — missing-session handling
+- **Problem:** `dashboard/page.tsx:28`, `meals/page.tsx:89`, `receipts/page.tsx:29`, `scan/[id]/review/page.tsx:33` use `user!.id` (non-null assertion) with **no** `if (!user) redirect("/login")`. Other pages (`inventory/page.tsx:41`, `inventory/new/page.tsx`, `inventory/[id]/*`) do guard explicitly. In practice `(app)/layout.tsx` redirects first, so this is only reachable in a race / if the layout guard regresses — then it throws (`Cannot read properties of null`) and renders `error.tsx` instead of redirecting. No data leak.
+- **Root cause:** Inconsistent guard pattern introduced by the redesign of these pages.
+- **Fix (proposed, not yet applied):** add the same `if (!user) redirect("/login")` line to the four pages for consistency and a graceful failure.
+- **Files changed:** none yet
+- **Verified by:** grep + read.
+- **Status:** OPEN
+
+---
+
+### ISSUE-005
+
+- **Severity:** P3 (design risk — shared mutable state, not data-ownership isolation)
+- **Feature:** Receipt commit → ingredient-alias learning
+- **Problem:** `commitReceipt` does `prisma.ingredientAlias.upsert({ where: { aliasText: key }, … })` where `aliasText` is **globally unique** (`schema.prisma:157`), `source: "USER"`. One user's receipt-text correction becomes a global mapping that `resolveIngredientByText` then applies to **every** user's future receipts. A malicious or careless user can mis-train the shared alias table (e.g. map a common token to the wrong ingredient) for everyone. Appears intentional ("normalization memory… improving over time", `AliasSource.USER`) but has no per-user scoping or review.
+- **Root cause:** Alias store is global by schema design; commit writes to it directly from user input.
+- **Fix:** product ruling needed — scope learned aliases per user, or gate `USER` aliases behind a confidence/consensus threshold, or accept the risk for v1. No code change made.
+- **Files changed:** none
+- **Verified by:** read `receipt.ts:167-178`, `schema.prisma:147-160`, `reference.ts`.
+- **Status:** OPEN
+
+---
+
+### ISSUE-006
+
+- **Severity:** P4
+- **Feature:** Shopping list bootstrap
+- **Problem:** `getOrCreateList` (`shopping.ts:9-13`) does `findFirst` then `create`; `ShoppingList` has only `@@index([userId])`, no unique constraint. Two near-simultaneous first actions could create two lists for one user; later reads use `findFirst … orderBy createdAt asc`, so items could split across lists.
+- **Root cause:** No DB-level "one list per user" guarantee.
+- **Fix:** add `@@unique([userId])` (needs a migration) or upsert on a deterministic key. Low likelihood; deferred.
+- **Files changed:** none
+- **Verified by:** read `shopping.ts` + `schema.prisma:352-363`.
+- **Status:** OPEN
+
+---
+
+### ISSUE-007
+
+- **Severity:** P3 (deploy-config, not code)
+- **Feature:** Sign-up email confirmation link
+- **Problem:** `login/actions.ts:23` builds `emailRedirectTo` from `process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"`. If `NEXT_PUBLIC_SITE_URL` is unset in the deploy env, confirmation emails link to `localhost`. (`env.ts` defaults it too, but only the validated `env` object — this file reads `process.env` directly.)
+- **Fix:** ensure `NEXT_PUBLIC_SITE_URL` is set in the production environment; add to the deploy checklist. Optionally read from `env` instead of `process.env`.
+- **Files changed:** none
+- **Verified by:** read `login/actions.ts`, `env.ts`, `.env.example:20`.
+- **Status:** OPEN
 
 ---
 
@@ -190,20 +283,42 @@ _One block per issue. Copy the template._
 
 _Secrets exposure, missing auth/authz checks, RLS bypass, unsafe uploads, unsafe queries._
 
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| S1 | **Receipt-commit write IDOR** — `commitReceipt` updated `receipt_items` by a client-supplied id without checking it belonged to the verified receipt; Prisma bypasses RLS so this was the only guard. See ISSUE-001. | P1 | **FIXED** (`04e3fe7`) |
+| S2 | Global `ingredient_aliases` table is trained directly from one user's receipt input and applied to all users. See ISSUE-005. | P3 | OPEN (needs product ruling) |
+| S3 | No `Content-Security-Policy` header (`next.config.mjs` sets HSTS/XFO/nosniff/Referrer-Policy/Permissions-Policy only). Recon note; belongs to Block F. | P3 | OPEN |
+| S4 | `public/QA-PLAN.md`, `public/QA-REPORT.md`, `public/CLAUDE-CODE-PROMPTS.md`, `public/Kitchen OS Mobile.dc.html` are served at `/<name>` in production (info disclosure). Belongs to Block F. | P3 | OPEN |
+| — | **No** service-role key anywhere in `src` (`grep -rn service_role/SERVICE_ROLE` → nothing); all Supabase clients use the anon key + cookies. | — | PASS |
+| — | Client-bundle secret grep (`.next/static`) not yet run — Block F. | — | NOT TESTED |
+
+**Auth/authz posture (verified clean, Block C):** JWT re-verified in middleware *and* `(app)/layout.tsx`; every server action derives `userId` from `auth.getUser()` (never the client); every service query is `userId`-scoped; RLS + Storage policies are live on the DB as defence-in-depth. Middleware is **not** relied on as the security boundary (correct — Next docs).
+
 ---
 
 ## 9. Database / RLS Findings
 
-_Per table, state whether user A can reach user B's rows and cite the policy._
+_A→B reachability is stated for the **browser anon/`authenticated` client** path (the only path RLS governs). The Prisma/service path bypasses RLS and is instead gated by `userId`-scoped queries in `src/server/services/*` — audited clean in Block C (C3), with the one exception fixed in ISSUE-001._
+_Live check 2026-09-06: `rowsecurity = ON` on all 18 tables; every `rls.sql` policy present with matching `USING`/`WITH CHECK`._
 
-| Table | Isolation verified | Policy | Notes |
-|-------|-------------------|--------|-------|
-| inventory | | | |
-| receipts | | | |
-| recipes | | | |
-| meal_plans | | | |
-| shopping_list | | | |
-| profiles | | | |
+| Table | A can reach B's rows? | Policy (live, from `pg_policies`) | Notes |
+|-------|----------------------|----------------------------------|-------|
+| inventory_items | No | `own - all` FOR ALL — `USING (auth.uid() = user_id)` / `WITH CHECK (auth.uid() = user_id)` | Prisma path also scoped by `userId` in every `inventory.ts` fn. |
+| receipts | No | `own - all` FOR ALL — `auth.uid() = user_id` (USING + CHECK) | `@@unique([userId, imageHash])` for dedup. |
+| receipt_items | No (client) | `own via receipt` FOR ALL — `EXISTS (SELECT 1 FROM receipts r WHERE r.id = receipt_id AND r.user_id = auth.uid())` | Prisma path had the ISSUE-001 write-IDOR — **fixed**. |
+| recipes | Read-only for global rows | `own or global - select` — `USING (user_id IS NULL OR auth.uid() = user_id)`; `own - write` FOR ALL — `auth.uid() = user_id` (USING + CHECK) | `user_id IS NULL` = intentional global/system recipes, world-readable to authenticated. No user rows currently global (8 recipes, all owned). |
+| recipe_ingredients | No (own or global parent) | `own via recipe` FOR ALL — `EXISTS (… recipes r WHERE r.id = recipe_id AND (r.user_id = auth.uid() OR r.user_id IS NULL))` | Mirrors the recipe read rule. |
+| meal_plans | No | `own - all` FOR ALL — `auth.uid() = user_id` (USING + CHECK) | |
+| meal_plan_items | No | `own via plan` FOR ALL — `EXISTS (… meal_plans m WHERE m.id = meal_plan_id AND m.user_id = auth.uid())` | Recipe ref can be nulled by ISSUE-002. |
+| shopping_lists | No | `own - all` FOR ALL — `auth.uid() = user_id` (USING + CHECK) | No `@@unique([userId])` — see ISSUE-006. |
+| shopping_list_items | No | `own via list` FOR ALL — `EXISTS (… shopping_lists s WHERE s.id = shopping_list_id AND s.user_id = auth.uid())` | |
+| consumption_records | No | `own via item` FOR ALL — `EXISTS (… inventory_items i WHERE i.id = inventory_item_id AND i.user_id = auth.uid())` | |
+| profiles | No | `own profile - select` / `own profile - update` — `auth.uid() = id` | No client INSERT/DELETE policy; insert via `SECURITY DEFINER` trigger `on_auth_user_created` (verified enabled). |
+| user_preferences | No | `own - all` FOR ALL — `auth.uid() = user_id` (USING + CHECK) | Accessibility toggles live in `notification_thresholds` JSON. |
+| categories / ingredients / ingredient_aliases / shelf_life_rules / unit_conversions | Read-only, all authenticated users | `read reference` FOR SELECT — `auth.role() = 'authenticated'` | Reference data; no client write policy. `ingredient_aliases` is written server-side from user input — see ISSUE-005. |
+| storage.objects (bucket `receipts`) | No | 4 policies (`select`/`insert`/`update`/`delete`), each `bucket_id = 'receipts' AND (storage.foldername(name))[1] = auth.uid()::text` | Bucket `public = false`; images via 10-min signed URLs. |
+
+**Caveat:** `relforcerowsecurity = false` on every table, so the Prisma connection role (table owner / privileged) bypasses RLS **by design** — this is the documented model (`rls.sql` header). RLS only protects the anon/`authenticated` roles. Live cross-user proof via two real users + the browser anon client is **NOT TESTED** (see §11) — the above is a full static read of live policy definitions, which is sufficient to show each policy is present and correctly shaped.
 
 ---
 
@@ -236,22 +351,33 @@ _Everything unverified, and what it would take to verify it._
 
 | Area | Why not tested | What's needed |
 |------|---------------|---------------|
-| | | |
+| Lint | No ESLint config or `eslint` dependency in the project; `npm` has no `lint` script. `next build`'s "Linting" step is a no-op (Next skips it with no config installed). The 5 `eslint-disable` comments in the code are therefore inert. | Add `eslint` + `eslint-config-next` and a `lint` script if lint coverage is wanted; out of QA scope to introduce. |
+| RLS cross-user proof (live) | Requires two real Supabase users and the browser anon client to actually attempt A→B reads/writes. Static read of every live policy done instead (§9). | A Supabase project with `rls.sql` + `storage.sql` applied (confirmed applied) + 2 test users + a script using `@supabase/supabase-js` with each user's JWT. |
+| ISSUE-001 live exploit + fix confirmation | Same as above — needs a forged `commitReceiptAction` payload from an authenticated session. | Running app + 2 users; POST the action with another user's `receiptItemId`. Expect `"Those items don't belong to this receipt."` |
+| ISSUE-002 runtime repro | Needs AI-generated recipes and a saved meal plan to exist. | `AI_PROVIDER` key (gemini or anthropic) + Storage; generate suggestions, make a plan, regenerate suggestions, check `getLatestPlan` items for `recipe: null`. |
+| ISSUE-003 `/api/health` behaviour | Needs the running server. | `curl -i http://localhost:3000/api/health` unauthenticated → observe 307 vs 200. |
+| Middleware route-protection behaviour | Static read done; live request behaviour (matcher gaps, redirect chains, expired session) not exercised. | Running app + Supabase auth; `curl`/browser against protected + public paths, and with a stale cookie. |
+| Auth flows (signup, login, logout, session persistence, expired-session, redirects) | Not verifiable from code alone; no Playwright configured. | Supabase project + a browser pass (or scripted auth via `@supabase/supabase-js`). |
+| Timezone round-trip (±1-day expiry flip) | `DateTime` columns are `timestamp(3)` (no tz); `classifyStatus` uses local `new Date()`. The pure-function boundary case is a Block D test; the Prisma round-trip needs a DB write/read under a non-UTC `TZ`. | Block D: crafted-UTC-`Date` unit tests (runnable now). Full round-trip: a test DB + `TZ` env manipulation. |
+| Decimal/FP quantity accumulation | `quantity` fields are `Float` (Postgres `double precision`); `tidy()` rounds to 3dp. Not yet exercised with `0.1 + 0.2`-style cases. | Block D Vitest against `computeDeduction` / `tidy` (runnable now). |
+| Client-bundle secret grep | Build output exists but `.next/static` not yet grepped for secrets. | Block F: `grep -rE "SUPABASE|ANTHROPIC|GEMINI|sk-|API_KEY" .next/static`. |
+| AI provider key mismatch | `AI_PROVIDER` defaults to `gemini` (`provider.ts`) but `env.ts` only declares `ANTHROPIC_*` — no `GEMINI_API_KEY`/`GOOGLE_API_KEY`. Not exercised. | Block E/F: confirm which provider deploy will use and that its key is in the env schema + `.env`. |
+| Everything in Blocks D, E, F, G | Not started (this session was A–C only). | Per QA-PLAN Stage 2 D–G. |
 
 ---
 
 ## 12. Production Build
 
-- **Result:** PASS / FAIL
-- **Command:**
-- **Output summary:**
+- **Result:** PASS
+- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23, on `qa/pre-deploy` at commit `04e3fe7` (after the P1 fix). Also `npm run typecheck` (`tsc --noEmit`) → exit 0.
+- **Output summary:** `✓ Compiled successfully in ~6s`, `✓ Generating static pages (18/18)`, `✓ Collecting build traces`. 18 routes: `/`, `/login`, `/robots.txt`, `/_not-found` static; the rest server-rendered on demand. Shared JS ≈ 103 kB; largest route bundle `/scan/[id]/review` at 6.38 kB. No `EPERM` from `prisma generate` this run. No warnings other than the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — see §11).
 
 ---
 
 ## 13. Top 5 Actions Before Deploy
 
-1.
-2.
-3.
-4.
-5.
+1. **Confirm ISSUE-001 fix in a live 2-user test** (P1). The write-IDOR is fixed in code (`04e3fe7`) and typechecks, but a real cross-user `commitReceiptAction` exploit attempt was not run — do it before deploy.
+2. **Decide ISSUE-002** (P2): regenerating dinner suggestions hard-deletes recipes referenced by an existing meal plan (and nulls consumption-record recipe links). Apply the proposed `deleteMany` guard or make an explicit product call to accept it.
+3. **Fix ISSUE-003** (P3, one line): exclude `/api/health` from the auth redirect in `src/lib/supabase/middleware.ts` so readiness probes get `200`, not a redirect to `/login`.
+4. **Verify deploy env** (ISSUE-007 + AI provider): set `NEXT_PUBLIC_SITE_URL` in production (email confirmation links); confirm whether `AI_PROVIDER` will be `gemini` or `anthropic` and that the matching key is in `env.ts` + the deploy env — `env.ts` currently declares only `ANTHROPIC_*`.
+5. **Run Blocks D–G** before calling READY: core-logic Vitest specs (quantity/expiry/reconciliation/shopping-delta + the TZ boundary case), receipt-pipeline failure paths, client-bundle secret grep, CSP header decision, `public/*.md` exposure, and the browser a11y/responsive pass.
