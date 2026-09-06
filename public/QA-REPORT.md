@@ -6,13 +6,15 @@
 
 **Branch:** `qa/pre-deploy` — CREATED off `main`. The ~30 uncommitted redesign files were snapshotted first as `c18eca3 chore(qa): baseline uncommitted redesign WIP before QA pass` so QA fixes produce a clean diff. Deploy target = this branch. Local git identity set to `mark.cabelloit@gmail.com` (repo had none).
 **Started:** 2026-09-06 (Stage 1)
-**Last updated:** 2026-09-06 — Stage 2 blocks A, B, C complete (1 P1 fixed)
+**Last updated:** 2026-09-06 — Stage 2 blocks D, E, F, G complete (28 new Block-D specs added; 6 new issues logged, all P2/P3; no code changed)
 
 ---
 
 ## Overall Status
 
-`IN PROGRESS` — Stage 2 A–C done. Static health green (typecheck + prod build pass; no lint tooling exists). Data layer: schema ↔ migrations ↔ live DB all consistent, no drift. Auth/isolation: service layer scopes every query by server-derived `userId`; RLS + Storage policies fully applied on the live DB. **1 P1 found and fixed** (receipt-commit write IDOR). 2 P2 and several P3 open — see Issues. Blocks D–G not yet run.
+`IN PROGRESS` — Stage 2 A–G done; Stage 3 (final verification) not yet run. Static health green (typecheck + prod build pass; no lint tooling exists). Data layer consistent, no drift. Auth/isolation clean at the service layer; RLS + Storage policies live. **1 P1 found and fixed** in A–C (receipt-commit write IDOR, `04e3fe7`).
+
+**Blocks D–G:** 28 new core-logic specs (`src/lib/qa-block-d.test.ts`) — all green; full suite 104/104. Quantity math is correct and safe (clamps, never negative, refuses unconvertible units). Expiry classification is sound but the **labels drift from the plan's wording** and lag true expiry by <24h (P3, ISSUE-011/012). Recipe availability and shopping-list delta are **name-presence only — no quantity comparison anywhere** (P2, ISSUE-009). Receipt pipeline: schema-validated before every DB write ✓, but the commit loop isn't a transaction (P2, ISSUE-013) and AI/infra error strings reach the client (P3, ISSUE-008). Client bundle **carries no private secrets** (grep of `.next/static` clean). UI wiring: every `href`/form-action/handler resolves; overlays have full close paths (ESC + scrim + button); loading/error/empty states present on every async view. Provider/env mismatch from recon **confirmed** (P2, ISSUE-014). Nothing here is P0/P1; **not READY** until Stage 3 runs and the P2s get a ruling.
 
 ---
 
@@ -151,10 +153,10 @@
 | A — Static health | ✅ | 2026-09-06 |
 | B — Data layer | ✅ | 2026-09-06 |
 | C — Auth & isolation | ✅ | 2026-09-06 |
-| D — Core logic tests | ⬜ | |
-| E — Receipt pipeline | ⬜ | |
-| F — Errors & secrets | ⬜ | |
-| G — UI wiring | ⬜ | |
+| D — Core logic tests | ✅ | 2026-09-06 |
+| E — Receipt pipeline | ✅ | 2026-09-06 |
+| F — Errors & secrets | ✅ | 2026-09-06 |
+| G — UI wiring | ✅ | 2026-09-06 |
 | Stage 3 — Final verification | ⬜ | |
 
 ---
@@ -182,6 +184,26 @@ _Each line needs evidence: a `file:line`, a command output, or a test name + res
 | C5 | Storage isolation | Bucket `receipts` exists and is `public = false`; 4 `storage.objects` policies restrict every op to `(storage.foldername(name))[1] = auth.uid()::text`; images served only via 10-min signed URLs from the user's cookie client | `storage.buckets` / `pg_policies` query |
 | C6 | Signup trigger | `on_auth_user_created` AFTER INSERT on `auth.users` is enabled; `handle_new_user()` is `SECURITY DEFINER` and upserts `profiles` | `pg_trigger` / `pg_proc` query |
 | C7 | No service-role key | No `SUPABASE_SERVICE_ROLE_KEY` / `service_role` reference anywhere in `src`; all Supabase clients use `NEXT_PUBLIC_SUPABASE_ANON_KEY` + cookies | `grep -rn` |
+| D1 | Quantity math — subtract | `500g − 300g = 200g`; `0.3kg − 100g = 0.2kg` (no FP drift, `tidy` 3dp) | `qa-block-d.test.ts` "D · quantity math" — 5 tests pass |
+| D2 | Quantity math — never negative | consume-exact → `0` + `usedUp`; over-consume → clamp `0`, `overuse:true`, `newQuantity ≥ 0`; non-positive → `{ok:false}` | same file; also `deduct.test.ts` (8) |
+| D3 | Quantity math — unit safety | `g↔kg` converts; `pcs`/`pack` vs `g` with no `typicalPieceGrams` → `{ok:false}`; `ml` vs `g` → `{ok:false}`. No silent corruption | `qa-block-d.test.ts`; `units.test.ts` (15) |
+| D4 | Expiry classification | today→CRITICAL, +3d→SOON, −2d→EXPIRED, null→UNKNOWN; boundary at 23:30 for a 01:00 expiry stays CRITICAL (no early flip); `daysUntil` is instant-based (TZ-agnostic for a given Date pair) | `qa-block-d.test.ts` "D · expiry…" — 11 tests; `expiry.test.ts` (19) |
+| D5 | Estimated vs confirmed expiry | `estimateExpiry` tags `source:'ESTIMATED'` (enum column) + confidence; badge adds textual `est.` marker (word, not colour); no rule → `source:'UNKNOWN'`, never an invented date | `qa-block-d.test.ts` "D · estimated…"; read `expiry-badge.tsx:30` |
+| D6 | Recipe availability grounding | `reconcileRecipe` puts a name in `available` only when an inventory token matches; the meals/[id] have/to-buy split derives from `reconciliation.available` (`page.tsx:26`), never an AI claim; optional-missing not counted | `qa-block-d.test.ts` "D · recipe availability"; `recipe.test.ts` (13) |
+| D7 | Integration (pure chain) | chicken 500 / rice 1000 / spinach 200 → cook 300/200/100 → **200 / 800 / 100** via `computeDeduction` in sequence | `qa-block-d.test.ts` "D · integration" |
+| E1 | AI output validated before any DB write | `createAndParseReceipt` runs `validateAndClean(raw)` and returns early on `{ok:false}` **before** the `$transaction` that writes `receipt` + `receipt_items` (`receipt.ts:61-99`). Malformed JSON → generic "unexpected shape" message | read `receipt.ts`, `schemas.ts:79-118` |
+| E2 | Receipt failure paths | empty file → reject; `>10MB` → reject (`receipt.ts:27-28`); AI throw/timeout → `catch` sets status `FAILED`; missing `rawName` → item dropped; missing qty/price → confidence penalty, still committable; duplicate (same content hash, prior `PARSED`/`COMMITTED`) → blocked + `?dup=1` redirect; stale `PENDING`/`FAILED` → deleted & re-parsed | static trace of `receipt.ts:25-107` |
+| E3 | Review edits persist to the written row | commit consumes the user-edited `rows` JSON, re-parsed by `reviewedItemsSchema`; `commitReceipt` writes `it.productName/quantity/unit/storageLocation` from that payload, not the raw AI values | read `review-form.tsx:86`, `review/actions.ts:23`, `receipt.ts:154-170` |
+| E4 | Receipt-item ownership re-checked | the ISSUE-001 fix stands: `commitReceipt` loads the verified receipt's own `receipt_items` id set and rejects any `receiptItemId` not in it (`receipt.ts:146-151`) | read; `typecheck` clean |
+| F1 | No secrets in client bundle | `grep -rlE "sk-ant-\|AIza…\|SERVICE_ROLE\|ANTHROPIC_API_KEY\|GEMINI_API_KEY\|DATABASE_URL\|DIRECT_URL\|eyJ…JWT" .next/static` → **no matches** (exit 1) after a clean prod build; supabase *client* code is present (sanity grep exit 0) | commands, 2026-09-06 |
+| F2 | No private `NEXT_PUBLIC_*` | schema (`env.ts:9-19`) exposes only `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public by design), `NEXT_PUBLIC_SITE_URL`. No client file imports `@/lib/env` | `env.ts`, `.env.example`, grep |
+| F3 | Server errors don't leak to client | `(app)/error.tsx` renders a fixed message (no `error.message`); its `console.error` is client-side only. Server-action throws surface as a Next digest, not a stack. Auth actions return Supabase's user-facing `error.message` (intended) | read `error.tsx`, `login/actions.ts`, `inventory/actions.ts` |
+| F4 | Security headers | `next.config.mjs` sets HSTS (2y, preload), XFO DENY, nosniff, Referrer-Policy, Permissions-Policy (camera=self), no `X-Powered-By`. (CSP still absent — S3) | read `next.config.mjs` |
+| G1 | Every route target resolves | all static `href`s and every dynamic `` href={`/…/${id}/…`} `` map to a real entry in the route tree (19 routes); `PageHeader back=` targets valid | grep of `href=` / `<Link` vs `find src/app` |
+| G2 | Every form posts to a real action | all 17 `<form action=>` targets are exported `"use server"` functions (`deleteItem`, `restoreItem`, `commitReceiptAction`, `addRecipeMissingAction`, `clearCheckedAction`, `signOut`, `recalculateExpiry`, …); `useActionState` forms wired the same | grep `export async function` in every `actions.ts` |
+| G3 | Overlay close paths | `Sheet`/`Dialog` (`overlay.tsx`) each close via ESC, scrim click, and an explicit control (Sheet: `×` button; Dialog: Cancel); focus trap + focus restore + body-scroll-lock; `motion-reduce:transition-opacity` fallback. Every caller passes `onOpenChange` | read `overlay.tsx`, `item-actions.tsx` |
+| G4 | Loading / error / empty per async view | 8 route `loading.tsx` + `(app)/loading.tsx` shell fallback covers the rest; `(app)/error.tsx` + `global-error.tsx` + `not-found.tsx`; `EmptyState` on dashboard, inventory (×2), meals, plan, receipts, shopping, alerts, scan-review | `find` + grep `EmptyState` |
+| G5 | a11y primitives | `Button` has `focus-visible:outline`; `Field` renders `<label htmlFor>`; `Checkbox` focus-visible; icon-only buttons carry `aria-label` (scan camera, sheet close, shopping check/remove, item remove, toast dismiss); status uses word+dot+rail not colour alone (`ExpiryBadge`); `prefers-reduced-motion` handled by CSS media query **and** a user toggle (`data-reduce-motion`) | read `button.tsx`, `field.tsx`, `overlay.tsx`, `shopping-list.tsx`, `globals.css:136-170` |
 
 ---
 
@@ -279,6 +301,115 @@ _One block per issue. Copy the template._
 
 ---
 
+### ISSUE-008
+
+- **Severity:** P3 (info-leak — infra error strings to the client)
+- **Feature:** Receipt scan (upload → parse)
+- **Problem:** `createAndParseReceipt`'s outer `catch` returns `e.message` verbatim (`receipt.ts:104`), and the storage-upload failure returns `` `Couldn't store the image: ${upErr.message}` `` (`receipt.ts:51`). Both bubble through `uploadReceipt` → `state.error` and render in `scan/page.tsx:126` (`role="alert"`). So AI-SDK and Supabase-Storage internals reach the end user: e.g. `"GEMINI_API_KEY is not set."`, `"[GoogleGenerativeAI Error]: …"`, `"429 Too Many Requests"`, `"fetch failed"`, a storage RLS message. No key *value* is exposed, but it discloses provider, config state, and rate-limit posture. Recipe generation is safe here — `meals/actions.ts` maps failures to a generic string.
+- **Root cause:** Error passthrough instead of a mapped user-facing message.
+- **Fix (proposed, not applied):** in the `catch`, log `e` server-side and return a fixed message ("Couldn't read that receipt — try a sharper photo, or try again in a minute."); keep the specific reason only for `validateAndClean`'s already-generic output.
+- **Files changed:** none
+- **Verified by:** read `receipt.ts:44-107`, `scan/actions.ts:21-26`, `scan/page.tsx:126-133`.
+- **Status:** OPEN
+
+---
+
+### ISSUE-009
+
+- **Severity:** P2 (core functionality incorrect — the plan's headline scenario fails)
+- **Feature:** Recipe availability + shopping-list delta
+- **Problem:** Reconciliation is **name-presence only**; there is **no `recipeQty − inventoryQty` arithmetic anywhere in the codebase**. `matches()` (`recipe.ts:50-62`) returns true if any inventory token name-matches, regardless of quantity or unit. Consequences:
+  - `meals/[id]/page.tsx` shows the green **"have"** badge for an ingredient you're short on (2 tomatoes when the recipe needs 4).
+  - `addRecipeMissing` (`shopping.ts:59-76`) only adds names **wholly absent** from inventory, and adds them at the recipe's **full** `detail.quantity` (`shopping.ts:69`) — never a delta. A partially-stocked ingredient never reaches `missing`, so nothing is added for it.
+  - QA-PLAN §D end-to-end: after cooking, chicken is at 200 g; the next recipe needs 400 g → plan expects the list to recommend ~200 g. Actual: chicken is still in inventory, so it's "have" and the list recommends **nothing**.
+- **Root cause:** `reconcileRecipe` / `addRecipeMissing` model availability as a set-membership test, not a quantity comparison. Pre-existing (the redesign was UI-only).
+- **Fix:** product ruling needed. A quantity-aware reconcile needs inventory quantities + unit conversion (`convert()` exists) threaded into `reconcileRecipe` and a `max(0, need − have)` in `addRecipeMissing` — **not** a "smallest diff", and it changes user-visible behaviour, so it should be a scoped follow-up, not a QA hot-fix. Alternatively accept name-only matching for v1 and document it.
+- **Files changed:** none
+- **Verified by:** `qa-block-d.test.ts` "D · recipe availability" + "D · shopping-list delta" + "D · integration" (assert current behaviour); read `recipe.ts:50-81`, `shopping.ts:49-78`, `meals/[id]/page.tsx:26,53-68`.
+- **Status:** OPEN
+
+---
+
+### ISSUE-010
+
+- **Severity:** P3
+- **Feature:** Shopping list — duplicate handling
+- **Problem:** QA-PLAN §D expects duplicate items to **merge**. `addRecipeMissing` (`shopping.ts:60`) and `addManualItem` (`shopping.ts:31`) instead **skip** a `norm()`-equal row (`skipped++; continue`). Quantities are never summed, so adding the missing items of two recipes that both need onions yields one "onion" line at the first recipe's quantity, silently understating the shop. The client-side `shopping-list.tsx` also does no merging.
+- **Root cause:** Dedup implemented as "skip if a same-label row exists" rather than "merge quantities".
+- **Fix:** product ruling — merge (`quantityNeeded += detail.quantity` when units match; keep separate lines when they don't) vs. keep skip-dedup for v1. Small diff if merge is wanted and units are ignored; larger if unit reconciliation is required.
+- **Files changed:** none
+- **Verified by:** `qa-block-d.test.ts` "duplicate items are SKIPPED, not merged"; read `shopping.ts:24-43,49-78`.
+- **Status:** OPEN
+
+---
+
+### ISSUE-011
+
+- **Severity:** P3
+- **Feature:** Expiry badge — "Expired" lags true expiry by up to 24 h
+- **Problem:** `daysUntil` = `Math.ceil(msDiff / 86_400_000)` (`expiry.ts:137-140`). For an item that expired **less than 24 h ago**, `msDiff` is a small negative, `Math.ceil` yields `-0`, and `-0 < 0` is `false` — so `classifyStatus` returns `CRITICAL` ("Use now"), not `EXPIRED`. An item that went off at 23:00 still reads "Use now · today" until a full day passes. It is still red / high-priority, so it's not hidden — just mislabelled for <24 h. (Beyond 24 h past, it correctly reads `EXPIRED`.)
+- **Root cause:** `Math.ceil` on a raw millisecond delta instead of a calendar-day comparison (whole-day floor of both dates, or `Math.floor` for the past side).
+- **Fix (proposed, not applied):** compare calendar days (zero both dates to local midnight before differencing), or special-case `msDiff < 0 → Math.floor`. One-line change in `daysUntil`; would also fix ISSUE-012's future side. Needs a ruling because `daysUntil` feeds several surfaces — re-run `expiry.test.ts` + `qa-block-d.test.ts` after.
+- **Files changed:** none
+- **Verified by:** `qa-block-d.test.ts` "an item that expired <24h ago still reads CRITICAL" / "…>24h ago reads EXPIRED".
+- **Status:** OPEN
+
+---
+
+### ISSUE-012
+
+- **Severity:** P3 (label wording — plan vs. shipped copy)
+- **Feature:** Expiry badge text
+- **Problem:** QA-PLAN §D specifies these labels; the shipped badge (`expiry-badge.tsx:4-10,35` composing `classifyStatus` + `relativeLabel`) produces different strings:
+
+  | Plan | Shipped badge |
+  |---|---|
+  | `Use now` (today) | `Use now · today` |
+  | `Use tomorrow` (tomorrow) | `Use now · tomorrow` — CRITICAL covers d ≤ 1, no distinct "tomorrow" bucket |
+  | `Use in 3 days` (+3d) | `Use soon · in 3 days` |
+  | `Expired` (yesterday) | `Expired · today` — `relativeLabel` maps d = −1 to "today" |
+  | `Expiry unknown` (null) | `No date` |
+
+  Also: an item expiring **later the same day** already reads `… · tomorrow` (same `Math.ceil` root cause as ISSUE-011).
+- **Root cause:** The badge shows `"<status word> · <relative phrase>"`; the plan assumed a single phrase. The buckets (`CRITICAL` = d ≤ 1) don't line up with the plan's per-day labels.
+- **Fix:** **ruling required — code change vs. plan change.** If the plan's exact copy is wanted: add a "tomorrow" branch to the label map, drop the `· today` suffix for CRITICAL/EXPIRED, and change `UNKNOWN` copy to "Expiry unknown". If the shipped copy is acceptable, update QA-PLAN §D. No code touched pending the call.
+- **Files changed:** none
+- **Verified by:** `qa-block-d.test.ts` "D · expiry labels…" (7 tests assert the shipped strings, each flagged `[DELTA]`).
+- **Status:** OPEN
+
+---
+
+### ISSUE-013
+
+- **Severity:** P2 (data integrity under partial failure)
+- **Feature:** Receipt review → commit to inventory
+- **Problem:** `commitReceipt`'s per-item loop (`receipt.ts:153-190`) is **not wrapped in a transaction**. Each iteration does `createInventoryItem` → `receiptItem.update` → `ingredientAlias.upsert`. If any iteration throws (DB blip, the `@unique` `ReceiptItem.inventoryItemId` colliding, an alias race), the receipt stays `PARSED` (the `status: "COMMITTED"` write at `:192` never runs) while the items processed so far are already in inventory. Re-submitting the review then **re-creates** those inventory rows (no "already linked" guard), duplicating them and orphaning the earlier ones. Recon flagged this; confirmed by trace.
+- **Root cause:** Multi-row write without a `$transaction`, and no idempotency check on `receiptItemId`s that already have an `inventoryItemId`.
+- **Fix (proposed, not applied):** wrap the loop in `prisma.$transaction(async (tx) => …)` so a mid-loop failure rolls the whole commit back; or skip lines where `receiptItem.inventoryItemId` is already set. The alias upsert could stay outside the tx (best-effort).
+- **Files changed:** none
+- **Verified by:** read `receipt.ts:131-194`, `schema.prisma` (`ReceiptItem.inventoryItemId @unique`). Runtime repro `NOT TESTED` (needs a forced mid-loop failure).
+- **Status:** OPEN
+
+---
+
+### ISSUE-014
+
+- **Severity:** P2 (deploy-config — receipt scanning breaks on a fresh env)
+- **Feature:** AI provider selection
+- **Problem:** Three sources disagree on the default AI provider:
+  - `provider.ts:89` — `(process.env.AI_PROVIDER ?? "gemini")` → code default is **gemini**.
+  - `.env.example:33` — `AI_PROVIDER="anthropic"` and documents **only** `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL`.
+  - `env.ts:8-19` — schema validates **only** `ANTHROPIC_*`; there is no `GEMINI_API_KEY` / `GEMINI_MODEL`.
+
+  `GeminiProvider`'s constructor reads `process.env.GEMINI_API_KEY` directly and `throw`s `"GEMINI_API_KEY is not set."` if absent (`gemini-provider.ts:24-25`). So a deploy that copies `.env.example` and *doesn't* explicitly set `AI_PROVIDER` gets the gemini code path with an undocumented, unvalidated, missing key → every receipt scan throws, and the raw message reaches the user (ISSUE-008).
+- **Root cause:** The code default (gemini) was changed without updating `.env.example` or `env.ts`.
+- **Fix:** pick one provider for deploy and make all three agree: set `AI_PROVIDER` explicitly in the deploy env, add the matching key to `env.ts` (`GEMINI_API_KEY` if gemini) and to `.env.example`. If anthropic stays the intended default, change `provider.ts:89`'s fallback back to `"anthropic"`.
+- **Files changed:** none
+- **Verified by:** read `provider.ts:88-101`, `gemini-provider.ts:23-28`, `anthropic-provider.ts:21-26`, `env.ts:8-19`, `.env.example`.
+- **Status:** OPEN
+
+---
+
 ## 8. Security Findings
 
 _Secrets exposure, missing auth/authz checks, RLS bypass, unsafe uploads, unsafe queries._
@@ -289,8 +420,10 @@ _Secrets exposure, missing auth/authz checks, RLS bypass, unsafe uploads, unsafe
 | S2 | Global `ingredient_aliases` table is trained directly from one user's receipt input and applied to all users. See ISSUE-005. | P3 | OPEN (needs product ruling) |
 | S3 | No `Content-Security-Policy` header (`next.config.mjs` sets HSTS/XFO/nosniff/Referrer-Policy/Permissions-Policy only). Recon note; belongs to Block F. | P3 | OPEN |
 | S4 | `public/QA-PLAN.md`, `public/QA-REPORT.md`, `public/CLAUDE-CODE-PROMPTS.md`, `public/Kitchen OS Mobile.dc.html` are served at `/<name>` in production (info disclosure). Belongs to Block F. | P3 | OPEN |
+| S5 | Receipt-scan surfaces raw AI/Storage error strings (`e.message`, `upErr.message`) to the client. Provider/config/rate-limit disclosure, no key value. See ISSUE-008. | P3 | OPEN |
+| S6 | Receipt image is uploaded to Storage (`receipt.ts:48`) **before** any file-type check; type validation is per-provider (`gemini-provider.ts:31`, `anthropic-provider.ts:29`) and runs only at parse time. A rejected upload leaves an orphan object in the user's Storage folder. `file.type` is client-set and never re-checked server-side. Low risk (object is private, signed-URL only). | P3 | OPEN |
 | — | **No** service-role key anywhere in `src` (`grep -rn service_role/SERVICE_ROLE` → nothing); all Supabase clients use the anon key + cookies. | — | PASS |
-| — | Client-bundle secret grep (`.next/static`) not yet run — Block F. | — | NOT TESTED |
+| — | **Client-bundle secret grep — DONE, CLEAN.** `grep -rlE "sk-ant-\|AIza…\|SERVICE_ROLE\|ANTHROPIC_API_KEY\|GEMINI_API_KEY\|DATABASE_URL\|DIRECT_URL\|eyJ…" .next/static` → no matches (exit 1) on a clean prod build; supabase client code confirmed present (sanity grep hits). | — | PASS |
 
 **Auth/authz posture (verified clean, Block C):** JWT re-verified in middleware *and* `(app)/layout.tsx`; every server action derives `userId` from `auth.getUser()` (never the client); every service query is `userId`-scoped; RLS + Storage policies are live on the DB as defence-in-depth. Middleware is **not** relied on as the security boundary (correct — Next docs).
 
@@ -324,24 +457,28 @@ _Live check 2026-09-06: `rowsecurity = ON` on all 18 tables; every `rls.sql` pol
 
 ## 10. Core Logic Test Results
 
-| Case | Expected | Actual | Result |
+All specs in `src/lib/qa-block-d.test.ts` (28 tests, green). Full suite: **104/104**. `Result` = does shipped behaviour meet the QA-PLAN §D expectation.
+
+| Case | Plan expected | Actual (shipped) | Result |
 |------|----------|--------|--------|
-| 500g − 300g | 200g | | |
-| Consume exact remaining | 0, no error | | |
-| Consume more than available | rejected/clamped, never negative | | |
-| Unit mismatch (g/kg/pack) | defined behavior | | |
-| Expiry: today | "Use now" | | |
-| Expiry: tomorrow | "Use tomorrow" | | |
-| Expiry: +3 days | "Use in 3 days" | | |
-| Expiry: yesterday | "Expired" | | |
-| Expiry: null | "Expiry unknown" | | |
-| Expiry across TZ boundary | no ±1 day drift | | |
-| Estimated vs confirmed expiry | distinguishable | | |
-| Recipe availability accuracy | never claims missing item is available | | |
-| Shopping list: have 2, need 4 | buy 2 | | |
-| Duplicate shopping items | merged | | |
-| Integration: cook recipe | 200g / 800g / 100g | | |
-| Integration: next recipe needs 400g chicken | buy ~200g | | |
+| 500g − 300g | 200g | 200g | ✅ PASS |
+| Consume exact remaining | 0, no error | `newQuantity: 0`, `usedUp: true`, `ok: true` | ✅ PASS |
+| Consume more than available | rejected/clamped, never negative | clamped to `0`, `overuse: true`, `newQuantity ≥ 0` — **callers ignore `overuse`, so no user warning** | ⚠️ PASS (clamped & safe; no rejection surfaced — ISSUE-008 note) |
+| Unit mismatch (g/kg/pack) | defined behavior, no silent corruption | `g↔kg` converts; `pcs`/`pack` vs `g` w/o piece weight → `{ok:false}`; `ml` vs `g` → `{ok:false}` | ✅ PASS |
+| Expiry: today | "Use now" | badge `Use now · today` | ⚠️ DELTA (label prefix ok, `· today` suffix added) — ISSUE-012 |
+| Expiry: tomorrow | "Use tomorrow" | badge `Use now · tomorrow` (no distinct bucket) | ❌ DELTA — ISSUE-012 (ruling needed) |
+| Expiry: +3 days | "Use in 3 days" | badge `Use soon · in 3 days` | ❌ DELTA — ISSUE-012 |
+| Expiry: yesterday | "Expired" | badge `Expired · today` | ⚠️ DELTA — ISSUE-012 |
+| Expiry: null | "Expiry unknown" | badge `No date` | ❌ DELTA — ISSUE-012 |
+| Expiry across TZ boundary | no ±1 day drift | pure fn is instant-based — 23:30→01:00-next-day stays CRITICAL, no early flip ✅. **BUT** an item expired <24h ago still reads CRITICAL not EXPIRED (`Math.ceil`→`-0`) | ⚠️ partial — future side ✅, past side lags — ISSUE-011. Prisma round-trip still `NOT TESTED` (§11) |
+| Estimated vs confirmed expiry | distinguishable (visual + structural) | `source` enum column (`ESTIMATED`/`EXACT`) + textual `est.` marker on the badge (word, not colour) | ✅ PASS |
+| Recipe availability accuracy | never claims a missing item is available | never marks `available` without a name-token match ✅ — **but** "available" = name present, not quantity sufficient (2 of 4 → still "have") | ⚠️ PASS for wholly-absent; ❌ for short quantity — ISSUE-009 |
+| Shopping list: have 2, need 4 | buy 2 | partially-stocked item never enters `missing` → **nothing added**; wholly-absent items added at full recipe qty (no `− inventory`) | ❌ FAIL — ISSUE-009 (P2, ruling needed) |
+| Duplicate shopping items | merged | `norm()`-equal row → **skipped**, quantities never summed | ❌ DELTA — ISSUE-010 |
+| Integration: cook recipe | 200g / 800g / 100g | 200 / 800 / 100 (chained `computeDeduction`) | ✅ PASS |
+| Integration: next recipe needs 400g chicken | buy ~200g | chicken still in stock → "have", list recommends nothing | ❌ FAIL — ISSUE-009 |
+
+**Runtime integration (real Prisma + Postgres):** `NOT TESTED` — no integration harness exists (§3). The chain above is the pure `computeDeduction` sequence, not a `consumeInventoryItem` round-trip.
 
 ---
 
@@ -359,25 +496,33 @@ _Everything unverified, and what it would take to verify it._
 | Middleware route-protection behaviour | Static read done; live request behaviour (matcher gaps, redirect chains, expired session) not exercised. | Running app + Supabase auth; `curl`/browser against protected + public paths, and with a stale cookie. |
 | Auth flows (signup, login, logout, session persistence, expired-session, redirects) | Not verifiable from code alone; no Playwright configured. | Supabase project + a browser pass (or scripted auth via `@supabase/supabase-js`). |
 | Timezone round-trip (±1-day expiry flip) | `DateTime` columns are `timestamp(3)` (no tz); `classifyStatus` uses local `new Date()`. The pure-function boundary case is a Block D test; the Prisma round-trip needs a DB write/read under a non-UTC `TZ`. | Block D: crafted-UTC-`Date` unit tests (runnable now). Full round-trip: a test DB + `TZ` env manipulation. |
-| Decimal/FP quantity accumulation | `quantity` fields are `Float` (Postgres `double precision`); `tidy()` rounds to 3dp. Not yet exercised with `0.1 + 0.2`-style cases. | Block D Vitest against `computeDeduction` / `tidy` (runnable now). |
-| Client-bundle secret grep | Build output exists but `.next/static` not yet grepped for secrets. | Block F: `grep -rE "SUPABASE|ANTHROPIC|GEMINI|sk-|API_KEY" .next/static`. |
-| AI provider key mismatch | `AI_PROVIDER` defaults to `gemini` (`provider.ts`) but `env.ts` only declares `ANTHROPIC_*` — no `GEMINI_API_KEY`/`GOOGLE_API_KEY`. Not exercised. | Block E/F: confirm which provider deploy will use and that its key is in the env schema + `.env`. |
-| Everything in Blocks D, E, F, G | Not started (this session was A–C only). | Per QA-PLAN Stage 2 D–G. |
+| Decimal/FP quantity accumulation | ~~Not yet exercised.~~ **DONE** — `qa-block-d.test.ts` covers `0.3kg − 100g = 0.2kg` through `computeDeduction` (no drift, `tidy` 3dp). | — |
+| Client-bundle secret grep | ~~Not yet run.~~ **DONE, CLEAN** — `grep -rlE "sk-ant-\|AIza…\|SERVICE_ROLE\|*_API_KEY\|DATABASE_URL\|DIRECT_URL\|eyJ…" .next/static` → no matches; supabase client code present. See §6 F1, §8. | — |
+| AI provider key mismatch | **CONFIRMED — ISSUE-014 (P2).** 3-way disagreement: `provider.ts:89` default `gemini`, `.env.example` sets `anthropic` + only `ANTHROPIC_*`, `env.ts` validates only `ANTHROPIC_*`. Not exercised at runtime. | Set `AI_PROVIDER` explicitly in deploy env; add the matching key to `env.ts` + `.env.example`; live scan test with a real key. |
+| Receipt pipeline end-to-end (upload → Storage → AI → parse → commit) | Static trace done (§6 E1–E4); no live run — needs an AI key + Storage. | `AI_PROVIDER` key (gemini or anthropic) + Supabase Storage; upload a real receipt, confirm PARSED items, edit one, commit, verify the inventory row reflects the edit. |
+| ISSUE-013 partial-commit repro | Needs a forced mid-loop failure in `commitReceipt` (e.g. a colliding `@unique inventoryItemId`). | Test DB + a crafted payload, or a fault-injected Prisma. |
+| Browser a11y / responsive / interaction pass | No Playwright configured (QA-PLAN §G says do not fake this by reading CSS). Static a11y wiring verified (§6 G5). | A Playwright pass: 375px + 200% zoom on dashboard/inventory/forms/sheets; keyboard tab order + sheet focus trap; 44px hit-targets on `BottomNav`/`PrimaryAction`/chips/steppers/switches; `prefers-reduced-motion` + the `data-reduce-motion` toggle; confirm no status is colour-only in a real render. |
+| Blocks D, E, F, G | **DONE this session** (static + Vitest). Runtime/browser portions remain per the rows above. | — |
 
 ---
 
 ## 12. Production Build
 
 - **Result:** PASS
-- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run twice: on the baseline `c18eca3` and again on `04e3fe7` **after** the ISSUE-001 fix — both green. `npm run typecheck` (`tsc --noEmit`) → exit 0 both times.
-- **Output summary:** `✓ Compiled successfully`, `✓ Generating static pages (18/18)`, `✓ Collecting build traces`. 18 routes: `/`, `/login`, `/robots.txt`, `/_not-found` static; the rest server-rendered on demand. Shared JS ≈ 103 kB; largest route bundle `/scan/[id]/review` at 6.38 kB. No `EPERM` from `prisma generate`. No warnings other than the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — see §11).
+- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run on `c18eca3` (baseline), `04e3fe7` (after ISSUE-001 fix), and again this session (Block D–G, exit 0) — all green. `npm run typecheck` (`tsc --noEmit`) → exit 0 each time, including with the new `qa-block-d.test.ts` present.
+- **Output summary (this session):** `✓ Compiled successfully in 16.2s`, `✓ Generating static pages (18/18)`. 22 route entries: `/`, `/_not-found`, `/login`, `/robots.txt` static (○); the other 18 server-rendered on demand (ƒ). Shared JS 103 kB; largest route bundle `/scan/[id]/review` 6.38 kB. No `EPERM` from `prisma generate`. Only warning is the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — §11).
+- **Test suite:** `npx vitest run` → **104 passed (9 files)** — 76 pre-existing + 28 new Block-D specs.
 
 ---
 
-## 13. Top 5 Actions Before Deploy
+## 13. Top Actions Before Deploy
 
-1. **Confirm ISSUE-001 fix in a live 2-user test** (P1). The write-IDOR is fixed in code (`04e3fe7`) and typechecks, but a real cross-user `commitReceiptAction` exploit attempt was not run — do it before deploy.
-2. **Decide ISSUE-002** (P2): regenerating dinner suggestions hard-deletes recipes referenced by an existing meal plan (and nulls consumption-record recipe links). Apply the proposed `deleteMany` guard or make an explicit product call to accept it.
-3. **Fix ISSUE-003** (P3, one line): exclude `/api/health` from the auth redirect in `src/lib/supabase/middleware.ts` so readiness probes get `200`, not a redirect to `/login`.
-4. **Verify deploy env** (ISSUE-007 + AI provider): set `NEXT_PUBLIC_SITE_URL` in production (email confirmation links); confirm whether `AI_PROVIDER` will be `gemini` or `anthropic` and that the matching key is in `env.ts` + the deploy env — `env.ts` currently declares only `ANTHROPIC_*`.
-5. **Run Blocks D–G** before calling READY: core-logic Vitest specs (quantity/expiry/reconciliation/shopping-delta + the TZ boundary case), receipt-pipeline failure paths, client-bundle secret grep, CSP header decision, `public/*.md` exposure, and the browser a11y/responsive pass.
+No P0/P1 is open (the one P1, ISSUE-001, is fixed in `04e3fe7`). The blockers below are the P2s and the deploy-config items.
+
+1. **Confirm ISSUE-001 fix in a live 2-user test** (P1, fixed-but-unproven). Real cross-user `commitReceiptAction` with another user's `receiptItemId` → expect `"Those items don't belong to this receipt."`
+2. **Rule on ISSUE-009** (P2) — recipe availability & shopping-list delta are name-presence only; the QA-PLAN §D "have 2, need 4 → buy 2" scenario fails (list recommends nothing / full qty). Either scope a quantity-aware reconcile (needs unit conversion threaded in — a follow-up, not a hot-fix) or accept name-only matching for v1 and amend the plan.
+3. **Fix ISSUE-014** (P2, deploy-config) — make `provider.ts` default, `.env.example`, and `env.ts` agree on one AI provider; add its key to the schema + the deploy env. Without this, receipt scanning throws on a fresh env.
+4. **Wrap the `commitReceipt` loop in a transaction — ISSUE-013** (P2) — or add an "already linked" skip, so a mid-loop failure can't half-commit and then duplicate on retry.
+5. **Decide ISSUE-002** (P2, from A–C) — regenerating dinner suggestions hard-deletes meal-plan recipes. Apply the `deleteMany` guard or accept.
+6. **P3 cleanup batch:** ISSUE-003 (`/api/health` behind auth, one line), ISSUE-008 (map receipt error strings to a generic message), ISSUE-011/012 (expiry label lag + wording — one `daysUntil` change covers most of it; get the copy ruling), ISSUE-010 (shopping dedup: merge vs skip), S3 (CSP header), S4 (`public/*.md` served in prod), ISSUE-007 (`NEXT_PUBLIC_SITE_URL` in prod).
+7. **Stage 3** — re-run typecheck / prod build / `npm test` (104 specs incl. Block D), regression-check any fix, then a browser a11y/responsive pass (Playwright not configured — see §11).
