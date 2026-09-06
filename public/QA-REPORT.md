@@ -6,21 +6,24 @@
 
 **Branch:** `qa/pre-deploy` — CREATED off `main`. The ~30 uncommitted redesign files were snapshotted first as `c18eca3 chore(qa): baseline uncommitted redesign WIP before QA pass` so QA fixes produce a clean diff. Deploy target = this branch. Local git identity set to `mark.cabelloit@gmail.com` (repo had none).
 **Started:** 2026-09-06 (Stage 1)
-**Last updated:** 2026-09-06 — **Stage 3 (final verification) complete.** typecheck + clean prod build + full test suite (104/104, incl. 28 Block-D specs) all re-run green. Regression check: the only production-code change in the whole pass is the ISSUE-001 guard (+10 lines in `receipt.ts`); additive, cannot affect legitimate commits, no regression. Report finalized. See §14.
+**Last updated:** 2026-09-06 — **Stage 3 complete, incl. the four P2 fixes the user ruled on.** ISSUE-002/009/013/014 fixed and re-verified; typecheck + clean prod build + full suite (**109/109**) green. No P0/P1/P2 open. See §14b. (One oddity: three `public/*.md` files were deleted from the working tree mid-session by something outside this session — restored before any commit; see §14 note.)
 
 ---
 
 ## Overall Status
 
-`STAGE 3 COMPLETE — NOT READY (product rulings outstanding on 4 P2s).`
+`STAGE 3 COMPLETE — READY per the QA-PLAN gate (no P0/P1/P2 open). Deploy-config + a browser pass remain, and are the user's call.`
 
-**Hard gate (QA-PLAN):** "Do not mark READY if the production build fails, or if any P0 or P1 remains unfixed." — production build **passes**, **no P0 open**, the **one P1 (ISSUE-001) is fixed** (`04e3fe7`). The hard gate is satisfied.
+**Hard gate (QA-PLAN):** "Do not mark READY if the production build fails, or if any P0 or P1 remains unfixed." — production build **passes**, and **no P0, P1, or P2 is open**. ISSUE-001 (P1) fixed in `04e3fe7`; ISSUE-002 / 009 / 013 / 014 (P2) fixed in Stage 3 (§14b). Gate satisfied.
 
-**Why still NOT READY:** 4 P2s are open and each needs a product decision, not just a code fix — ISSUE-009 (recipe availability / shopping-list delta are name-presence only, so the QA-PLAN §D headline scenario "have 2, need 4 → buy 2" fails), ISSUE-014 (3-way AI-provider/env-schema disagreement — receipt scanning throws on a fresh env), ISSUE-013 (receipt commit loop isn't transactional — partial commit + duplicate-on-retry), ISSUE-002 (regenerating dinner suggestions hard-deletes meal-plan recipes). None is a security or build blocker; all change user-visible behaviour or deploy config and were pre-existing (the redesign was UI-only). Deploy decision is the user's once these are ruled on — see §13 / §14.
+**Before you actually deploy (not blockers, but do them):**
+- Set `GEMINI_API_KEY` and `NEXT_PUBLIC_SITE_URL` on the deploy target; confirm `rls.sql` + `storage.sql` are applied (§13 item 1).
+- Run the browser a11y / responsive pass and the live confirmation of the four code-verified fixes (§13 items 2–3) — neither could run in this environment (no Playwright, no live stack).
+- P3 batch (§13 item 4) is non-blocking.
 
-**Verification summary:** Static health green (typecheck + prod build pass; no lint tooling exists — §11). Data layer consistent, no drift. Auth/isolation clean at the service layer; RLS + Storage policies live on the DB. 1 P1 found and fixed in A–C (receipt-commit write IDOR).
+**Verification summary:** Static health green (typecheck + prod build pass; no lint tooling exists — §11). Data layer consistent, no drift. Auth/isolation clean at the service layer; RLS + Storage policies live on the DB.
 
-**Blocks D–G:** 28 core-logic specs (`src/lib/qa-block-d.test.ts`) — all green; full suite 104/104. Quantity math is correct and safe (clamps, never negative, refuses unconvertible units). Expiry classification is sound but the **labels drift from the plan's wording** and lag true expiry by <24h (P3, ISSUE-011/012). Recipe availability and shopping-list delta are **name-presence only — no quantity comparison anywhere** (P2, ISSUE-009). Receipt pipeline: schema-validated before every DB write ✓, but the commit loop isn't a transaction (P2, ISSUE-013) and AI/infra error strings reach the client (P3, ISSUE-008). Client bundle **carries no private secrets** (grep of `.next/static` clean). UI wiring: every `href`/form-action/handler resolves; overlays have full close paths (ESC + scrim + button); loading/error/empty states present on every async view. Provider/env mismatch from recon **confirmed** (P2, ISSUE-014).
+**Blocks D–G + P2 fixes:** `src/lib/qa-block-d.test.ts` now 33 specs, full suite **109/109**. Quantity math correct and safe (clamps, never negative, refuses unconvertible units); over-consumption is now **surfaced to the user** (`?over` toast), not swallowed. Recipe availability + shopping-list delta are now **quantity-aware** — `convert()`-based `need − have`, with a `short` state (ISSUE-009 fixed). Receipt commit is now **transactional** (ISSUE-013 fixed). Regenerating dinner suggestions **no longer deletes meal-plan recipes** (ISSUE-002 fixed). AI provider standardised on **gemini**, `env.ts` + `.env.example` aligned (ISSUE-014 fixed). Expiry labels still drift from the plan's wording and lag true expiry by <24h — **accepted as-is** this pass (P3, ISSUE-011/012). Client bundle carries no private secrets. UI wiring: every `href`/form-action/handler resolves; overlays have full close paths; loading/error/empty states present on every async view.
 
 ---
 
@@ -163,7 +166,8 @@
 | E — Receipt pipeline | ✅ | 2026-09-06 |
 | F — Errors & secrets | ✅ | 2026-09-06 |
 | G — UI wiring | ✅ | 2026-09-06 |
-| Stage 3 — Final verification | ✅ | 2026-09-06 |
+| Stage 3 — Final verification (14a) | ✅ | 2026-09-06 |
+| Stage 3 — P2 fixes applied (14b) | ✅ | 2026-09-06 |
 
 ---
 
@@ -236,10 +240,11 @@ _One block per issue. Copy the template._
 - **Feature:** "What's for dinner?" suggestions vs. Meal plan
 - **Problem:** `generateSuggestions` ends with `prisma.recipe.deleteMany({ where: { userId, saved: false, id: { notIn: currentSetIds } } })` (`recipe.ts:158`). It deletes **every** unsaved recipe not in the fresh suggestion set — with no guard for recipes referenced by a `meal_plan_items` row. Recipes created by `generateMealPlan` are `saved: false` and `lastSuggestedAt: null` (`persistRecipe` never stamps it). So opening the meals screen and regenerating suggestions **hard-deletes the recipes in an existing meal plan**; `MealPlanItem.recipe` is `SetNull`, so `getLatestPlan` then returns items with `recipe: null` and the plan silently loses its dinners. Same delete also nulls `ConsumptionRecord.recipeId` (SetNull), losing the recipe link in the "audit trail". `generateMealPlan`'s own cleanup (`recipe.ts:389`) is correctly scoped (`lastSuggestedAt: null` AND `id in newIds` from that call) and is not affected.
 - **Root cause:** The prune predicate treats "not in the current suggestion set" as "safe to delete", ignoring other references (meal plans, consumption history).
-- **Fix (proposed, not yet applied):** Exclude ids referenced by `meal_plan_items` (and optionally `consumption_records`) from the `deleteMany`, e.g. add `AND id NOT IN (SELECT recipe_id FROM meal_plan_items WHERE recipe_id IS NOT NULL)` via a Prisma `NOT: { mealPlanItems: { some: {} } }` relation filter. Needs a ruling: this is pre-existing service logic (the redesign was UI-only), and "smallest diff" vs. a broader "don't delete referenced recipes" cleanup.
-- **Files changed:** none yet
-- **Verified by:** code + schema read (`recipe.ts:82-165,318-392`, `schema.prisma:293,340-344,387,393`); reproduction is deterministic from the code path. Runtime repro `NOT TESTED` (needs AI key to generate recipes + a plan).
-- **Status:** OPEN
+- **Ruling (2026-09-06):** apply the `NOT: { mealPlanItems: { some: {} } }` guard.
+- **Fix (applied):** `generateSuggestions`' prune `deleteMany` now carries `NOT: { mealPlanItems: { some: {} } }`, so a recipe any meal plan still points at is never pruned. `consumption_records` deliberately left out of the guard — `ConsumptionRecord.recipeId` is `SetNull` and losing the recipe *name* on a historical consumption row is cosmetic, not a broken plan. `generateMealPlan`'s own cleanup (`recipe.ts:390`) was already scoped to just-created unplanned ids and is unchanged.
+- **Files changed:** `src/server/services/recipe.ts` (Stage 3 — see §14 for commit)
+- **Verified by:** `npm run typecheck` → exit 0; `npm run build` → exit 0; full suite 109/109. Runtime repro still `NOT TESTED` (needs an AI key to generate recipes + a plan) — see §11.
+- **Status:** FIXED
 
 ---
 
@@ -329,10 +334,17 @@ _One block per issue. Copy the template._
   - `addRecipeMissing` (`shopping.ts:59-76`) only adds names **wholly absent** from inventory, and adds them at the recipe's **full** `detail.quantity` (`shopping.ts:69`) — never a delta. A partially-stocked ingredient never reaches `missing`, so nothing is added for it.
   - QA-PLAN §D end-to-end: after cooking, chicken is at 200 g; the next recipe needs 400 g → plan expects the list to recommend ~200 g. Actual: chicken is still in inventory, so it's "have" and the list recommends **nothing**.
 - **Root cause:** `reconcileRecipe` / `addRecipeMissing` model availability as a set-membership test, not a quantity comparison. Pre-existing (the redesign was UI-only).
-- **Fix:** product ruling needed. A quantity-aware reconcile needs inventory quantities + unit conversion (`convert()` exists) threaded into `reconcileRecipe` and a `max(0, need − have)` in `addRecipeMissing` — **not** a "smallest diff", and it changes user-visible behaviour, so it should be a scoped follow-up, not a QA hot-fix. Alternatively accept name-only matching for v1 and document it.
-- **Files changed:** none
-- **Verified by:** `qa-block-d.test.ts` "D · recipe availability" + "D · shopping-list delta" + "D · integration" (assert current behaviour); read `recipe.ts:50-81`, `shopping.ts:49-78`, `meals/[id]/page.tsx:26,53-68`.
-- **Status:** OPEN
+- **Ruling (2026-09-06):** fix it now — minimum viable quantity-aware version.
+- **Fix (applied):**
+  - `reconcileRecipe` now accepts `InventoryLot[]` (match tokens + `quantity` + `unit` + `typicalPieceGrams`) as well as the old `string[]`. When the recipe line and a matched lot both carry a quantity and a convertible unit, it compares: `have ≥ need` → `have`; `0 < have < need` → new **`short`** status; absent → `missing`. Unconvertible / no-quantity → falls back to name-presence (never a false "buy"). Multiple lots for one ingredient are summed. Result gains a `lines[]` breakdown with `have` / `shortBy` per ingredient; `available`/`missing`/`coverage` unchanged in meaning (short lines join `missing`).
+  - `getRecipeWithReconciliation` passes lots built from live inventory (`quantity`, `unit`, `ingredient.typicalPieceGrams`).
+  - `addRecipeMissing` writes `quantityNeeded = shortBy` for a `short` line (the `need − have` delta) and the full amount for a wholly-absent one — `max(0, need − have)` via the existing `convert()`.
+  - `meals/[id]/page.tsx` badge: `have` / **`not enough`** (amber) / `to buy` — word + colour, not colour alone.
+  - **Overuse surfaced:** `cookRecipe` and `consumeItem` now read `consumeInventoryItem`'s `overuse` flag and redirect with `?over=N`; `Toaster` shows "You used more than you had of N items — they're now at zero." (info tone). Previously the flag was swallowed.
+- **Not changed (accepted):** the meals *list* card chip (`meals/page.tsx`) and `analyzeCookability` scoring stay name-only — they don't drive the shopping delta and threading lots there is scope beyond "minimum viable". Duplicate-merge on the shopping list is still skip-dedup (separate call — ISSUE-010, P3, not in this ruling).
+- **Files changed:** `src/lib/recipe.ts`, `src/server/services/recipe.ts`, `src/server/services/shopping.ts`, `src/app/(app)/meals/[id]/page.tsx`, `src/app/(app)/meals/[id]/cook/actions.ts`, `src/app/(app)/inventory/actions.ts`, `src/components/ui/toaster.tsx`, `src/app/(app)/inventory/page.tsx` (Stage 3 — see §14 for commit)
+- **Verified by:** `src/lib/qa-block-d.test.ts` — new `D · quantity-aware reconciliation (ISSUE-009)` block (7 specs: have 2/need 4 → short by 2; exact cover; g↔kg cross-unit short by 100; multi-lot sum; unconvertible → safe "have"; wholly absent → missing at full qty; optional+short not missing) + the integration spec now asserts the shopping delta ≈ 200 g. `recipe.test.ts` (13) unchanged and green — the `string[]` name-only path is preserved. Full suite **109/109**; typecheck + prod build exit 0. Runtime (DB) proof of `addRecipeMissing` still `NOT TESTED` — see §11.
+- **Status:** FIXED
 
 ---
 
@@ -391,10 +403,11 @@ _One block per issue. Copy the template._
 - **Feature:** Receipt review → commit to inventory
 - **Problem:** `commitReceipt`'s per-item loop (`receipt.ts:153-190`) is **not wrapped in a transaction**. Each iteration does `createInventoryItem` → `receiptItem.update` → `ingredientAlias.upsert`. If any iteration throws (DB blip, the `@unique` `ReceiptItem.inventoryItemId` colliding, an alias race), the receipt stays `PARSED` (the `status: "COMMITTED"` write at `:192` never runs) while the items processed so far are already in inventory. Re-submitting the review then **re-creates** those inventory rows (no "already linked" guard), duplicating them and orphaning the earlier ones. Recon flagged this; confirmed by trace.
 - **Root cause:** Multi-row write without a `$transaction`, and no idempotency check on `receiptItemId`s that already have an `inventoryItemId`.
-- **Fix (proposed, not applied):** wrap the loop in `prisma.$transaction(async (tx) => …)` so a mid-loop failure rolls the whole commit back; or skip lines where `receiptItem.inventoryItemId` is already set. The alias upsert could stay outside the tx (best-effort).
-- **Files changed:** none
-- **Verified by:** read `receipt.ts:131-194`, `schema.prisma` (`ReceiptItem.inventoryItemId @unique`). Runtime repro `NOT TESTED` (needs a forced mid-loop failure).
-- **Status:** OPEN
+- **Ruling (2026-09-06):** wrap the loop in `$transaction`.
+- **Fix (applied):** the whole commit batch — every `createInventoryItem` + `receiptItem.update` + `ingredientAlias.upsert`, then the `status: "COMMITTED"` flip — now runs inside one `prisma.$transaction(async (tx) => …, { timeout: 20_000 })`. `createInventoryItem` gained an optional `db: Prisma.TransactionClient = prisma` param so its write joins the caller's tx (its reference-data *reads* stay on the base client — they don't need tx isolation). A mid-loop failure now rolls the entire commit back, so the receipt stays `PARSED` with **zero** inventory rows written and a retry starts clean — no half-commit, no duplication. The ISSUE-001 ownership guard still runs before the tx opens.
+- **Files changed:** `src/server/services/receipt.ts`, `src/server/services/inventory.ts` (Stage 3 — see §14 for commit)
+- **Verified by:** `npm run typecheck` → exit 0; `npm run build` → exit 0; full suite 109/109. Runtime repro (forced mid-loop failure) still `NOT TESTED` — see §11.
+- **Status:** FIXED
 
 ---
 
@@ -409,10 +422,15 @@ _One block per issue. Copy the template._
 
   `GeminiProvider`'s constructor reads `process.env.GEMINI_API_KEY` directly and `throw`s `"GEMINI_API_KEY is not set."` if absent (`gemini-provider.ts:24-25`). So a deploy that copies `.env.example` and *doesn't* explicitly set `AI_PROVIDER` gets the gemini code path with an undocumented, unvalidated, missing key → every receipt scan throws, and the raw message reaches the user (ISSUE-008).
 - **Root cause:** The code default (gemini) was changed without updating `.env.example` or `env.ts`.
-- **Fix:** pick one provider for deploy and make all three agree: set `AI_PROVIDER` explicitly in the deploy env, add the matching key to `env.ts` (`GEMINI_API_KEY` if gemini) and to `.env.example`. If anthropic stays the intended default, change `provider.ts:89`'s fallback back to `"anthropic"`.
-- **Files changed:** none
-- **Verified by:** read `provider.ts:88-101`, `gemini-provider.ts:23-28`, `anthropic-provider.ts:21-26`, `env.ts:8-19`, `.env.example`.
-- **Status:** OPEN
+- **Ruling (2026-09-06):** standardise on **gemini** (the user has an active Gemini API token).
+- **Fix (applied):** all three sources now agree on gemini.
+  - `env.ts` schema adds `GEMINI_API_KEY` and `GEMINI_MODEL` (both `.optional()`, same as the `ANTHROPIC_*` pair) with a comment that `AI_PROVIDER` defaults to `"gemini"`.
+  - `.env.example` M2 block rewritten: `AI_PROVIDER="gemini"` first, then a documented Gemini block (`GEMINI_API_KEY`, `GEMINI_MODEL` default `gemini-2.5-flash`, AI Studio link) and the Anthropic block kept as the labelled alternative.
+  - `provider.ts` header comment corrected ("the default is Gemini"); the `?? "gemini"` fallback at `provider.ts:89` was already correct and is unchanged.
+- **Still a deploy step:** `GEMINI_API_KEY` must be set in the production environment — it's `.optional()` in the schema (so the app boots without it) and `GeminiProvider`'s constructor throws a clean `"GEMINI_API_KEY is not set."` if absent. Added to §13.
+- **Files changed:** `src/lib/env.ts`, `.env.example`, `src/server/ai/provider.ts` (Stage 3 — see §14 for commit)
+- **Verified by:** `npm run typecheck` → exit 0; `npm run build` → exit 0 (env schema parses); full suite 109/109.
+- **Status:** FIXED
 
 ---
 
@@ -463,28 +481,28 @@ _Live check 2026-09-06: `rowsecurity = ON` on all 18 tables; every `rls.sql` pol
 
 ## 10. Core Logic Test Results
 
-All specs in `src/lib/qa-block-d.test.ts` (28 tests, green). Full suite: **104/104**. `Result` = does shipped behaviour meet the QA-PLAN §D expectation.
+All specs in `src/lib/qa-block-d.test.ts` (**33 tests**, green — 28 Stage-2 + 5 net new for the ISSUE-009 fix). Full suite: **109/109**. `Result` = does behaviour meet the QA-PLAN §D expectation, **after the Stage 3 rulings** (§7 / §14).
 
-| Case | Plan expected | Actual (shipped) | Result |
+| Case | Plan expected | Actual (after Stage 3) | Result |
 |------|----------|--------|--------|
 | 500g − 300g | 200g | 200g | ✅ PASS |
 | Consume exact remaining | 0, no error | `newQuantity: 0`, `usedUp: true`, `ok: true` | ✅ PASS |
-| Consume more than available | rejected/clamped, never negative | clamped to `0`, `overuse: true`, `newQuantity ≥ 0` — **callers ignore `overuse`, so no user warning** | ⚠️ PASS (clamped & safe; no rejection surfaced — ISSUE-008 note) |
+| Consume more than available | rejected/clamped, never negative | clamped to `0`, `overuse: true`, `newQuantity ≥ 0`; **`cookRecipe`/`consumeItem` now surface `overuse` via a `?over=N` toast** (ISSUE-009 ruling) | ✅ PASS (clamped, safe, and now warned) |
 | Unit mismatch (g/kg/pack) | defined behavior, no silent corruption | `g↔kg` converts; `pcs`/`pack` vs `g` w/o piece weight → `{ok:false}`; `ml` vs `g` → `{ok:false}` | ✅ PASS |
-| Expiry: today | "Use now" | badge `Use now · today` | ⚠️ DELTA (label prefix ok, `· today` suffix added) — ISSUE-012 |
-| Expiry: tomorrow | "Use tomorrow" | badge `Use now · tomorrow` (no distinct bucket) | ❌ DELTA — ISSUE-012 (ruling needed) |
-| Expiry: +3 days | "Use in 3 days" | badge `Use soon · in 3 days` | ❌ DELTA — ISSUE-012 |
-| Expiry: yesterday | "Expired" | badge `Expired · today` | ⚠️ DELTA — ISSUE-012 |
-| Expiry: null | "Expiry unknown" | badge `No date` | ❌ DELTA — ISSUE-012 |
-| Expiry across TZ boundary | no ±1 day drift | pure fn is instant-based — 23:30→01:00-next-day stays CRITICAL, no early flip ✅. **BUT** an item expired <24h ago still reads CRITICAL not EXPIRED (`Math.ceil`→`-0`) | ⚠️ partial — future side ✅, past side lags — ISSUE-011. Prisma round-trip still `NOT TESTED` (§11) |
+| Expiry: today | "Use now" | badge `Use now · today` | ⚠️ DELTA — ISSUE-012 (accepted, P3) |
+| Expiry: tomorrow | "Use tomorrow" | badge `Use now · tomorrow` (no distinct bucket) | ⚠️ DELTA — ISSUE-012 (accepted, P3) |
+| Expiry: +3 days | "Use in 3 days" | badge `Use soon · in 3 days` | ⚠️ DELTA — ISSUE-012 (accepted, P3) |
+| Expiry: yesterday | "Expired" | badge `Expired · today` | ⚠️ DELTA — ISSUE-012 (accepted, P3) |
+| Expiry: null | "Expiry unknown" | badge `No date` | ⚠️ DELTA — ISSUE-012 (accepted, P3) |
+| Expiry across TZ boundary | no ±1 day drift | pure fn is instant-based — 23:30→01:00-next-day stays CRITICAL, no early flip ✅. Item expired <24h ago still reads CRITICAL not EXPIRED (`Math.ceil`→`-0`) | ⚠️ partial — future side ✅, past side lags — ISSUE-011 (accepted, P3). Prisma round-trip still `NOT TESTED` (§11) |
 | Estimated vs confirmed expiry | distinguishable (visual + structural) | `source` enum column (`ESTIMATED`/`EXACT`) + textual `est.` marker on the badge (word, not colour) | ✅ PASS |
-| Recipe availability accuracy | never claims a missing item is available | never marks `available` without a name-token match ✅ — **but** "available" = name present, not quantity sufficient (2 of 4 → still "have") | ⚠️ PASS for wholly-absent; ❌ for short quantity — ISSUE-009 |
-| Shopping list: have 2, need 4 | buy 2 | partially-stocked item never enters `missing` → **nothing added**; wholly-absent items added at full recipe qty (no `− inventory`) | ❌ FAIL — ISSUE-009 (P2, ruling needed) |
-| Duplicate shopping items | merged | `norm()`-equal row → **skipped**, quantities never summed | ❌ DELTA — ISSUE-010 |
+| Recipe availability accuracy | never claims a missing item is available | quantity-aware: `have ≥ need` → `have`; `0 < have < need` → `short` (badge "not enough", joins `missing`); absent → `missing`. Unconvertible/no-qty → safe name-presence fallback | ✅ PASS — ISSUE-009 FIXED |
+| Shopping list: have 2, need 4 | buy 2 | `short` line, `shortBy = 2` → `addRecipeMissing` writes `quantityNeeded = 2` (the `need − have` delta via `convert()`) | ✅ PASS — ISSUE-009 FIXED |
+| Duplicate shopping items | merged | `norm()`-equal row → **skipped**, quantities never summed | ❌ DELTA — ISSUE-010 (accepted for v1, P3) |
 | Integration: cook recipe | 200g / 800g / 100g | 200 / 800 / 100 (chained `computeDeduction`) | ✅ PASS |
-| Integration: next recipe needs 400g chicken | buy ~200g | chicken still in stock → "have", list recommends nothing | ❌ FAIL — ISSUE-009 |
+| Integration: next recipe needs 400g chicken | buy ~200g | 200 g in stock < 400 g needed → `short`, `shortBy = 200` → list recommends 200 g | ✅ PASS — ISSUE-009 FIXED |
 
-**Runtime integration (real Prisma + Postgres):** `NOT TESTED` — no integration harness exists (§3). The chain above is the pure `computeDeduction` sequence, not a `consumeInventoryItem` round-trip.
+**Runtime integration (real Prisma + Postgres):** still `NOT TESTED` — no integration harness exists (§3). The reconciliation specs run the real pure `reconcileRecipe`; the `addRecipeMissing` DB write is traced, not executed. See §11.
 
 ---
 
@@ -497,16 +515,16 @@ _Everything unverified, and what it would take to verify it._
 | Lint | No ESLint config or `eslint` dependency in the project; `npm` has no `lint` script. `next build`'s "Linting" step is a no-op (Next skips it with no config installed). The 5 `eslint-disable` comments in the code are therefore inert. | Add `eslint` + `eslint-config-next` and a `lint` script if lint coverage is wanted; out of QA scope to introduce. |
 | RLS cross-user proof (live) | Requires two real Supabase users and the browser anon client to actually attempt A→B reads/writes. Static read of every live policy done instead (§9). | A Supabase project with `rls.sql` + `storage.sql` applied (confirmed applied) + 2 test users + a script using `@supabase/supabase-js` with each user's JWT. |
 | ISSUE-001 live exploit + fix confirmation | Same as above — needs a forged `commitReceiptAction` payload from an authenticated session. | Running app + 2 users; POST the action with another user's `receiptItemId`. Expect `"Those items don't belong to this receipt."` |
-| ISSUE-002 runtime repro | Needs AI-generated recipes and a saved meal plan to exist. | `AI_PROVIDER` key (gemini or anthropic) + Storage; generate suggestions, make a plan, regenerate suggestions, check `getLatestPlan` items for `recipe: null`. |
+| ISSUE-002 runtime repro | **Fixed in code** (`NOT: { mealPlanItems: { some: {} } }` guard); the before/after runtime repro needs AI-generated recipes + a saved meal plan. | `GEMINI_API_KEY` + Storage; generate suggestions, make a plan, regenerate suggestions, check `getLatestPlan` items still have their `recipe`. |
 | ISSUE-003 `/api/health` behaviour | Needs the running server. | `curl -i http://localhost:3000/api/health` unauthenticated → observe 307 vs 200. |
 | Middleware route-protection behaviour | Static read done; live request behaviour (matcher gaps, redirect chains, expired session) not exercised. | Running app + Supabase auth; `curl`/browser against protected + public paths, and with a stale cookie. |
 | Auth flows (signup, login, logout, session persistence, expired-session, redirects) | Not verifiable from code alone; no Playwright configured. | Supabase project + a browser pass (or scripted auth via `@supabase/supabase-js`). |
 | Timezone round-trip (±1-day expiry flip) | `DateTime` columns are `timestamp(3)` (no tz); `classifyStatus` uses local `new Date()`. The pure-function boundary case is a Block D test; the Prisma round-trip needs a DB write/read under a non-UTC `TZ`. | Block D: crafted-UTC-`Date` unit tests (runnable now). Full round-trip: a test DB + `TZ` env manipulation. |
 | Decimal/FP quantity accumulation | ~~Not yet exercised.~~ **DONE** — `qa-block-d.test.ts` covers `0.3kg − 100g = 0.2kg` through `computeDeduction` (no drift, `tidy` 3dp). | — |
 | Client-bundle secret grep | ~~Not yet run.~~ **DONE, CLEAN** — `grep -rlE "sk-ant-\|AIza…\|SERVICE_ROLE\|*_API_KEY\|DATABASE_URL\|DIRECT_URL\|eyJ…" .next/static` → no matches; supabase client code present. See §6 F1, §8. | — |
-| AI provider key mismatch | **CONFIRMED — ISSUE-014 (P2).** 3-way disagreement: `provider.ts:89` default `gemini`, `.env.example` sets `anthropic` + only `ANTHROPIC_*`, `env.ts` validates only `ANTHROPIC_*`. Not exercised at runtime. | Set `AI_PROVIDER` explicitly in deploy env; add the matching key to `env.ts` + `.env.example`; live scan test with a real key. |
+| AI provider key mismatch | **FIXED — ISSUE-014.** All three sources now agree on gemini (`env.ts` gains `GEMINI_API_KEY`/`GEMINI_MODEL`; `.env.example` M2 block rewritten; `provider.ts` comment fixed). Not exercised at runtime. | Set `GEMINI_API_KEY` in the deploy env; one live receipt scan with a real key to confirm end to end. |
 | Receipt pipeline end-to-end (upload → Storage → AI → parse → commit) | Static trace done (§6 E1–E4); no live run — needs an AI key + Storage. | `AI_PROVIDER` key (gemini or anthropic) + Supabase Storage; upload a real receipt, confirm PARSED items, edit one, commit, verify the inventory row reflects the edit. |
-| ISSUE-013 partial-commit repro | Needs a forced mid-loop failure in `commitReceipt` (e.g. a colliding `@unique inventoryItemId`). | Test DB + a crafted payload, or a fault-injected Prisma. |
+| ISSUE-013 partial-commit repro | **Fixed in code** (whole commit batch now in one `prisma.$transaction`). Proving the rollback needs a forced mid-loop failure. | Test DB + a crafted payload, or a fault-injected Prisma; assert 0 inventory rows + receipt still `PARSED` after the induced throw. |
 | Browser a11y / responsive / interaction pass | No Playwright configured (QA-PLAN §G says do not fake this by reading CSS). Static a11y wiring verified (§6 G5). | A Playwright pass: 375px + 200% zoom on dashboard/inventory/forms/sheets; keyboard tab order + sheet focus trap; 44px hit-targets on `BottomNav`/`PrimaryAction`/chips/steppers/switches; `prefers-reduced-motion` + the `data-reduce-motion` toggle; confirm no status is colour-only in a real render. |
 | Blocks D, E, F, G | **DONE this session** (static + Vitest). Runtime/browser portions remain per the rows above. | — |
 
@@ -515,29 +533,36 @@ _Everything unverified, and what it would take to verify it._
 ## 12. Production Build
 
 - **Result:** PASS
-- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run on `c18eca3` (baseline), `04e3fe7` (after ISSUE-001 fix), Stage 2 D–G session, and **Stage 3 final verification** (`e20d71d`, exit 0) — all green. `npm run typecheck` (`tsc --noEmit`) → exit 0 each time.
-- **Output summary (Stage 3 run):** `✓ Compiled successfully in 3.0s`, `✓ Generating static pages (18/18)`. 22 route entries: `/`, `/_not-found`, `/login`, `/robots.txt` static (○); the other 18 server-rendered on demand (ƒ). Shared JS 103 kB; largest route bundle `/scan/[id]/review` 6.38 kB. No `EPERM` from `prisma generate`. Only warning is the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — §11).
-- **Test suite (Stage 3 run):** `npx vitest run` → **104 passed (9 files)** — 76 pre-existing + 28 Block-D specs. `qa-block-d.test.ts` re-run in isolation with `--reporter=verbose` → **28 passed**.
+- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run on `c18eca3` (baseline), `04e3fe7` (after ISSUE-001 fix), Stage 2 D–G session, Stage 3 final verification (`0d19f92`), and **again after the four P2 fixes** (§14) — all green. `npm run typecheck` (`tsc --noEmit`) → exit 0 each time.
+- **Output summary (post-P2-fix run):** `✓ Compiled successfully in 4.4s`, `✓ Generating static pages (18/18)`. 22 route entries: `/`, `/_not-found`, `/login`, `/robots.txt` static (○); the other 18 server-rendered on demand (ƒ). Shared JS 103 kB; largest route bundle `/scan/[id]/review` 6.38 kB. No `EPERM` from `prisma generate`. Lint step is a no-op (no ESLint installed — §11).
+- **Test suite (post-P2-fix run):** `npx vitest run` → **109 passed (9 files)** — 76 pre-existing + 33 Block-D specs (28 Stage-2 + 5 net new for ISSUE-009).
 
 ---
 
 ## 13. Top Actions Before Deploy
 
-No P0/P1 is open (the one P1, ISSUE-001, is fixed in `04e3fe7`). The blockers below are the P2s and the deploy-config items.
+**No P0, P1, or P2 is open.** ISSUE-001 (P1) fixed in `04e3fe7`; ISSUE-002 / 009 / 013 / 014 (P2) fixed in Stage 3 (§14). What's left is deploy config, live confirmation of code-verified fixes, and a P3 batch.
 
-1. **Confirm ISSUE-001 fix in a live 2-user test** (P1, fixed-but-unproven). Real cross-user `commitReceiptAction` with another user's `receiptItemId` → expect `"Those items don't belong to this receipt."`
-2. **Rule on ISSUE-009** (P2) — recipe availability & shopping-list delta are name-presence only; the QA-PLAN §D "have 2, need 4 → buy 2" scenario fails (list recommends nothing / full qty). Either scope a quantity-aware reconcile (needs unit conversion threaded in — a follow-up, not a hot-fix) or accept name-only matching for v1 and amend the plan.
-3. **Fix ISSUE-014** (P2, deploy-config) — make `provider.ts` default, `.env.example`, and `env.ts` agree on one AI provider; add its key to the schema + the deploy env. Without this, receipt scanning throws on a fresh env.
-4. **Wrap the `commitReceipt` loop in a transaction — ISSUE-013** (P2) — or add an "already linked" skip, so a mid-loop failure can't half-commit and then duplicate on retry.
-5. **Decide ISSUE-002** (P2, from A–C) — regenerating dinner suggestions hard-deletes meal-plan recipes. Apply the `deleteMany` guard or accept.
-6. **P3 cleanup batch:** ISSUE-003 (`/api/health` behind auth, one line), ISSUE-008 (map receipt error strings to a generic message), ISSUE-011/012 (expiry label lag + wording — one `daysUntil` change covers most of it; get the copy ruling), ISSUE-010 (shopping dedup: merge vs skip), S3 (CSP header), S4 (`public/*.md` served in prod), ISSUE-007 (`NEXT_PUBLIC_SITE_URL` in prod).
-7. **Stage 3** — ✅ **DONE** (see §14). Browser a11y/responsive pass still outstanding (Playwright not configured — see §11).
+1. **Set `GEMINI_API_KEY` in the production environment** (ISSUE-014). It's `.optional()` in `env.ts` so the app boots without it, but every receipt scan throws `"GEMINI_API_KEY is not set."` until it's present. Also set `NEXT_PUBLIC_SITE_URL` (ISSUE-007) and confirm `rls.sql` + `storage.sql` are applied on the deploy DB.
+2. **Confirm the code-verified fixes on a live stack** (all currently `NOT TESTED` at runtime — §11):
+   - ISSUE-001 — cross-user `commitReceiptAction` with a foreign `receiptItemId` → expect `"Those items don't belong to this receipt."`
+   - ISSUE-002 — make a meal plan, regenerate dinner suggestions, confirm the plan's recipes survive.
+   - ISSUE-009 — inventory tomato ×2, cook/plan a recipe needing 4 → shopping list shows **2**.
+   - ISSUE-013 — induce a mid-commit failure → 0 inventory rows, receipt still `PARSED`, clean retry.
+3. **Browser a11y / responsive pass** (Playwright not configured — §11). Includes confirming the new `meals/[id]` badge ("have" / "not enough" / "to buy") and the `?over` toast read correctly, and that "not enough" is distinguishable without colour (it is — distinct word).
+4. **P3 cleanup batch (non-blocking):** ISSUE-003 (`/api/health` behind auth, one line), ISSUE-008 (map receipt error strings to a generic message), ISSUE-011/012 (expiry label lag + wording — accepted as-is this pass; revisit if copy matters), ISSUE-010 (shopping dedup: merge vs skip — accepted skip for v1), ISSUE-005 (global alias table), S3 (CSP header), S4 (`public/*.md` + `.dc.html` served in prod — see the note in §14).
 
 ---
 
 ## 14. Stage 3 — Final Verification (2026-09-06)
 
-Re-ran every gate on `e20d71d` (branch tip, working tree clean). No new code written in this stage.
+Two parts: (14a) the plan's re-verification pass on the branch tip as it stood after Stage 2, then (14b) the four P2 fixes the user ruled on, applied and re-verified.
+
+---
+
+### 14a — Re-verification (2026-09-06, on `0d19f92`)
+
+Re-ran every gate on the branch tip, working tree clean. No new code in this part.
 
 ### Re-run results
 
@@ -557,8 +582,44 @@ The entire QA pass changed **exactly one block of production code**: the ISSUE-0
 - Typecheck, production build, and the full 104-spec suite (which includes `schemas.test.ts` covering `reviewedItemsSchema` and the receipt validation path) all pass with the guard in place.
 - No other production file was touched, so there is nothing else for a fix to have regressed. **No regression.**
 
+### 14a verdict (before the P2 fixes)
+
+- Hard gate satisfied: build passes, no P0, the one P1 (ISSUE-001) fixed.
+- Not READY: 4 P2s open pending a ruling from the user (ISSUE-002/009/013/014).
+
+---
+
+### 14b — P2 rulings applied (2026-09-06)
+
+The user ruled on all four P2s; each fix was applied with the smallest reasonable diff and re-verified.
+
+| Issue | Ruling | What changed |
+|-------|--------|--------------|
+| **ISSUE-014** (P2) | Standardise on **gemini** | `env.ts` +`GEMINI_API_KEY`/`GEMINI_MODEL`; `.env.example` M2 block rewritten (gemini default + documented, anthropic kept as alt); `provider.ts` comment fixed. Fallback was already `"gemini"`. |
+| **ISSUE-013** (P2) | Wrap the commit loop in `$transaction` | `commitReceipt`'s whole batch (items + links + alias upserts + `COMMITTED` flip) runs in one `prisma.$transaction(…, { timeout: 20_000 })`. `createInventoryItem` gained `db: Prisma.TransactionClient = prisma` so its write joins the tx. Mid-loop failure now rolls everything back — no half-commit, no retry duplication. |
+| **ISSUE-002** (P2) | Add the `mealPlanItems` guard | `generateSuggestions`' prune `deleteMany` now carries `NOT: { mealPlanItems: { some: {} } }` — a recipe any meal plan points at is never pruned. |
+| **ISSUE-009** (P2) | Fix now — minimum viable quantity-aware version | `reconcileRecipe` takes `InventoryLot[]` (tokens + qty + unit + `typicalPieceGrams`), compares amounts via the existing `convert()`, adds a `short` status + per-line `have`/`shortBy`. `getRecipeWithReconciliation` passes real lots. `addRecipeMissing` writes `max(0, need − have)`. `meals/[id]` badge → have / **not enough** / to buy. `cookRecipe` + `consumeItem` now **surface `overuse`** via a `?over=N` toast instead of swallowing it. Name-only `string[]` path preserved for other callers. |
+
+**Files changed (14b):** `src/lib/recipe.ts`, `src/lib/env.ts`, `src/lib/qa-block-d.test.ts`, `src/server/ai/provider.ts`, `src/server/services/recipe.ts`, `src/server/services/inventory.ts`, `src/server/services/receipt.ts`, `src/server/services/shopping.ts`, `src/app/(app)/meals/[id]/page.tsx`, `src/app/(app)/meals/[id]/cook/actions.ts`, `src/app/(app)/inventory/actions.ts`, `src/app/(app)/inventory/page.tsx`, `src/components/ui/toaster.tsx`, `.env.example`.
+
+**Re-verification (14b):**
+
+| Check | Result |
+|-------|--------|
+| `npm run typecheck` | **exit 0** |
+| `npm run build` | **exit 0** — `✓ Compiled successfully in 4.4s`, 18/18 static pages, 22 routes |
+| `npx vitest run` | **109 passed / 9 files** (was 104; +7 new quantity-aware specs, −2 obsolete "KNOWN GAP" specs) |
+
+**Regression check (14b):** `reconcileRecipe`'s signature widened to `string[] | InventoryLot[]`; every existing caller that passed `string[]` (`recipe.test.ts` ×13, `meals/page.tsx` card chip, `qa-block-d` name-only specs) still gets identical name-presence behaviour — verified green. `createInventoryItem`'s new `db` param defaults to `prisma`, so its existing callers (`addInventoryItem`, `editInventoryItem` via `updateInventoryItem`, manual add) are unaffected. `ReconcileResult` only *gained* a field (`lines`). No behaviour change outside the four issues. Full suite + typecheck + build all green.
+
 ### Final verdict
 
-- **Hard gate satisfied:** production build passes; no P0 open; the one P1 (ISSUE-001) is fixed.
-- **NOT marking READY:** 4 P2s remain open, each needing a product ruling (ISSUE-009, ISSUE-014, ISSUE-013, ISSUE-002 — see §13 items 2–5), plus the browser a11y/responsive pass was never run (no Playwright — §11). The QA plan's hard gate doesn't block on P2s, but ISSUE-009 means the plan's own §D headline scenario fails, and ISSUE-014 breaks receipt scanning on a fresh env — so the deploy call belongs to the user, not this report.
-- **Recommended before deploy:** rule on the 4 P2s (§13), apply ISSUE-014 (deploy-config, low-risk) and ISSUE-013 (transaction wrap) at minimum, then a browser pass. The P3 batch (§13 item 6) can follow.
+- **Hard gate satisfied:** production build passes; **no P0, P1, or P2 open**.
+- **READY for deploy per the QA-PLAN gate**, with two caveats that are the user's call, not blockers:
+  1. `GEMINI_API_KEY` (+ `NEXT_PUBLIC_SITE_URL`, + `rls.sql`/`storage.sql` applied) must be set on the deploy target — §13 item 1.
+  2. The browser a11y / responsive pass and the live confirmation of the four code-verified fixes (§13 items 2–3) still haven't run — no Playwright, no live stack in this environment.
+- P3 batch (§13 item 4) is non-blocking and can follow the deploy.
+
+### Note — `public/*.md` deletion during the session
+
+Partway through 14b, `git status` showed `public/QA-PLAN.md`, `public/QA-REPORT.md`, and `public/CLAUDE-CODE-PROMPTS.md` as **deleted from the working tree** (dir mtime moved to 08:14; `Kitchen OS Mobile.dc.html` untouched). Nothing in this session ran a delete — cause unknown (OneDrive sync on the `OneDrive/Desktop` path is the leading guess). All three were restored with `git checkout --` before any commit, so no fix commit carries the deletion and the files are intact. Flagged here because it's unexplained; **S4 still stands** — these files (and the `.dc.html`) are served at `/<name>` in production and should be moved out of `public/` regardless.
