@@ -1,5 +1,5 @@
 import { prisma } from "@/server/db";
-import type { StorageLocation, ExpirySource } from "@prisma/client";
+import type { StorageLocation, ExpirySource, Prisma } from "@prisma/client";
 import { estimateExpiry, type ShelfLifeRuleish } from "@/lib/expiry";
 import { computeDeduction } from "@/lib/deduct";
 import { resolveIngredientByText } from "./reference";
@@ -85,7 +85,16 @@ async function categoryNameFor(categoryId: string | null, ingredient: ResolvedIn
   return ingredient?.category?.name ?? null;
 }
 
-export async function createInventoryItem(userId: string, input: CreateItemInput) {
+/**
+ * Create an inventory item. Pass `db` to run the write inside a caller's
+ * interactive transaction (e.g. receipt commit, so a mid-batch failure rolls the
+ * whole thing back); the reference-data lookups above always use the base client.
+ */
+export async function createInventoryItem(
+  userId: string,
+  input: CreateItemInput,
+  db: Prisma.TransactionClient = prisma
+) {
   const ingredient = await resolveIngredient(input.ingredientId, input.ingredientName);
   const categoryId = input.categoryId ?? ingredient?.categoryId ?? null;
   const categoryName = await categoryNameFor(categoryId, ingredient);
@@ -101,7 +110,7 @@ export async function createInventoryItem(userId: string, input: CreateItemInput
     openedAt,
   });
 
-  return prisma.inventoryItem.create({
+  return db.inventoryItem.create({
     data: {
       userId,
       productName: input.productName,

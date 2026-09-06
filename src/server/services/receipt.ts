@@ -150,46 +150,60 @@ export async function commitReceipt(
     return { ok: false, error: "Those items don't belong to this receipt." };
   }
 
-  let count = 0;
-  for (const it of included) {
-    const invItem = await createInventoryItem(userId, {
-      productName: it.productName,
-      ingredientName: it.ingredientName,
-      categoryId: it.categoryId,
-      quantity: it.quantity ?? 1,
-      unit: it.unit ?? "pcs",
-      storageLocation: it.storageLocation,
-      purchaseDate: receipt.purchaseDate ?? new Date(),
-      opened: false,
-      exactExpiryDate: null, // let the expiry engine estimate
-      price: it.price,
-      currency: receipt.currency,
-      store: receipt.store,
-      source: "RECEIPT",
-      receiptId: receipt.id,
-    });
+  // One transaction for the whole batch: a mid-loop failure (a DB blip, the
+  // @unique inventoryItemId colliding, an alias race) must roll every item back,
+  // not leave a half-commit that a retry then duplicates.
+  const count = await prisma.$transaction(
+    async (tx) => {
+      let n = 0;
+      for (const it of included) {
+        const invItem = await createInventoryItem(
+          userId,
+          {
+            productName: it.productName,
+            ingredientName: it.ingredientName,
+            categoryId: it.categoryId,
+            quantity: it.quantity ?? 1,
+            unit: it.unit ?? "pcs",
+            storageLocation: it.storageLocation,
+            purchaseDate: receipt.purchaseDate ?? new Date(),
+            opened: false,
+            exactExpiryDate: null, // let the expiry engine estimate
+            price: it.price,
+            currency: receipt.currency,
+            store: receipt.store,
+            source: "RECEIPT",
+            receiptId: receipt.id,
+          },
+          tx
+        );
 
-    await prisma.receiptItem.update({
-      where: { id: it.receiptItemId },
-      data: { inventoryItemId: invItem.id },
-    });
-
-    // Alias learning: if this line resolved to a canonical ingredient, remember
-    // the raw receipt phrasing so the next receipt matches without asking.
-    if (invItem.ingredientId) {
-      const key = simplifyProductName(it.rawName);
-      if (key.length > 2) {
-        await prisma.ingredientAlias.upsert({
-          where: { aliasText: key },
-          update: {},
-          create: { ingredientId: invItem.ingredientId, aliasText: key, source: "USER", confidence: 0.9 },
+        await tx.receiptItem.update({
+          where: { id: it.receiptItemId },
+          data: { inventoryItemId: invItem.id },
         });
-      }
-    }
-    count++;
-  }
 
-  await prisma.receipt.update({ where: { id: receipt.id }, data: { status: "COMMITTED" } });
+        // Alias learning: if this line resolved to a canonical ingredient, remember
+        // the raw receipt phrasing so the next receipt matches without asking.
+        if (invItem.ingredientId) {
+          const key = simplifyProductName(it.rawName);
+          if (key.length > 2) {
+            await tx.ingredientAlias.upsert({
+              where: { aliasText: key },
+              update: {},
+              create: { ingredientId: invItem.ingredientId, aliasText: key, source: "USER", confidence: 0.9 },
+            });
+          }
+        }
+        n++;
+      }
+
+      await tx.receipt.update({ where: { id: receipt.id }, data: { status: "COMMITTED" } });
+      return n;
+    },
+    { timeout: 20_000 }
+  );
+
   return { ok: true, count };
 }
 
