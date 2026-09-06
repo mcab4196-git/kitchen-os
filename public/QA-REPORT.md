@@ -6,15 +6,21 @@
 
 **Branch:** `qa/pre-deploy` — CREATED off `main`. The ~30 uncommitted redesign files were snapshotted first as `c18eca3 chore(qa): baseline uncommitted redesign WIP before QA pass` so QA fixes produce a clean diff. Deploy target = this branch. Local git identity set to `mark.cabelloit@gmail.com` (repo had none).
 **Started:** 2026-09-06 (Stage 1)
-**Last updated:** 2026-09-06 — Stage 2 blocks D, E, F, G complete (28 new Block-D specs added; 6 new issues logged, all P2/P3; no code changed)
+**Last updated:** 2026-09-06 — **Stage 3 (final verification) complete.** typecheck + clean prod build + full test suite (104/104, incl. 28 Block-D specs) all re-run green. Regression check: the only production-code change in the whole pass is the ISSUE-001 guard (+10 lines in `receipt.ts`); additive, cannot affect legitimate commits, no regression. Report finalized. See §14.
 
 ---
 
 ## Overall Status
 
-`IN PROGRESS` — Stage 2 A–G done; Stage 3 (final verification) not yet run. Static health green (typecheck + prod build pass; no lint tooling exists). Data layer consistent, no drift. Auth/isolation clean at the service layer; RLS + Storage policies live. **1 P1 found and fixed** in A–C (receipt-commit write IDOR, `04e3fe7`).
+`STAGE 3 COMPLETE — NOT READY (product rulings outstanding on 4 P2s).`
 
-**Blocks D–G:** 28 new core-logic specs (`src/lib/qa-block-d.test.ts`) — all green; full suite 104/104. Quantity math is correct and safe (clamps, never negative, refuses unconvertible units). Expiry classification is sound but the **labels drift from the plan's wording** and lag true expiry by <24h (P3, ISSUE-011/012). Recipe availability and shopping-list delta are **name-presence only — no quantity comparison anywhere** (P2, ISSUE-009). Receipt pipeline: schema-validated before every DB write ✓, but the commit loop isn't a transaction (P2, ISSUE-013) and AI/infra error strings reach the client (P3, ISSUE-008). Client bundle **carries no private secrets** (grep of `.next/static` clean). UI wiring: every `href`/form-action/handler resolves; overlays have full close paths (ESC + scrim + button); loading/error/empty states present on every async view. Provider/env mismatch from recon **confirmed** (P2, ISSUE-014). Nothing here is P0/P1; **not READY** until Stage 3 runs and the P2s get a ruling.
+**Hard gate (QA-PLAN):** "Do not mark READY if the production build fails, or if any P0 or P1 remains unfixed." — production build **passes**, **no P0 open**, the **one P1 (ISSUE-001) is fixed** (`04e3fe7`). The hard gate is satisfied.
+
+**Why still NOT READY:** 4 P2s are open and each needs a product decision, not just a code fix — ISSUE-009 (recipe availability / shopping-list delta are name-presence only, so the QA-PLAN §D headline scenario "have 2, need 4 → buy 2" fails), ISSUE-014 (3-way AI-provider/env-schema disagreement — receipt scanning throws on a fresh env), ISSUE-013 (receipt commit loop isn't transactional — partial commit + duplicate-on-retry), ISSUE-002 (regenerating dinner suggestions hard-deletes meal-plan recipes). None is a security or build blocker; all change user-visible behaviour or deploy config and were pre-existing (the redesign was UI-only). Deploy decision is the user's once these are ruled on — see §13 / §14.
+
+**Verification summary:** Static health green (typecheck + prod build pass; no lint tooling exists — §11). Data layer consistent, no drift. Auth/isolation clean at the service layer; RLS + Storage policies live on the DB. 1 P1 found and fixed in A–C (receipt-commit write IDOR).
+
+**Blocks D–G:** 28 core-logic specs (`src/lib/qa-block-d.test.ts`) — all green; full suite 104/104. Quantity math is correct and safe (clamps, never negative, refuses unconvertible units). Expiry classification is sound but the **labels drift from the plan's wording** and lag true expiry by <24h (P3, ISSUE-011/012). Recipe availability and shopping-list delta are **name-presence only — no quantity comparison anywhere** (P2, ISSUE-009). Receipt pipeline: schema-validated before every DB write ✓, but the commit loop isn't a transaction (P2, ISSUE-013) and AI/infra error strings reach the client (P3, ISSUE-008). Client bundle **carries no private secrets** (grep of `.next/static` clean). UI wiring: every `href`/form-action/handler resolves; overlays have full close paths (ESC + scrim + button); loading/error/empty states present on every async view. Provider/env mismatch from recon **confirmed** (P2, ISSUE-014).
 
 ---
 
@@ -157,7 +163,7 @@
 | E — Receipt pipeline | ✅ | 2026-09-06 |
 | F — Errors & secrets | ✅ | 2026-09-06 |
 | G — UI wiring | ✅ | 2026-09-06 |
-| Stage 3 — Final verification | ⬜ | |
+| Stage 3 — Final verification | ✅ | 2026-09-06 |
 
 ---
 
@@ -509,9 +515,9 @@ _Everything unverified, and what it would take to verify it._
 ## 12. Production Build
 
 - **Result:** PASS
-- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run on `c18eca3` (baseline), `04e3fe7` (after ISSUE-001 fix), and again this session (Block D–G, exit 0) — all green. `npm run typecheck` (`tsc --noEmit`) → exit 0 each time, including with the new `qa-block-d.test.ts` present.
-- **Output summary (this session):** `✓ Compiled successfully in 16.2s`, `✓ Generating static pages (18/18)`. 22 route entries: `/`, `/_not-found`, `/login`, `/robots.txt` static (○); the other 18 server-rendered on demand (ƒ). Shared JS 103 kB; largest route bundle `/scan/[id]/review` 6.38 kB. No `EPERM` from `prisma generate`. Only warning is the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — §11).
-- **Test suite:** `npx vitest run` → **104 passed (9 files)** — 76 pre-existing + 28 new Block-D specs.
+- **Command:** `npm run build` (`prisma generate && next build`), Next.js 15.5.23. Run on `c18eca3` (baseline), `04e3fe7` (after ISSUE-001 fix), Stage 2 D–G session, and **Stage 3 final verification** (`e20d71d`, exit 0) — all green. `npm run typecheck` (`tsc --noEmit`) → exit 0 each time.
+- **Output summary (Stage 3 run):** `✓ Compiled successfully in 3.0s`, `✓ Generating static pages (18/18)`. 22 route entries: `/`, `/_not-found`, `/login`, `/robots.txt` static (○); the other 18 server-rendered on demand (ƒ). Shared JS 103 kB; largest route bundle `/scan/[id]/review` 6.38 kB. No `EPERM` from `prisma generate`. Only warning is the Prisma 6.2.1→8 update notice. Lint step is a no-op (no ESLint installed — §11).
+- **Test suite (Stage 3 run):** `npx vitest run` → **104 passed (9 files)** — 76 pre-existing + 28 Block-D specs. `qa-block-d.test.ts` re-run in isolation with `--reporter=verbose` → **28 passed**.
 
 ---
 
@@ -525,4 +531,34 @@ No P0/P1 is open (the one P1, ISSUE-001, is fixed in `04e3fe7`). The blockers be
 4. **Wrap the `commitReceipt` loop in a transaction — ISSUE-013** (P2) — or add an "already linked" skip, so a mid-loop failure can't half-commit and then duplicate on retry.
 5. **Decide ISSUE-002** (P2, from A–C) — regenerating dinner suggestions hard-deletes meal-plan recipes. Apply the `deleteMany` guard or accept.
 6. **P3 cleanup batch:** ISSUE-003 (`/api/health` behind auth, one line), ISSUE-008 (map receipt error strings to a generic message), ISSUE-011/012 (expiry label lag + wording — one `daysUntil` change covers most of it; get the copy ruling), ISSUE-010 (shopping dedup: merge vs skip), S3 (CSP header), S4 (`public/*.md` served in prod), ISSUE-007 (`NEXT_PUBLIC_SITE_URL` in prod).
-7. **Stage 3** — re-run typecheck / prod build / `npm test` (104 specs incl. Block D), regression-check any fix, then a browser a11y/responsive pass (Playwright not configured — see §11).
+7. **Stage 3** — ✅ **DONE** (see §14). Browser a11y/responsive pass still outstanding (Playwright not configured — see §11).
+
+---
+
+## 14. Stage 3 — Final Verification (2026-09-06)
+
+Re-ran every gate on `e20d71d` (branch tip, working tree clean). No new code written in this stage.
+
+### Re-run results
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Typecheck | `npm run typecheck` (`tsc --noEmit`) | **exit 0**, no output |
+| Production build | `npm run build` (`prisma generate && next build`) | **exit 0** — `✓ Compiled successfully in 3.0s`, `✓ Generating static pages (18/18)`, 22 routes, shared JS 103 kB, no `EPERM` |
+| Full test suite | `npx vitest run` | **104 passed / 9 files** (exit 0) |
+| Block D specs (isolated) | `npx vitest run src/lib/qa-block-d.test.ts --reporter=verbose` | **28 passed** (exit 0) — 12 pass clean, 8 carry an explicit `[DELTA]` flag documenting a plan-vs-shipped gap (ISSUE-009/010/011/012), all asserting *current* behaviour so a future fix trips the spec |
+| Lint | — | No ESLint config or dependency exists; `next build` lint step is a no-op. Unchanged from Stage 2 (§11). |
+
+### Regression check
+
+The entire QA pass changed **exactly one block of production code**: the ISSUE-001 fix in `src/server/services/receipt.ts` (`04e3fe7`, +10 lines). `git diff --stat c18eca3..HEAD -- 'src/**'` outside test files shows only `receipt.ts | 10 ++`.
+
+- The fix is an **additive pre-loop ownership guard** — it loads the verified receipt's own `receipt_items` id set and rejects the request if any reviewed line's `receiptItemId` isn't in it. For a legitimate review submission every id belongs to that receipt, so the guard is a no-op on the happy path; no behaviour change, no data-shape change.
+- Typecheck, production build, and the full 104-spec suite (which includes `schemas.test.ts` covering `reviewedItemsSchema` and the receipt validation path) all pass with the guard in place.
+- No other production file was touched, so there is nothing else for a fix to have regressed. **No regression.**
+
+### Final verdict
+
+- **Hard gate satisfied:** production build passes; no P0 open; the one P1 (ISSUE-001) is fixed.
+- **NOT marking READY:** 4 P2s remain open, each needing a product ruling (ISSUE-009, ISSUE-014, ISSUE-013, ISSUE-002 — see §13 items 2–5), plus the browser a11y/responsive pass was never run (no Playwright — §11). The QA plan's hard gate doesn't block on P2s, but ISSUE-009 means the plan's own §D headline scenario fails, and ISSUE-014 breaks receipt scanning on a fresh env — so the deploy call belongs to the user, not this report.
+- **Recommended before deploy:** rule on the 4 P2s (§13), apply ISSUE-014 (deploy-config, low-risk) and ISSUE-013 (transaction wrap) at minimum, then a browser pass. The P3 batch (§13 item 6) can follow.
