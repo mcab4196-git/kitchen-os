@@ -23,7 +23,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
   if (!data) notFound();
   const { recipe, ingredients, reconciliation } = data;
 
-  const availableSet = new Set(reconciliation.available);
+  const lineByName = new Map(reconciliation.lines.map((l) => [l.name, l]));
   const time = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
   const steps = (recipe.instructions as string[]) ?? [];
   const missingCount = reconciliation.missing.length;
@@ -51,7 +51,9 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
         <h2 className="mb-3 font-display text-title-sm text-ink">Ingredients</h2>
         <ul className="flex flex-col divide-y divide-line rounded-card border border-line bg-card">
           {ingredients.map((ing, i) => {
-            const have = availableSet.has(ing.name);
+            const status = lineByName.get(ing.name)?.status ?? "missing";
+            const tone = status === "have" ? "fresh" : status === "short" ? "soon" : "accent";
+            const label = status === "have" ? "have" : status === "short" ? "not enough" : "to buy";
             return (
               <li key={i} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
                 <span className="text-ink">
@@ -60,8 +62,8 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
                   {ing.name}
                   {ing.optional && <span className="text-muted"> (optional)</span>}
                 </span>
-                <Badge tone={have ? "fresh" : "accent"} className="shrink-0">
-                  {have ? "have" : "to buy"}
+                <Badge tone={tone} className="shrink-0">
+                  {label}
                 </Badge>
               </li>
             );

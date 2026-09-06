@@ -43,8 +43,10 @@ export async function addManualItem(userId: string, label: string, quantity?: nu
 }
 
 /**
- * Add a recipe's missing ingredients to the list. Missing = not in inventory
- * (computed by reconciliation). Also deduped against items already on the list.
+ * Add a recipe's missing ingredients to the list. "Missing" is quantity-aware:
+ * an ingredient you have none of is added at its full recipe amount; one you're
+ * merely short on is added at the shortfall (need − have). Deduped against items
+ * already on the list.
  */
 export async function addRecipeMissing(userId: string, recipeId: string): Promise<{ added: number; skipped: number }> {
   const data = await getRecipeWithReconciliation(userId, recipeId);
@@ -56,22 +58,25 @@ export async function addRecipeMissing(userId: string, recipeId: string): Promis
 
   let added = 0;
   let skipped = 0;
-  for (const name of data.reconciliation.missing) {
-    if (have.has(norm(name))) {
+  for (const line of data.reconciliation.lines) {
+    if (line.optional || line.status === "have") continue;
+    if (have.has(norm(line.name))) {
       skipped++;
       continue;
     }
-    const detail = data.ingredients.find((ing) => norm(ing.name) === norm(name));
+    // "short" → buy the gap; "missing" → buy the full amount (or null if the
+    // recipe never specified one).
+    const buy = line.shortBy > 0 ? line.shortBy : line.needed ?? null;
     await prisma.shoppingListItem.create({
       data: {
         shoppingListId: list.id,
-        label: name,
-        quantityNeeded: detail?.quantity ?? null,
-        unit: detail?.unit ?? null,
+        label: line.name,
+        quantityNeeded: buy,
+        unit: line.unit,
         reason: "RECIPE",
       },
     });
-    have.add(norm(name));
+    have.add(norm(line.name));
     added++;
   }
   return { added, skipped };

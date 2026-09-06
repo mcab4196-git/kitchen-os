@@ -1,9 +1,10 @@
-// QA Stage 2 · Block D — Core logic correctness.
+// QA Block D — Core logic correctness (specs from QA-PLAN.md §D).
 //
-// These are the specs from QA-PLAN.md §D, run against the real pure functions.
-// Where the shipped behaviour differs from the plan's wording, the test asserts
-// what the code ACTUALLY does and a comment flags the delta — QA-REPORT.md §10
-// carries the ruling (code change vs plan change). No behaviour is changed here.
+// Stage 2 recorded the shipped behaviour against the plan and flagged the deltas.
+// Stage 3 acted on the rulings: ISSUE-009 (quantity-aware reconciliation) and the
+// overuse-swallowing gap are now FIXED, and the specs below assert the new
+// behaviour. Remaining deltas that were accepted as-is (label wording ISSUE-012,
+// <24h expiry lag ISSUE-011, dedup-by-skip ISSUE-010) still carry a [DELTA] note.
 
 import { describe, it, expect } from "vitest";
 import { computeDeduction } from "./deduct";
@@ -31,9 +32,9 @@ describe("D · quantity math", () => {
       expect(r.newQuantity).toBeGreaterThanOrEqual(0);
       expect(r.overuse).toBe(true);
     }
-    // DELTA vs plan ("explicit rejection or clamp"): the engine clamps + sets
-    // `overuse:true`, but callers (cookRecipe, consumeItem) ignore the flag, so
-    // the user gets no "you used more than you had" warning. See QA-REPORT ISSUE-008.
+    // The engine clamps + sets `overuse:true`; Stage 3 wired that flag through
+    // cookRecipe and consumeItem, which now redirect with `?over=N` so the user
+    // gets a "you used more than you had" toast. See QA-REPORT §14.
   });
 
   it("unit mismatch — g↔kg converts, count↔mass without a piece weight is refused", () => {
@@ -218,38 +219,100 @@ describe("D · recipe availability", () => {
     expect(r.missing).toEqual([]);
   });
 
-  it("KNOWN GAP: 'have' is name-presence only — no quantity check  [DELTA: P2, see ISSUE-009]", () => {
-    // Inventory has *a* tomato token; recipe needs 4. Reconciliation still says
-    // "have". Downstream (meals/[id]/page.tsx) shows the "have" badge and the
-    // shopping-list add treats it as not-missing, so a short quantity is invisible.
+  it("name-only fallback: bare tokens carry no quantity, so a match counts as 'have'", () => {
+    // reconcileRecipe(ingredients, string[]) is the name-presence path — used when
+    // the caller has no quantities (e.g. legacy token lists). A match is "have".
     const r = reconcileRecipe([{ name: "tomato", quantity: 4, unit: "pcs" }], ["tomato"]);
     expect(r.available).toEqual(["tomato"]);
     expect(r.missing).toEqual([]);
   });
 });
 
-// ─────────────────────── Shopping list delta (name-only) ───────────────────────
+// ──────────────── Quantity-aware reconciliation — ISSUE-009 fixed ────────────────
+//
+// getRecipeWithReconciliation now passes InventoryLot[] (tokens + quantity + unit
+// + typicalPieceGrams), so "have some but not enough" is a real shortfall and the
+// shopping-list delta is need − have, not the full recipe amount.
 
-describe("D · shopping-list delta", () => {
-  it("KNOWN GAP: reconciliation.missing carries the name; no recipeQty − inventoryQty anywhere  [DELTA: P2, ISSUE-009]", () => {
-    // The plan wants: inventory tomatoes = 2, recipe needs 4 → list shows 2.
-    // Reality: addRecipeMissing (server/services/shopping.ts:59-76) only adds names
-    // that are wholly absent from inventory, at `detail.quantity` (the recipe's
-    // FULL amount, shopping.ts:69) — there is no subtraction. And a partially-
-    // stocked ingredient like this one never reaches `missing` at all, so nothing
-    // is added. Runtime proof needs a test DB (see QA-REPORT §11).
-    const r = reconcileRecipe([{ name: "tomato", quantity: 4, unit: "pcs" }], ["tomato"]);
-    expect(r.missing).toEqual([]); // → addRecipeMissing adds nothing for tomato
+describe("D · quantity-aware reconciliation (ISSUE-009)", () => {
+  it("have 2, need 4 → SHORT, shortBy 2, name in `missing`", () => {
+    const r = reconcileRecipe(
+      [{ name: "tomato", quantity: 4, unit: "pcs" }],
+      [{ tokens: ["tomato"], quantity: 2, unit: "pcs" }],
+    );
+    const line = r.lines[0];
+    expect(line.status).toBe("short");
+    expect(line.have).toBe(2);
+    expect(line.shortBy).toBe(2); // addRecipeMissing writes quantityNeeded = 2
+    expect(r.missing).toEqual(["tomato"]);
+    expect(r.available).toEqual([]);
   });
 
-  it("a fully-absent ingredient is added at the recipe's full quantity, not a delta", () => {
-    const r = reconcileRecipe([{ name: "soy sauce", quantity: 4, unit: "tbsp" }], ["tomato"]);
+  it("have 4, need 4 → HAVE (exact cover, no shortfall)", () => {
+    const r = reconcileRecipe(
+      [{ name: "tomato", quantity: 4, unit: "pcs" }],
+      [{ tokens: ["tomato"], quantity: 4, unit: "pcs" }],
+    );
+    expect(r.lines[0].status).toBe("have");
+    expect(r.lines[0].shortBy).toBe(0);
+    expect(r.missing).toEqual([]);
+  });
+
+  it("cross-unit: need 400 g, have 0.3 kg → SHORT by 100 g (convert() bridges g↔kg)", () => {
+    const r = reconcileRecipe(
+      [{ name: "chicken", quantity: 400, unit: "g" }],
+      [{ tokens: ["chicken breast"], quantity: 0.3, unit: "kg" }],
+    );
+    expect(r.lines[0].status).toBe("short");
+    expect(r.lines[0].have).toBe(300);
+    expect(r.lines[0].shortBy).toBe(100);
+  });
+
+  it("multiple lots of the same ingredient are summed before comparing", () => {
+    const r = reconcileRecipe(
+      [{ name: "egg", quantity: 6, unit: "pcs" }],
+      [
+        { tokens: ["eggs"], quantity: 4, unit: "pcs" },
+        { tokens: ["egg"], quantity: 3, unit: "pcs" },
+      ],
+    );
+    expect(r.lines[0].status).toBe("have"); // 7 ≥ 6
+  });
+
+  it("present but not comparable (no piece weight for pcs↔g) → falls back to 'have', never a false buy", () => {
+    const r = reconcileRecipe(
+      [{ name: "chicken", quantity: 400, unit: "g" }],
+      [{ tokens: ["chicken"], quantity: 2, unit: "pcs" }], // no typicalPieceGrams
+    );
+    expect(r.lines[0].status).toBe("have");
+    expect(r.lines[0].have).toBeNull();
+  });
+
+  it("wholly absent → MISSING at the full recipe amount", () => {
+    const r = reconcileRecipe(
+      [{ name: "soy sauce", quantity: 4, unit: "tbsp" }],
+      [{ tokens: ["tomato"], quantity: 2, unit: "pcs" }],
+    );
+    expect(r.lines[0].status).toBe("missing");
+    expect(r.lines[0].shortBy).toBe(4);
     expect(r.missing).toEqual(["soy sauce"]);
-    // addRecipeMissing then writes quantityNeeded = 4 (detail.quantity), reason RECIPE.
   });
 
+  it("optional + short is still not counted as missing", () => {
+    const r = reconcileRecipe(
+      [{ name: "parsley", quantity: 10, unit: "g", optional: true }],
+      [{ tokens: ["parsley"], quantity: 2, unit: "g" }],
+    );
+    expect(r.lines[0].status).toBe("short");
+    expect(r.missing).toEqual([]);
+  });
+});
+
+// ─────────────────────── Shopping list dedup (name-only) ───────────────────────
+
+describe("D · shopping-list dedup", () => {
   it("duplicate items are SKIPPED, not merged  [DELTA: plan wants merge; ISSUE-010, P3]", () => {
-    // shopping.ts:60 — `if (have.has(norm(name))) { skipped++; continue; }`
+    // shopping.ts — `if (have.has(norm(line.name))) { skipped++; continue; }`
     // Second add of the same label is dropped; quantities are never summed.
     const names = ["Soy Sauce", "soy sauce", "SOY SAUCE  "];
     const seen = new Set<string>();
@@ -275,13 +338,17 @@ describe("D · integration — cook a recipe, then check the next shop", () => {
     expect(spinach.ok && spinach.newQuantity).toBe(100);
   });
 
-  it("next recipe needs chicken 400g, only 200g left — plan wants list ≈ 200g", () => {
-    // What the code does today: chicken is still IN inventory (200 g > 0), so
-    // reconcileRecipe puts it in `available`, addRecipeMissing skips it, and the
-    // shopping list recommends NOTHING for chicken (not ~200 g).
-    const r = reconcileRecipe([{ name: "chicken", quantity: 400, unit: "g" }], ["chicken"]);
-    expect(r.available).toEqual(["chicken"]);
-    expect(r.missing).toEqual([]);
-    // DELTA: P2, same root cause as ISSUE-009 (no quantity-aware reconciliation).
+  it("next recipe needs chicken 400g, only 200g left → shopping delta ≈ 200g (ISSUE-009 fixed)", () => {
+    // Chicken is still IN inventory (200 g), but reconciliation is now quantity-
+    // aware: 200 < 400 → SHORT, shortBy 200 → addRecipeMissing writes
+    // quantityNeeded = 200, exactly what the plan's §D scenario asks for.
+    const r = reconcileRecipe(
+      [{ name: "chicken", quantity: 400, unit: "g" }],
+      [{ tokens: ["chicken"], quantity: 200, unit: "g" }],
+    );
+    expect(r.lines[0].status).toBe("short");
+    expect(r.lines[0].shortBy).toBe(200);
+    expect(r.available).toEqual([]);
+    expect(r.missing).toEqual(["chicken"]);
   });
 });

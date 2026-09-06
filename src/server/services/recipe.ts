@@ -155,7 +155,16 @@ export async function generateSuggestions(
   const currentSetIds = [...kept.map((k) => k.id), ...newIds];
   const now = new Date();
   await prisma.recipe.updateMany({ where: { id: { in: currentSetIds } }, data: { lastSuggestedAt: now } });
-  await prisma.recipe.deleteMany({ where: { userId, saved: false, id: { notIn: currentSetIds } } });
+  // Prune stale unsaved suggestions — but never one that a meal plan still points
+  // at, or regenerating dinner ideas would silently gut an existing plan (SetNull).
+  await prisma.recipe.deleteMany({
+    where: {
+      userId,
+      saved: false,
+      id: { notIn: currentSetIds },
+      NOT: { mealPlanItems: { some: {} } },
+    },
+  });
 
   return { ok: true, recipeIds: currentSetIds, filtered, usedAI };
 }
@@ -231,9 +240,16 @@ export async function getRecipeWithReconciliation(userId: string, recipeId: stri
     where: { userId, isDeleted: false, quantity: { gt: 0 } },
     include: { ingredient: true },
   });
-  const tokens = items.flatMap((i) => [i.productName, i.ingredient?.canonicalName].filter(Boolean) as string[]);
+  // Quantity-aware reconciliation: pass each item as a lot (its match tokens +
+  // how much of it there is), not a bare name — so "have 2, need 4" is a shortfall.
+  const lots = items.map((i) => ({
+    tokens: [i.productName, i.ingredient?.canonicalName].filter(Boolean) as string[],
+    quantity: i.quantity,
+    unit: i.unit,
+    typicalPieceGrams: i.ingredient?.typicalPieceGrams ?? null,
+  }));
 
-  return { recipe, ingredients, reconciliation: reconcileRecipe(ingredients, tokens) };
+  return { recipe, ingredients, reconciliation: reconcileRecipe(ingredients, lots) };
 }
 
 export interface CookPlanLine {

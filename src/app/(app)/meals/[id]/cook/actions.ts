@@ -33,15 +33,18 @@ export async function cookRecipe(_prev: CookState, formData: FormData): Promise<
 
   const problems: string[] = [];
   let deducted = 0;
+  let overused = 0;
   for (const l of lines) {
     if (!l.include || !l.useQuantity || l.useQuantity <= 0) continue;
     const res = await consumeInventoryItem(user.id, l.inventoryItemId, l.useQuantity, l.useUnit, recipeId);
-    if (res.ok) deducted++;
-    else problems.push(res.reason);
+    if (res.ok) {
+      deducted++;
+      if (res.overuse) overused++; // used more than was in stock — clamped to 0
+    } else problems.push(res.reason);
   }
 
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
   if (deducted === 0 && problems.length > 0) return { error: problems[0] };
-  redirect(`/inventory?cooked=${deducted}`);
+  redirect(`/inventory?cooked=${deducted}${overused > 0 ? `&over=${overused}` : ""}`);
 }

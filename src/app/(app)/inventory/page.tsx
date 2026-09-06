@@ -32,7 +32,15 @@ const DOT: Record<BucketTone, string> = {
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; sort?: string; undo?: string; added?: string; cooked?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    filter?: string;
+    sort?: string;
+    undo?: string;
+    added?: string;
+    cooked?: string;
+    over?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const supabase = await createClient();

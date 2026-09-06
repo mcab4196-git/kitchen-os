@@ -13,8 +13,8 @@ const AUTO_DISMISS_MS = 4600;
 
 /**
  * Confirmation toasts driven by the URL params the server actions already
- * redirect with (`?added`, `?cooked`, `?planned`, `?recalculated`, `?generated`,
- * `?undo`, `?dup`). On mount we read them, show a toast, and strip them from the
+ * redirect with (`?added`, `?cooked`, `?over`, `?planned`, `?recalculated`,
+ * `?generated`, `?undo`, `?dup`). On mount we read them, show a toast, strip them from the
  * URL so a refresh or back-nav doesn't resurrect a stale banner. Mounted once in
  * the app shell.
  */
@@ -49,6 +49,15 @@ export function Toaster() {
       const v = n("cooked");
       consumed.push("cooked");
       next.push({ id: "cooked", tone: "success", message: `Cooked — updated ${v} ingredient${plural(v)}.` });
+    }
+    if (params.has("over")) {
+      const v = n("over");
+      consumed.push("over");
+      next.push({
+        id: "over",
+        tone: "info",
+        message: `You used more than you had of ${v} item${plural(v)} — ${v === 1 ? "it's" : "they're"} now at zero.`,
+      });
     }
     if (params.has("planned")) {
       const v = n("planned");

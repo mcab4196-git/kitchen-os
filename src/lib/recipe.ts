@@ -5,6 +5,8 @@
 // inventory (§17 — never trust the model's "you have this"). Scoring then ranks
 // candidates, favouring recipes that use soon-to-expire items (§11).
 
+import { convert, tidy } from "./units";
+
 export interface RecipeIngredientLite {
   name: string;
   quantity?: number | null;
@@ -12,9 +14,35 @@ export interface RecipeIngredientLite {
   optional?: boolean;
 }
 
+/**
+ * One inventory item as far as reconciliation cares: the names it can be matched
+ * by, and how much of it there is. Pass these (instead of bare name strings) to
+ * get a quantity-aware split — "have 2, need 4" becomes a shortfall, not a tick.
+ */
+export interface InventoryLot {
+  tokens: string[]; // productName + canonical name (+ aliases)
+  quantity?: number | null;
+  unit?: string | null;
+  typicalPieceGrams?: number | null; // enables count <-> mass conversion
+}
+
+export type InventoryInput = string[] | InventoryLot[];
+
+/** Per-ingredient verdict, quantity-aware where the numbers allow it. */
+export interface ReconcileLine {
+  name: string;
+  optional: boolean;
+  needed: number | null; // recipe quantity as written
+  unit: string | null;
+  have: number | null; // inventory qty expressed in `unit`; null = present but not comparable
+  shortBy: number; // how much to buy: max(0, needed - have), or the full amount when absent
+  status: "have" | "short" | "missing";
+}
+
 export interface ReconcileResult {
-  available: string[];
-  missing: string[]; // required ingredients not in inventory
+  available: string[]; // lines with status "have"
+  missing: string[]; // required lines short of, or absent from, inventory
+  lines: ReconcileLine[]; // the full per-ingredient breakdown
   coverage: number; // available / (available + missing), 0..1
 }
 
@@ -47,37 +75,95 @@ export function isAlwaysAvailable(name: string): boolean {
   return ALWAYS_AVAILABLE.has(normName(name));
 }
 
+/** Loose name match between one recipe ingredient and one inventory token. */
+function nameMatchesToken(ingredientName: string, rawToken: string): boolean {
+  const n = normName(ingredientName);
+  const t = normName(rawToken);
+  if (!n || !t) return false;
+  if (t === n) return true;
+  if (n.length >= 3 && t.includes(n)) return true;
+  if (t.length >= 3 && n.includes(t)) return true;
+  return false;
+}
+
 function matches(ingredientName: string, inventoryTokens: string[]): boolean {
   if (isAlwaysAvailable(ingredientName)) return true;
-  const n = normName(ingredientName);
-  if (!n) return false;
-  return inventoryTokens.some((raw) => {
-    const t = normName(raw);
-    if (!t) return false;
-    if (t === n) return true;
-    if (n.length >= 3 && t.includes(n)) return true;
-    if (t.length >= 3 && n.includes(t)) return true;
-    return false;
-  });
+  if (!normName(ingredientName)) return false;
+  return inventoryTokens.some((raw) => nameMatchesToken(ingredientName, raw));
+}
+
+/** Accept either bare name strings (name-only match) or full lots (quantity-aware). */
+function toLots(inventory: InventoryInput): InventoryLot[] {
+  if (inventory.length === 0) return [];
+  if (typeof inventory[0] === "string") {
+    return (inventory as string[]).map((t) => ({ tokens: [t] }));
+  }
+  return inventory as InventoryLot[];
 }
 
 /**
- * Split a recipe's ingredients into what you already have vs need to buy, by
- * matching names against inventory tokens (canonical names, product names,
- * aliases). Optional ingredients you lack are not counted as "missing".
+ * Split a recipe's ingredients into what you already have vs need to buy.
+ *
+ * Names are matched against inventory tokens (product names, canonical names,
+ * aliases). When BOTH the recipe line and the matched lot(s) carry a quantity +
+ * a convertible unit, the amounts are compared: having *some* of an ingredient
+ * but not *enough* is a "short" line (it goes to `missing`, and `shortBy` is the
+ * amount to buy). When the quantities can't be compared (no recipe amount, or an
+ * unconvertible unit) we fall back to name-presence and don't guess. Optional
+ * ingredients you lack are never counted as missing.
  */
 export function reconcileRecipe(
   ingredients: RecipeIngredientLite[],
-  inventoryTokens: string[]
+  inventory: InventoryInput
 ): ReconcileResult {
-  const available: string[] = [];
-  const missing: string[] = [];
-  for (const ing of ingredients) {
-    if (matches(ing.name, inventoryTokens)) available.push(ing.name);
-    else if (!ing.optional) missing.push(ing.name);
-  }
+  const lots = toLots(inventory);
+
+  const lines: ReconcileLine[] = ingredients.map((ing) => {
+    const optional = !!ing.optional;
+    const needed = ing.quantity ?? null;
+    const unit = ing.unit ?? null;
+    const base = { name: ing.name, optional, needed, unit };
+
+    if (isAlwaysAvailable(ing.name)) {
+      return { ...base, have: needed, shortBy: 0, status: "have" as const };
+    }
+
+    const matched = lots.filter((lot) => lot.tokens.some((tok) => nameMatchesToken(ing.name, tok)));
+    if (matched.length === 0) {
+      return { ...base, have: 0, shortBy: needed ?? 0, status: "missing" as const };
+    }
+
+    // Name is present. Compare amounts only when the recipe gave us a quantity
+    // AND at least one matched lot converts into the recipe's unit.
+    if (needed == null || unit == null) {
+      return { ...base, have: null, shortBy: 0, status: "have" as const };
+    }
+    let sum = 0;
+    let comparable = false;
+    for (const lot of matched) {
+      if (lot.quantity == null || !lot.unit) continue;
+      const inRecipeUnit = convert(lot.quantity, lot.unit, unit, {
+        typicalPieceGrams: lot.typicalPieceGrams ?? null,
+      });
+      if (inRecipeUnit == null) continue;
+      sum += inRecipeUnit;
+      comparable = true;
+    }
+    if (!comparable) {
+      return { ...base, have: null, shortBy: 0, status: "have" as const };
+    }
+
+    const have = tidy(sum);
+    if (have + 1e-6 >= needed) {
+      return { ...base, have, shortBy: 0, status: "have" as const };
+    }
+    return { ...base, have, shortBy: tidy(needed - have), status: "short" as const };
+  });
+
+  const available = lines.filter((l) => l.status === "have").map((l) => l.name);
+  const missing = lines.filter((l) => l.status !== "have" && !l.optional).map((l) => l.name);
   const denom = available.length + missing.length || 1;
-  return { available, missing, coverage: available.length / denom };
+  return { available, missing, lines, coverage: available.length / denom };
 }
 
 // ─── Ingredient tiers: proteins and mains matter far more than staples ───
