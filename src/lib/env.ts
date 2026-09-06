@@ -11,8 +11,12 @@ const schema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().default("http://localhost:3000"),
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1).optional(),
-  // M2 (optional until receipt scanning is used)
+  // M2 (optional until receipt scanning is used). AI_PROVIDER defaults to
+  // "gemini" (see server/ai/provider.ts); set the matching key for whichever
+  // provider you deploy with.
   AI_PROVIDER: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
   RECEIPTS_BUCKET: z.string().optional(),

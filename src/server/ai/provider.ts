@@ -2,7 +2,7 @@
 //
 // The rest of the app depends ONLY on this interface, never on a specific vendor.
 // Swapping providers = adding one class and changing getAIProvider(). Today the
-// default is Anthropic; nothing else in the codebase knows or cares.
+// default is Gemini (AI_PROVIDER env); nothing else in the codebase knows or cares.
 
 export interface RawReceiptItem {
   rawName: string;
