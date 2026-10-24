@@ -145,7 +145,6 @@ export function ItemForm({
       cancelled = true;
       clearTimeout(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ingredientId, ingredientName, categoryId, storage, opened, purchaseDate, exactDate]);
 
   const isEdit = Boolean(initial.id);

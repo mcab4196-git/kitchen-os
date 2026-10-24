@@ -134,7 +134,7 @@ export async function createInventoryItem(
   });
 }
 
-export interface UpdateItemInput extends CreateItemInput {}
+export type UpdateItemInput = CreateItemInput;
 
 /** Update an item, re-deriving expiry with the same rules as create. */
 export async function updateInventoryItem(userId: string, id: string, input: UpdateItemInput) {

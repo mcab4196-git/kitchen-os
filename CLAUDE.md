@@ -16,6 +16,7 @@ AI behind one interface: Gemini (default) or Anthropic, chosen by `AI_PROVIDER`.
 ```bash
 npm run dev          # local app (needs .env — copy .env.example)
 npm run typecheck    # tsc --noEmit
+npm run lint         # eslint, zero warnings allowed (CI runs typecheck · lint · test · build on every PR)
 npm test             # vitest, pure logic only, no DB needed
 npm run build        # prisma generate && next build
 npm run db:migrate   # prisma migrate dev (uses DIRECT_URL, port 5432)
@@ -23,7 +24,8 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **151 tests / 13 files green, typecheck clean.** Run both before finishing any change.
+Baseline you must not break: **151 tests / 13 files green, typecheck and lint clean.** Run all three before finishing
+any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
 Run `npm ci`, or call the tools directly:
