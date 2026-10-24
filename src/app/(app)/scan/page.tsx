@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Icon } from "@/components/ui/icon";
 import { IndeterminateBar } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils";
+import { MAX_RECEIPT_BYTES } from "@/lib/receipt-file";
+import { shrinkImage } from "./shrink-image";
 
 export default function ScanPage() {
   const [state, action, pending] = useActionState<ScanState, FormData>(uploadReceipt, {});
@@ -17,14 +19,42 @@ export default function ScanPage() {
   const [isPdf, setIsPdf] = useState(false);
   const [hasFile, setHasFile] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  // N1: photos are shrunk on the device before upload; this covers that short wait.
+  const [preparing, setPreparing] = useState(false);
+  const [tooBig, setTooBig] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pickId = useRef(0);
 
-  function accept(f: File | undefined) {
+  async function accept(f: File | undefined) {
+    const id = ++pickId.current;
     setHasFile(Boolean(f));
     setFileName(f?.name ?? null);
     const pdf = f?.type === "application/pdf";
     setIsPdf(pdf);
     setPreview(f && !pdf ? URL.createObjectURL(f) : null);
+    setTooBig(null);
+    if (!f) return;
+
+    setPreparing(true);
+    const upload = await shrinkImage(f);
+    if (id !== pickId.current) return; // a newer pick replaced this one
+    setPreparing(false);
+    if (upload !== f) {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(upload);
+        if (inputRef.current) inputRef.current.files = dt.files;
+      } catch {
+        // No DataTransfer: the original goes up, and the server enforces the limit.
+      }
+    }
+    if (upload.size > MAX_RECEIPT_BYTES) {
+      setTooBig(
+        pdf
+          ? "That PDF is over 4 MB. Try a smaller export, or take a photo of the receipt instead."
+          : "That image is over 4 MB and couldn't be shrunk here. Try taking the photo again.",
+      );
+    }
   }
 
   // One hidden input feeds the form; the two buttons only differ by whether they
@@ -98,7 +128,7 @@ export default function ScanPage() {
                   <Icon name="camera" size={20} />
                 </span>
                 <span className="font-medium text-ink">Photograph the whole receipt, flat and lit</span>
-                <span className="text-[13px] text-muted">JPEG, PNG, WebP or PDF · up to 10&nbsp;MB</span>
+                <span className="text-[13px] text-muted">Photos are resized for upload · PDFs up to 4&nbsp;MB</span>
               </>
             )}
           </div>
@@ -123,12 +153,12 @@ export default function ScanPage() {
           />
         </div>
 
-        {state.error && (
+        {(tooBig ?? state.error) && (
           <p
             role="alert"
             className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
           >
-            {state.error}
+            {tooBig ?? state.error}
           </p>
         )}
 
@@ -159,8 +189,8 @@ export default function ScanPage() {
           <span aria-hidden />
         </div>
 
-        <Button type="submit" loading={pending} disabled={!hasFile} size="lg">
-          {pending ? "Reading receipt…" : "Extract items"}
+        <Button type="submit" loading={pending} disabled={!hasFile || preparing || Boolean(tooBig)} size="lg">
+          {pending ? "Reading receipt…" : preparing ? "Preparing photo…" : "Extract items"}
         </Button>
       </form>
     </main>

@@ -3,6 +3,7 @@ import { prisma } from "@/server/db";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider } from "@/server/ai/provider";
 import { validateAndClean, simplifyProductName, type ReviewedItem } from "@/server/ai/schemas";
+import { receiptFileProblem, sniffReceiptType } from "@/lib/receipt-file";
 import { resolveIngredientByText } from "./reference";
 import { createInventoryItem } from "./inventory";
 
@@ -24,10 +25,12 @@ function sha256(buf: Buffer): string {
  */
 export async function createAndParseReceipt(userId: string, file: File): Promise<ParseOutcome> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  if (buffer.length === 0) return { ok: false, error: "The image was empty." };
-  if (buffer.length > 10 * 1024 * 1024) return { ok: false, error: "Image is larger than 10 MB." };
+  // S6: judge the file by its bytes, not the browser's label, before anything is
+  // stored or sent to the AI; N1: and hold it to the upload limit.
+  const mediaType = sniffReceiptType(buffer);
+  const problem = receiptFileProblem(buffer.length, mediaType);
+  if (problem || !mediaType) return { ok: false, error: problem ?? "Unsupported file." };
 
-  const mediaType = file.type || "image/jpeg";
   const hash = sha256(buffer);
 
   // Duplicate detection: block only on a prior *successful* scan of this image.

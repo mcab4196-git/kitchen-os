@@ -17,6 +17,9 @@ const nextConfig = {
   poweredByHeader: false,
   // Receipt images are served from Supabase Storage signed URLs.
   images: { remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }] },
+  // N1: Server Actions default to a 1 MB body. Photos are shrunk on the phone first;
+  // this leaves room for a 4 MB PDF while staying under Vercel's 4.5 MB request cap.
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -23,7 +23,7 @@ npm run db:rls       # apply prisma/rls.sql via psql — re-run after adding tab
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **109 tests / 9 files green, typecheck clean.** Run both before finishing any change.
+Baseline you must not break: **130 tests / 12 files green, typecheck clean.** Run both before finishing any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
 Run `npm ci`, or call the tools directly:
@@ -93,8 +93,13 @@ src/server/services/          ALL database access, every query scoped by userId
 
 ## Environment
 
-See `.env.example`. Server-only keys never get a `NEXT_PUBLIC_` prefix. `src/lib/env.ts` defines validation but is
-**not imported anywhere yet**, so the app reads `process.env` directly (PLAN item).
+See `.env.example`. Server-only keys never get a `NEXT_PUBLIC_` prefix. `src/instrumentation.ts` validates the
+environment once at server start with `checkEnv()` from `src/lib/env.ts`, and the app stops booting if it's invalid.
+Code still reads `process.env` directly. The key for the selected `AI_PROVIDER` (default `gemini`) is required.
+
+Receipt uploads: the scan page shrinks photos on the device (`scan/shrink-image.ts`) before upload, and the server
+trusts only the file's bytes (`sniffReceiptType`) and a 4 MB limit, all in `src/lib/receipt-file.ts`. The Server Action
+body limit is 4.5mb in `next.config.mjs` (Vercel caps requests at 4.5 MB), so don't raise one without the other.
 Anthropic provider: the default model is `claude-sonnet-5`. Moving to `claude-sonnet-5-5` / `claude-opus-5-5` requires
 first replacing forced `tool_choice: {type: "tool"}` (a 400 on those models) with structured outputs.
 

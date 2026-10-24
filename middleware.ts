@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and image files.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Run on everything except static assets, image files and the health probe
+  // (ISSUE-003: uptime checks must get the JSON status, not a sign-in redirect).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
