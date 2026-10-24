@@ -23,7 +23,7 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **146 tests / 13 files green, typecheck clean.** Run both before finishing any change.
+Baseline you must not break: **151 tests / 13 files green, typecheck clean.** Run both before finishing any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
 Run `npm ci`, or call the tools directly:
@@ -49,7 +49,8 @@ src/server/services/          ALL database access, every query scoped by userId
    action or page calls `supabase.auth.getUser()` and redirects when there is no user. Every Prisma query filters by
    `userId`, directly or through an owned parent. IDs from the client are never trusted: verify ownership first
    (pattern: the `ownItemIds` check in `commitReceipt`). RLS in `prisma/rls.sql` is defense-in-depth only.
-2. **AI output is untrusted.** Validate with zod (`ai/schemas.ts`, `ai/recipe-schemas.ts`) before any DB write. The
+2. **AI output is untrusted.** Validate with zod (`ai/schemas.ts`, `ai/recipe-schemas.ts`) before any DB write,
+   including size: recipes have per-field length caps and a repeated-word loop check, and are validated one by one. The
    model never decides what the user has: `reconcileRecipe` does, in code. Allergens and dislikes are a hard filter in
    code: `recipeIsForbidden` (EU-14 groups from `lib/allergens.ts`) runs on every recipe a user can be offered,
    including AI output, saved favourites and older suggestions. Only the user-reviewed payload from the review screen

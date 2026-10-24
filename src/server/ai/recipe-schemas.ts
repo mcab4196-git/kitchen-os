@@ -14,28 +14,65 @@ const num = z.preprocess((v) => {
   return Number.isFinite(n as number) ? n : null;
 }, z.number().nullable());
 
+// AI text is untrusted in size too: a model stuck in a loop once wrote an 8,555-
+// character ingredient "unit". Every field has a generous cap; a recipe that breaks
+// one is dropped, never truncated into something plausible-looking.
+const text = (max: number) => z.string().trim().min(1).max(max);
+// Models sometimes write the word "null" (or "none") instead of leaving a field empty.
+const optionalText = (max: number) =>
+  z
+    .preprocess((v) => (typeof v === "string" && /^\s*(null|none|n\/a)?\s*$/i.test(v) ? null : v), z.string().trim().max(max).nullable())
+    .optional()
+    .default(null);
+
 export const recipeIngredientSchema = z.object({
-  name: z.string().min(1),
+  name: text(80),
   quantity: num.optional().default(null),
-  unit: z.string().nullable().optional().default(null),
+  unit: optionalText(24),
   optional: z.boolean().optional().default(false),
 });
 
 export const recipeSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().nullable().optional().default(null),
+  name: text(120),
+  description: optionalText(600),
   prepMinutes: num.optional().default(null),
   cookMinutes: num.optional().default(null),
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).optional().default("EASY"),
   servings: num.optional().default(null),
-  ingredients: z.array(recipeIngredientSchema).default([]),
-  instructions: z.array(z.string()).default([]),
-  storageNotes: z.string().nullable().optional().default(null),
-  leftoverNotes: z.string().nullable().optional().default(null),
+  ingredients: z.array(recipeIngredientSchema).min(1).max(40),
+  instructions: z.array(text(800)).min(1).max(30),
+  storageNotes: optionalText(400),
+  leftoverNotes: optionalText(400),
 });
 
-export const recipesSchema = z.array(recipeSchema);
 export type ValidatedRecipe = z.infer<typeof recipeSchema>;
+
+/** A generation loop shows up as one word repeated over and over ("g g g g g"). */
+function repeatsItself(s: string | null | undefined): boolean {
+  if (!s) return false;
+  let run = 1;
+  const words = s.toLowerCase().split(/\s+/).filter(Boolean);
+  for (let i = 1; i < words.length; i++) {
+    run = words[i] === words[i - 1] ? run + 1 : 1;
+    if (run >= 5) return true;
+  }
+  return false;
+}
+
+function looped(r: { name: string; description?: string | null; ingredients: { name: string; unit?: string | null }[]; instructions?: string[] }): boolean {
+  return [r.name, r.description, ...r.ingredients.flatMap((i) => [i.name, i.unit]), ...(r.instructions ?? [])].some(repeatsItself);
+}
+
+/**
+ * True when a stored recipe is garbled: it would fail today's checks on the name or
+ * ingredients (length caps, a repeated-word loop). Used to hide recipes saved before
+ * these checks existed, so they're never offered again.
+ */
+export function recipeIsMalformed(recipe: { name: string; ingredients: unknown[] }): boolean {
+  if (!text(120).safeParse(recipe.name).success) return true;
+  const ings = z.array(recipeIngredientSchema).min(1).max(40).safeParse(recipe.ingredients);
+  return !ings.success || looped({ name: recipe.name, ingredients: ings.data });
+}
 
 function stem(w: string): string {
   // "-ies" → "-y", so an allergy to "strawberry" also catches "strawberries".
@@ -80,16 +117,21 @@ export function recipeIsForbidden(
 }
 
 /**
- * Validate raw model output and drop any recipe that contains an allergen or a
- * disliked food. Returns the safe recipes plus how many were filtered out.
+ * Validate raw model output recipe by recipe: drop any that is malformed or garbled
+ * (so one bad recipe can't sink the batch), then any that contains an allergen or a
+ * disliked food. Returns the safe recipes plus how many were dropped.
  */
 export function validateAndFilterRecipes(
   raw: unknown,
   opts: { allergies: string[]; dislikes: string[] }
 ): { ok: true; recipes: ValidatedRecipe[]; filtered: number } | { ok: false; error: string } {
-  const parsed = recipesSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "AI returned recipes in an unexpected shape." };
+  if (!Array.isArray(raw)) return { ok: false, error: "AI returned recipes in an unexpected shape." };
 
-  const safe = parsed.data.filter((r) => !recipeIsForbidden(r, opts));
-  return { ok: true, recipes: safe, filtered: parsed.data.length - safe.length };
+  const wellFormed: ValidatedRecipe[] = [];
+  for (const item of raw) {
+    const parsed = recipeSchema.safeParse(item);
+    if (parsed.success && !looped(parsed.data)) wellFormed.push(parsed.data);
+  }
+  const safe = wellFormed.filter((r) => !recipeIsForbidden(r, opts));
+  return { ok: true, recipes: safe, filtered: raw.length - safe.length };
 }

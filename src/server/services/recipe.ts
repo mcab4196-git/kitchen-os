@@ -1,6 +1,11 @@
 import { prisma } from "@/server/db";
 import { getAIProvider } from "@/server/ai/provider";
-import { recipeIsForbidden, validateAndFilterRecipes, type ValidatedRecipe } from "@/server/ai/recipe-schemas";
+import {
+  recipeIsForbidden,
+  recipeIsMalformed,
+  validateAndFilterRecipes,
+  type ValidatedRecipe,
+} from "@/server/ai/recipe-schemas";
 import { reconcileRecipe, scoreRecipe, normName, analyzeCookability } from "@/lib/recipe";
 import { planMeals, type PlanCandidate } from "@/lib/planner";
 import { convert, tidy } from "@/lib/units";
@@ -216,15 +221,20 @@ export async function toggleSaved(userId: string, recipeId: string): Promise<boo
 }
 
 /**
- * The allergen/dislike hard filter for stored recipes: saved favourites, and
- * suggestions made before the user changed their preferences. AI output is
- * filtered as it arrives (validateAndFilterRecipes); this covers everything else.
+ * The hard filter for stored recipes: saved favourites, and suggestions made before
+ * the user changed their preferences or before today's output checks. Drops any
+ * recipe with an allergen or disliked food, and any garbled one (a model loop once
+ * stored an 8,555-character "unit"). AI output is checked as it arrives
+ * (validateAndFilterRecipes); this covers everything already in the database.
  */
 export function allowedFor<T extends { name: string; nutrition: unknown }>(
   recipes: T[],
   prefs: { allergies: string[]; dislikes: string[] }
 ): T[] {
-  return recipes.filter((r) => !recipeIsForbidden({ name: r.name, ingredients: ingredientListOf(r.nutrition) }, prefs));
+  return recipes.filter((r) => {
+    const ingredients = ingredientListOf(r.nutrition);
+    return !recipeIsMalformed({ name: r.name, ingredients }) && !recipeIsForbidden({ name: r.name, ingredients }, prefs);
+  });
 }
 
 /** The current suggestion set (saved kept + AI fill), saved shown first, minus anything now forbidden. */

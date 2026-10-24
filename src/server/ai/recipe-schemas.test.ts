@@ -40,7 +40,47 @@ describe("validateAndFilterRecipes", () => {
   });
 });
 
-import { recipeIsForbidden } from "./recipe-schemas";
+import { recipeIsForbidden, recipeIsMalformed } from "./recipe-schemas";
+
+describe("garbled AI output — the 8,555-character unit", () => {
+  const loopUnit = "g VeraTex / pack units or g equivalent grams grams " + "g ".repeat(4000);
+  const broken = {
+    name: "Filipino Pork and Potato Picadillo",
+    ingredients: [{ name: "Minced Pork and Beef", quantity: 300, unit: loopUnit }],
+    instructions: ["Brown the meat"],
+  };
+
+  it("drops a recipe with a runaway field but keeps the rest of the batch", () => {
+    const r = validateAndFilterRecipes([broken, good], { allergies: [], dislikes: [] });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.recipes.map((x) => x.name)).toEqual(["Chicken Rice Bowl"]);
+      expect(r.filtered).toBe(1);
+    }
+  });
+
+  it("drops a short loop of repeated words, even under the length caps", () => {
+    const stuck = { ...good, name: "Stuck stew", instructions: ["Stir stir stir stir stir until done"] };
+    const r = validateAndFilterRecipes([stuck], { allergies: [], dislikes: [] });
+    expect(r.ok && r.recipes.length).toBe(0);
+  });
+
+  it("drops a recipe with no ingredients or no steps", () => {
+    const r = validateAndFilterRecipes([{ ...good, ingredients: [] }, { ...good, instructions: [] }], { allergies: [], dislikes: [] });
+    expect(r.ok && r.recipes.length).toBe(0);
+  });
+
+  it('reads a unit written as the word "null" as no unit', () => {
+    const r = validateAndFilterRecipes([{ ...good, ingredients: [{ name: "rice", unit: "null" }] }], { allergies: [], dislikes: [] });
+    expect(r.ok && r.recipes[0].ingredients[0].unit).toBeNull();
+  });
+
+  it("flags garbled stored recipes so they're hidden, and passes normal ones", () => {
+    expect(recipeIsMalformed({ name: broken.name, ingredients: broken.ingredients })).toBe(true);
+    expect(recipeIsMalformed({ name: "Adobo", ingredients: [{ name: "pork", quantity: 500, unit: "g" }] })).toBe(false);
+    expect(recipeIsMalformed({ name: "Adobo", ingredients: [] })).toBe(true);
+  });
+});
 
 describe("recipeIsForbidden — allergen groups (N2)", () => {
   const recipe = (name: string, ...ingredients: string[]) => ({ name, ingredients: ingredients.map((n) => ({ name: n })) });
