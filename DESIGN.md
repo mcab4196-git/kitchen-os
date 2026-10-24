@@ -259,7 +259,9 @@ destinations, Receipt history at the foot) beside a content column of up to 760p
 gutters. Sheets rise from the bottom on phones and become centred dialogs from 640px.
 
 Rhythm: 24px between a page header and its content, 36px before a major section, 8–12px between rows and cards,
-10px between paired buttons. Horizontal chip strips scroll with a faded right edge rather than wrapping.
+10px between paired buttons. A fixed set of filter chips wraps onto more lines rather than scrolling sideways, so every
+option stays visible and reachable with a mouse. Only open-ended strips (Quick add on the add-item form) scroll
+sideways, with a faded right edge.
 
 Home is **Today** (PLAN 5.8). On phones, the Tonight card sits above the "Also to do" list. On desktop, Today takes
 the full content width (a page opts in by marking its `<main>` with `data-wide`): the list sits on the left and the

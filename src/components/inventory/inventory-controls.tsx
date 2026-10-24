@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useState, useEffect, useTransition, useRef } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { controlClass } from "@/components/ui/field";
@@ -25,7 +25,6 @@ export function InventoryControls({ counts }: { counts?: Record<string, number> 
   const pathname = usePathname();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const stripRef = useRef<HTMLDivElement>(null);
 
   const activeFilter = params.get("filter") ?? "all";
   const sort = params.get("sort") ?? "expiry";
@@ -42,17 +41,6 @@ export function InventoryControls({ counts }: { counts?: Record<string, number> 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
-
-  // Keep the active chip in view when it changes (e.g. deep-linked filter).
-  // Scroll the strip itself — `scrollIntoView` on a horizontal strip can also
-  // scroll the whole page up/down.
-  useEffect(() => {
-    const strip = stripRef.current;
-    const active = strip?.querySelector<HTMLElement>('[data-active="true"]');
-    if (!strip || !active) return;
-    const left = active.offsetLeft - strip.clientWidth / 2 + active.clientWidth / 2;
-    strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
-  }, [activeFilter]);
 
   function setParam(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -92,17 +80,17 @@ export function InventoryControls({ counts }: { counts?: Record<string, number> 
         </select>
       </div>
 
-      <div
-        ref={stripRef}
-        className="no-scrollbar edge-fade-x -mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 lg:-mx-1 lg:px-1"
-      >
+      {/* Wraps rather than scrolling sideways: there are only seven fixed filters, and in a
+          scrolling strip the hidden ones could only be reached by tapping the last visible chip. */}
+      <div role="group" aria-label="Filter inventory" className="flex flex-wrap gap-2">
         {FILTERS.map(([value, label]) => {
           const active = activeFilter === value;
           const count = counts?.[value];
           return (
             <button
               key={value}
-              data-active={active}
+              type="button"
+              aria-pressed={active}
               onClick={() => setParam("filter", value)}
               className={cn(
                 "inline-flex min-h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition duration-fast ease-out active:scale-95",
