@@ -3,6 +3,8 @@
 Kitchen inventory, expiry tracking and AI meal planning to cut food waste. A mobile-first PWA, free, for public
 users in the Philippines (PHP, English UI). v1.0.0 (Sep 2026). Product truth: [PRODUCT.md](PRODUCT.md).
 Upstream: `github.com/mcab4196-git/kitchen-os` (`main`). Roadmap: [PLAN.md](PLAN.md). Findings: [REVIEW.md](REVIEW.md).
+PLAN.md and REVIEW.md are local-only (git-ignored): the repo is public and they list open security items. Don't
+commit them, and don't copy their open findings into tracked files or commit messages.
 Because users are public, one user's data or corrections must never change what another user sees.
 
 ## Stack

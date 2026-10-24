@@ -9,3 +9,6 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 .vercel
 .claude/settings.local.json
+# The repo is public and these list open security items: local-only.
+/REVIEW.md
+/PLAN.md
