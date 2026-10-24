@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:45:00+08:00",
+  "title": "Design System: Kitchen OS",
+  "extensions": {
+    "colorMeta": {
+      "brand": { "role": "primary", "displayName": "Pandan", "canonical": "oklch(42.4% 0.054 174.2)", "dark": "#7CC0A6", "tonalRamp": ["#000F0A", "#002D23", "#1E4B40", "#3E6B5F", "#5F8D80", "#82B1A2", "#A5D5C6", "#CAFBEC"] },
+      "brand-soft": { "role": "primary", "displayName": "Pandan Mist", "dark": "#22322C" },
+      "brand-ink": { "role": "primary", "displayName": "Pandan Deep", "dark": "#A9D8C6" },
+      "brand-contrast": { "role": "primary", "displayName": "On Pandan", "dark": "#121610" },
+      "accent": { "role": "secondary", "displayName": "Kalabasa", "canonical": "oklch(70.8% 0.150 53.1)", "dark": "#E89A5A", "tonalRamp": ["#170600", "#3D1A00", "#673102", "#964901", "#C5640C", "#ED873F", "#FEB78A", "#FFEADD"] },
+      "accent-soft": { "role": "secondary", "displayName": "Kalabasa Cream", "dark": "#3A2A1C" },
+      "accent-fg": { "role": "secondary", "displayName": "Kalabasa Ink", "dark": "#E9A86F" },
+      "surface": { "role": "neutral", "displayName": "Rice Paper", "canonical": "oklch(98.5% 0.004 91.4)", "dark": "#161612", "tonalRamp": ["#0C0B09", "#262523", "#434240", "#62615F", "#838280", "#A6A5A2", "#CAC9C6", "#EFEEEB"] },
+      "surface-2": { "role": "neutral", "displayName": "Rice Paper Shade", "dark": "#1C1C17" },
+      "card": { "role": "neutral", "displayName": "Card White", "dark": "#20201A" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(22.2% 0.004 84.6)", "dark": "#F0EDE6", "tonalRamp": ["#0C0B09", "#262523", "#434240", "#62615F", "#838280", "#A6A5A2", "#CAC9C6", "#F0EEEB"] },
+      "muted": { "role": "neutral", "displayName": "Muted", "dark": "#A5A196" },
+      "faint": { "role": "neutral", "displayName": "Faint (decorative only)", "dark": "#827F75" },
+      "line": { "role": "neutral", "displayName": "Hairline", "dark": "#33322B" },
+      "line-strong": { "role": "neutral", "displayName": "Hairline Strong", "dark": "#4C4A40" },
+      "status-critical": { "role": "status", "displayName": "Critical", "canonical": "oklch(57.5% 0.161 29.7)", "dark": "#E0685A", "tonalRamp": ["#1F0000", "#4D0100", "#800300", "#AA2F22", "#D15444", "#FA7966", "#FEB4A7", "#FEE9E5"] },
+      "status-critical-fg": { "role": "status", "displayName": "Critical Text", "dark": "#F0938A" },
+      "status-critical-bg": { "role": "status", "displayName": "Critical Tint", "dark": "#2E1A17" },
+      "status-critical-border": { "role": "status", "displayName": "Critical Hairline", "dark": "#5A342E" },
+      "status-soon": { "role": "status", "displayName": "Soon", "canonical": "oklch(71.7% 0.138 71.2)", "dark": "#E0A954", "tonalRamp": ["#130800", "#362000", "#5C3902", "#865504", "#B27301", "#DB9430", "#FFBA61", "#FFEBD5"] },
+      "status-soon-fg": { "role": "status", "displayName": "Soon Text", "dark": "#E6B978" },
+      "status-soon-bg": { "role": "status", "displayName": "Soon Tint", "dark": "#2C2416" },
+      "status-soon-border": { "role": "status", "displayName": "Soon Hairline", "dark": "#584828" },
+      "status-soon-bar": { "role": "status", "displayName": "Soon Bar (freshness fill only)", "dark": "#E0A954" },
+      "status-fresh": { "role": "status", "displayName": "Fresh", "canonical": "oklch(63.0% 0.108 154.3)", "dark": "#5FB985", "tonalRamp": ["#001005", "#012E16", "#02502A", "#207344", "#479564", "#6BB986", "#8FDEAA", "#C5FFD7"] },
+      "status-fresh-fg": { "role": "status", "displayName": "Fresh Text", "dark": "#84C9A2" },
+      "status-fresh-bg": { "role": "status", "displayName": "Fresh Tint", "dark": "#16271D" },
+      "status-fresh-border": { "role": "status", "displayName": "Fresh Hairline", "dark": "#2E5540" },
+      "status-unknown": { "role": "status", "displayName": "Unknown", "canonical": "oklch(63.1% 0.012 106.7)", "dark": "#9A968C", "tonalRamp": ["#0C0C06", "#26251F", "#43423B", "#62625A", "#83837B", "#A6A69D", "#CACAC1", "#EFEFE6"] },
+      "status-unknown-fg": { "role": "status", "displayName": "Unknown Text", "dark": "#A6A296" },
+      "status-unknown-bg": { "role": "status", "displayName": "Unknown Tint", "dark": "#26251F" },
+      "status-unknown-border": { "role": "status", "displayName": "Unknown Hairline", "dark": "#45433B" }
+    },
+    "typographyMeta": {
+      "title-lg": { "displayName": "Title Large", "purpose": "Login and not-found headlines; the big quantity on the Use screen." },
+      "title": { "displayName": "Title", "purpose": "Every top-level page title." },
+      "title-sm": { "displayName": "Title Small", "purpose": "Section headings, sheet titles, empty-state titles." },
+      "body": { "displayName": "Body", "purpose": "Default text; secondary lines drop to 13-13.5px in Muted." },
+      "read": { "displayName": "Read", "purpose": "Recipe steps and long copy, about 65ch." },
+      "label": { "displayName": "Label", "purpose": "Badges, tab labels, meta; uppercase with 0.1em tracking for inventory bucket headers." }
+    },
+    "shadows": [
+      { "name": "xs", "value": "0 1px 1px rgb(var(--shadow) / 0.04)", "purpose": "Whisper under primary buttons and the active chip." },
+      { "name": "card", "value": "0 1px 2px rgb(var(--shadow) / 0.05), 0 8px 24px rgb(var(--shadow) / 0.08)", "purpose": "Cards and link rows at rest; slightly lifted (2026-10-25)." },
+      { "name": "pop", "value": "0 6px 16px rgb(var(--shadow) / 0.10), 0 24px 64px rgb(var(--shadow) / 0.20)", "purpose": "Sheets, dialogs, toasts, the floating Add button, hovered interactive cards (strengthened 2026-10-25)." },
+      { "name": "nav", "value": "0 -1px 0 rgb(var(--line) / 1), 0 -8px 24px rgb(var(--shadow) / 0.04)", "purpose": "Top edge of the bottom tab bar." },
+      { "name": "focus", "value": "0 0 0 2px rgb(var(--surface) / 1), 0 0 0 4px rgb(var(--brand) / 1)", "purpose": "Focus ring where an outline can't be used." }
+    ],
+    "motion": [
+      { "name": "duration-fast", "value": "120ms", "purpose": "Colour and press feedback." },
+      { "name": "duration-default", "value": "180ms", "purpose": "Most state transitions." },
+      { "name": "duration-slow", "value": "280ms", "purpose": "Sheets, scrims, the active-tab bar." },
+      { "name": "ease-out", "value": "cubic-bezier(0.2, 0.8, 0.2, 1)", "purpose": "Default easing for entrances and state changes." },
+      { "name": "ease-in", "value": "cubic-bezier(0.4, 0, 1, 1)", "purpose": "Exits." },
+      { "name": "ease-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Small, playful confirmations only." },
+      { "name": "status-beat", "value": "scale 1 → 1.06 → 1 over 0.5s, once", "purpose": "One attention beat on an urgent badge's first paint." },
+      { "name": "reduced-motion", "value": "durations to 0.01ms except .motion-keep", "purpose": "OS setting or the in-app Reduce motion preference." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px", "purpose": "Bottom sheet becomes a centred dialog." },
+      { "name": "lg", "value": "1024px", "purpose": "Tab bar becomes the 224px sidebar; content column widens to 760px." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action on a screen: Cook & deduct, Scan receipt, Save.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10\"/></svg>Scan receipt</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:0;border-radius:0.7rem;background:rgb(var(--brand,43 88 76));color:rgb(var(--brand-contrast,255 255 255));font:500 14px/1 Inter,system-ui,sans-serif;letter-spacing:-0.005em;box-shadow:0 1px 1px rgb(var(--shadow,28 27 25) / 0.04);cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms cubic-bezier(0.2,0.8,0.2,1)}.ds-btn-primary:hover{background:rgb(var(--brand-ink,30 62 54))}.ds-btn-primary:active{transform:translateY(1px) scale(0.985)}.ds-btn-primary:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The alternative next to a primary: Other ideas, Add item.",
+      "html": "<button class=\"ds-btn-secondary\">Other ideas</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid rgb(var(--line-strong,201 194 180));border-radius:0.7rem;background:rgb(var(--card,255 255 255));color:rgb(var(--ink,28 27 25));font:500 14px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),border-color 120ms,transform 120ms}.ds-btn-secondary:hover{background:rgb(var(--surface-2,246 244 239));border-color:rgb(var(--line,228 223 214))}.ds-btn-secondary:active{transform:translateY(1px) scale(0.985)}.ds-btn-secondary:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}"
+    },
+    {
+      "name": "Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Buying actions: Add missing to shopping list. Tint, never white-on-orange.",
+      "html": "<button class=\"ds-btn-accent\">Add 3 to shopping list</button>",
+      "css": ".ds-btn-accent{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid rgb(var(--accent,232 131 58) / 0.3);border-radius:0.7rem;background:rgb(var(--accent-soft,251 235 220));color:rgb(var(--accent-fg,149 71 22));font:500 14px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(0.2,0.8,0.2,1),transform 120ms}.ds-btn-accent:hover{background:rgb(var(--accent,232 131 58) / 0.15)}.ds-btn-accent:active{transform:translateY(1px) scale(0.985)}.ds-btn-accent:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label above, 44px control, hint or error below.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Quantity</span><input class=\"ds-input\" placeholder=\"e.g. 500\"><span class=\"ds-field-hint\">Grams, pieces or millilitres.</span></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:6px;font-family:Inter,system-ui,sans-serif}.ds-field-label{font-size:13px;font-weight:500;color:rgb(var(--ink,28 27 25))}.ds-input{min-height:44px;padding:0 12px;border:1px solid rgb(var(--line-strong,201 194 180));border-radius:0.7rem;background:rgb(var(--card,255 255 255));color:rgb(var(--ink,28 27 25));font-size:14px;transition:border-color 120ms,box-shadow 120ms}.ds-input::placeholder{color:rgb(var(--muted,106 104 98))}.ds-input:focus{outline:none;border-color:rgb(var(--brand,43 88 76));box-shadow:0 0 0 2px rgb(var(--brand,43 88 76) / 0.25)}.ds-field-hint{font-size:11px;line-height:16px;color:rgb(var(--muted,106 104 98))}"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-filter",
+      "description": "Inventory filters with live counts; active is solid Pandan.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-active\">All <span>24</span></button><button class=\"ds-chip\">Use soon <span>3</span></button><button class=\"ds-chip\">Fridge <span>14</span></button></div>",
+      "css": ".ds-chips{display:flex;gap:8px}.ds-chip{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px;border:1px solid rgb(var(--line,228 223 214));border-radius:9999px;background:rgb(var(--card,255 255 255));color:rgb(var(--muted,106 104 98));font:500 13px/1 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color 120ms,color 120ms,transform 120ms}.ds-chip:hover{border-color:rgb(var(--line-strong,201 194 180));color:rgb(var(--ink,28 27 25))}.ds-chip:active{transform:scale(0.95)}.ds-chip:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}.ds-chip-active{background:rgb(var(--brand,43 88 76));border-color:rgb(var(--brand,43 88 76));color:rgb(var(--brand-contrast,255 255 255));box-shadow:0 1px 1px rgb(var(--shadow,28 27 25) / 0.04)}.ds-chip-active span{opacity:.75}"
+    },
+    {
+      "name": "Expiry Badge",
+      "kind": "chip",
+      "refersTo": "badge-soon",
+      "description": "Status word first, dot second; one per item.",
+      "html": "<span class=\"ds-badge ds-badge-crit\"><i></i>Use now · today</span> <span class=\"ds-badge ds-badge-soon\"><i></i>Use soon · in 2 days <em>est.</em></span> <span class=\"ds-badge ds-badge-unk\"><i></i>No date</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border:1px solid;border-radius:9999px;font:500 11px/20px Inter,system-ui,sans-serif;letter-spacing:.01em}.ds-badge i{width:6px;height:6px;border-radius:50%}.ds-badge em{font-style:normal;opacity:.7}.ds-badge-crit{background:rgb(var(--status-critical-bg,247 233 230));border-color:rgb(var(--status-critical-border,230 199 192));color:rgb(var(--status-critical-fg,176 56 42))}.ds-badge-crit i{background:rgb(var(--status-critical,198 74 59))}.ds-badge-soon{background:rgb(var(--status-soon-bg,247 236 218));border-color:rgb(var(--status-soon-border,231 211 172));color:rgb(var(--status-soon-fg,138 88 20))}.ds-badge-soon i{background:rgb(var(--status-soon,217 147 46))}.ds-badge-unk{background:rgb(var(--status-unknown-bg,239 237 232));border-color:rgb(var(--status-unknown-border,219 214 204));color:rgb(var(--status-unknown-fg,111 108 99))}.ds-badge-unk i{background:rgb(var(--status-unknown,138 138 130))}"
+    },
+    {
+      "name": "Link Row",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The single card treatment as a whole-row link with a trailing chevron.",
+      "html": "<a class=\"ds-linkrow\" href=\"#\"><span><b>Receipt history</b><small>12 receipts scanned</small></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6l6 6-6 6\"/></svg></a>",
+      "css": ".ds-linkrow{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgb(var(--line,228 223 214));border-radius:1rem;background:rgb(var(--card,255 255 255));color:rgb(var(--ink,28 27 25));text-decoration:none;font-family:Inter,system-ui,sans-serif;box-shadow:0 1px 2px rgb(var(--shadow,28 27 25) / 0.05),0 8px 24px rgb(var(--shadow,28 27 25) / 0.08);transition:border-color 120ms,box-shadow 120ms,transform 120ms}.ds-linkrow>span{flex:1;display:flex;flex-direction:column;gap:2px}.ds-linkrow b{font-size:15px;font-weight:600}.ds-linkrow small{font-size:13px;color:rgb(var(--muted,106 104 98))}.ds-linkrow svg{color:rgb(var(--faint,141 139 131));transition:transform 120ms}.ds-linkrow:hover{border-color:rgb(var(--line-strong,201 194 180));box-shadow:0 6px 16px rgb(var(--shadow,28 27 25) / 0.10),0 24px 64px rgb(var(--shadow,28 27 25) / 0.20)}.ds-linkrow:hover svg{transform:translateX(2px)}.ds-linkrow:active{transform:translateY(1px)}.ds-linkrow:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "Phone navigation; active tab is Pandan with a top bar.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Primary\"><a href=\"#\" aria-current=\"page\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z\"/></svg>Home</a><a href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z M3.5 7.5 12 11.5l8.5-4 M12 11.5v9\"/></svg>Inventory</a><a href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10h16v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M2.5 10h19\"/></svg>Cook</a></nav>",
+      "css": ".ds-tabs{display:flex;background:rgb(var(--card,255 255 255) / 0.85);border-top:1px solid rgb(var(--line,228 223 214));box-shadow:0 -1px 0 rgb(var(--line,228 223 214) / 1),0 -8px 24px rgb(var(--shadow,28 27 25) / 0.04)}.ds-tabs a{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:60px;font:500 11px/1.2 Inter,system-ui,sans-serif;color:rgb(var(--muted,106 104 98));text-decoration:none;transition:color 120ms}.ds-tabs a:hover{color:rgb(var(--ink,28 27 25))}.ds-tabs a[aria-current=page]{color:rgb(var(--brand,43 88 76))}.ds-tabs a[aria-current=page]::before{content:\"\";position:absolute;top:0;width:32px;height:2px;border-radius:2px;background:rgb(var(--brand,43 88 76))}.ds-tabs a:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:-2px}"
+    },
+    {
+      "name": "Freshness Bar",
+      "kind": "custom",
+      "refersTo": "badge-soon",
+      "description": "Shelf life left under its label (components/inventory/freshness-bar.tsx); hidden from assistive tech, never a number.",
+      "html": "<div class=\"ds-fresh\"><span class=\"ds-fresh-label ds-fresh-crit\">Use now · today</span><span class=\"ds-fresh-bar\" aria-hidden=\"true\"><span style=\"width:8%;background:rgb(var(--status-critical,198 74 59))\"></span></span><span class=\"ds-fresh-label ds-fresh-soon\">Use soon · in 2 days est.</span><span class=\"ds-fresh-bar\" aria-hidden=\"true\"><span style=\"width:40%;background:rgb(var(--status-soon-bar,184 121 30))\"></span></span><span class=\"ds-fresh-label ds-fresh-unk\">No date</span><span class=\"ds-fresh-bar ds-fresh-none\" aria-hidden=\"true\"></span></div>",
+      "css": ".ds-fresh{display:grid;gap:5px;width:150px;font-family:Inter,system-ui,sans-serif}.ds-fresh-label{font-size:12px;font-weight:600;line-height:16px}.ds-fresh-label:not(:first-child){margin-top:10px}.ds-fresh-crit{color:rgb(var(--status-critical-fg,176 56 42))}.ds-fresh-soon{color:rgb(var(--status-soon-fg,138 88 20))}.ds-fresh-unk{color:rgb(var(--status-unknown-fg,111 108 99))}.ds-fresh-bar{display:block;height:6px;border-radius:3px;background:#EAE6DE;overflow:hidden}.ds-fresh-bar span{display:block;height:100%;border-radius:3px}.ds-fresh-none{background:repeating-linear-gradient(135deg,#DDD7CC 0 4px,#F3F0EA 4px 8px)}"
+    },
+    {
+      "name": "Tonight Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The one double-ruled card on Today, picked from dinner ideas that already exist (never a new AI call).",
+      "html": "<article class=\"ds-tonight\"><h3>Use the pork belly tonight</h3><p>Cook <b>Tokwa't baboy</b> (40 min, serves 4). It uses up the pork belly and the opened tokwa.</p><button class=\"ds-tonight-cta\">Cook &amp; deduct</button></article>",
+      "css": ".ds-tonight{max-width:358px;padding:16px;border:3px double rgb(var(--line-strong,201 194 180));border-radius:1rem;background:rgb(var(--card,255 255 255));color:rgb(var(--ink,28 27 25));font-family:Inter,system-ui,sans-serif;box-shadow:0 1px 2px rgb(var(--shadow,28 27 25) / 0.05),0 8px 24px rgb(var(--shadow,28 27 25) / 0.08)}.ds-tonight h3{margin:0;font:500 1.375rem/1.75rem Fraunces,Georgia,serif;letter-spacing:-0.014em}.ds-tonight p{margin:8px 0 0;font-size:15px;line-height:23px}.ds-tonight b{font-weight:600}.ds-tonight-cta{margin-top:14px;width:100%;min-height:48px;border:0;border-radius:0.7rem;background:rgb(var(--brand,43 88 76));color:rgb(var(--brand-contrast,255 255 255));font:600 15px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:background-color 120ms}.ds-tonight-cta:hover{background:rgb(var(--brand-ink,30 62 54))}.ds-tonight-cta:focus-visible{outline:2px solid rgb(var(--brand,43 88 76));outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kitchen Notebook",
+    "overview": "Kitchen OS should feel like the notebook that lives by the fridge: warm paper, a short list of what to do today, and honest notes about what's in stock. The mood is warm, calm and honest. Nothing shouts. Urgency is carried by four functional status colours and plain words, never by alarm styling. Density is moderate. The app is used one-handed, often with wet hands and at arm's length, so controls are sturdy and forgiving, and type stays generous.\n\nThe world is warm near-white paper (Rice Paper) with one deep herb green (Pandan) for action and one warm orange (Kalabasa) for anything you need to buy. A soft serif (Fraunces) sets titles; a neutral sans (Inter) carries everything you read as data or tap. Light and dark are one token swap; components never branch on theme.\n\nThe home screen direction approved on 2026-10-25 takes two quiet cues from JRPG menus: a double-ruled card for the one thing that matters most today, and a freshness bar that shows how much life an ingredient has left. The influence stays in form and never reaches the words (see Do's and Don'ts). Evidence: the private design canvas linked in PLAN.md 5.5.",
+    "keyCharacteristics": [
+      "Warm paper surfaces, hairline borders and a soft, slightly lifted shadow.",
+      "One action colour (Pandan) and one buying colour (Kalabasa); four status colours that only ever mean expiry.",
+      "Serif titles, sans everything else, tabular numbers for quantities.",
+      "44px minimum targets; primary actions in the thumb zone.",
+      "Every status shown as a word first, with colour and graphics as support."
+    ],
+    "rules": [
+      { "name": "The Status Words Rule", "body": "The four status colours mean one thing: how soon food expires (and, by extension, have / not enough). Never use them for branding, categories or decoration, and never show one without its word.", "section": "colors" },
+      { "name": "The Three Roles Rule", "body": "Text uses the -fg role, tints use -bg and -border, and the base value is for dots, bars and fills only. A base status colour is never used as text.", "section": "colors" },
+      { "name": "The Kalabasa Is For Buying Rule", "body": "Orange marks what you need to get. Never white text on Kalabasa or on status amber; use the soft tint with its ink.", "section": "colors" },
+      { "name": "The Serif Titles Rule", "body": "Fraunces sets titles only: page titles, section headings, sheet and empty-state titles, and the wordmark. Anything a person taps, scans or compares is Inter.", "section": "typography" },
+      { "name": "The Tabular Numbers Rule", "body": "Quantities, counts and dates use tabular figures (.tabular), so columns and counters don't jitter.", "section": "typography" },
+      { "name": "The Paper On A Counter Rule", "body": "Resting surfaces get a hairline and the Card shadow. Only things that float (sheets, dialogs, toasts, the floating Add button) and an interactive card under the pointer take Pop.", "section": "elevation" },
+      { "name": "The Double-Rule Rule", "body": "The double border marks the single most important card on a screen. Never more than one per screen, and never on list rows.", "section": "shapes" },
+      { "name": "The Label Carries It Rule", "body": "A freshness bar never appears without its text label, and never shows a number. The bar is hidden from assistive tech, because the label beside it says the same thing.", "section": "components" }
+    ],
+    "dos": [
+      "Do style through the Tailwind tokens (bg-brand, text-status-soon-fg), never raw hex in components, and join classes with cn().",
+      "Do show every status as its word first: Use now, Use soon, Fresh, Expired, No date, with \"est.\" on every estimate.",
+      "Do keep every control at least 44px tall, and keep the main actions in the thumb zone on phones (the floating Add button) and in the sidebar or page header on desktop.",
+      "Do use Fraunces for titles and Inter for everything else, with tabular figures for numbers.",
+      "Do honour reduced motion: remove motion that moves, but keep spinners and progress turning (.motion-keep)."
+    ],
+    "donts": [
+      "Don't use game vocabulary (HP, quest, KO, level, reward, party). The JRPG influence lives in form only, confirmed by the owner on 2026-10-25.",
+      "Don't use Faint for text people must read: it's 3.4:1 on white. Today it's still on inactive tab labels and input placeholders (logged for PLAN 5.3).",
+      "Don't put a coloured stripe thicker than 1px down the side of a card or row. The old 4px status rail was replaced by the freshness bar in PLAN 5.8.",
+      "Don't put an eyebrow or kicker above a heading.",
+      "Don't put white text on Kalabasa or status amber.",
+      "Don't use more than one double-ruled card on a screen.",
+      "Don't pin a button in place over scrolling content. Floating actions are sticky, like the Save bar: they float while there's more below and settle after the last content, so the end of a page is never covered (owner, 2026-10-25)."
+    ]
+  }
+}
