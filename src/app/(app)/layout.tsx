@@ -30,7 +30,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <PrefsEffect largerText={a11y.largerText} reduceMotion={a11y.reduceMotion} />
       <SideNav />
       <div className="w-full min-w-0 flex-1 lg:border-r lg:border-line">
-        <div className="mx-auto w-full max-w-app px-4 pt-6 pb-[calc(var(--nav-h)+env(safe-area-inset-bottom)+5.5rem)] lg:max-w-content lg:px-8 lg:pb-16">
+        {/* A page marked `data-wide` (Today's two-column view) takes the full width on desktop. */}
+        <div className="mx-auto w-full max-w-app px-4 pt-6 pb-[calc(var(--nav-h)+env(safe-area-inset-bottom)+1.5rem)] lg:max-w-content lg:px-8 lg:pb-16 lg:has-[[data-wide]]:max-w-none">
           {children}
         </div>
       </div>

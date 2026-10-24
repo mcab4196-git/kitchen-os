@@ -51,7 +51,7 @@ async function loadInventoryContext(userId: string): Promise<InventoryCtx> {
   return { tokens, soonTokens, available };
 }
 
-function ingredientListOf(nutrition: unknown): IngredientList {
+export function ingredientListOf(nutrition: unknown): IngredientList {
   const n = (nutrition ?? {}) as { ingredientList?: IngredientList };
   return n.ingredientList ?? [];
 }

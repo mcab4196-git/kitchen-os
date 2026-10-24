@@ -92,6 +92,46 @@ function matches(ingredientName: string, inventoryTokens: string[]): boolean {
   return inventoryTokens.some((raw) => nameMatchesToken(ingredientName, raw));
 }
 
+/**
+ * The lots a recipe would draw on, by the same loose name match `reconcileRecipe`
+ * uses. Today [5.8] uses it to tell which expiring items a dinner idea uses up.
+ */
+export function lotsUsedBy<T extends InventoryLot>(ingredients: RecipeIngredientLite[], lots: T[]): T[] {
+  return lots.filter((lot) =>
+    ingredients.some(
+      (ing) => !isAlwaysAvailable(ing.name) && lot.tokens.some((tok) => nameMatchesToken(ing.name, tok))
+    )
+  );
+}
+
+export interface TonightCandidate {
+  saved: boolean;
+  missing: number; // required ingredients short or absent
+  urgency: number; // weighted count of expiring items it uses (today/tomorrow weigh more)
+}
+
+/**
+ * Tonight's dinner on Today [5.8], picked only from ideas that already exist (a
+ * page load never spends an AI call). The recipe that uses the most urgent stock
+ * wins (§11, expiring first); ties go to fewer things to buy, then to a saved
+ * favourite. Null when no idea uses anything that needs using.
+ */
+export function pickTonight<T extends TonightCandidate>(candidates: T[]): T | null {
+  let best: T | null = null;
+  for (const c of candidates) {
+    if (c.urgency <= 0) continue;
+    if (
+      !best ||
+      c.urgency > best.urgency ||
+      (c.urgency === best.urgency &&
+        (c.missing < best.missing || (c.missing === best.missing && c.saved && !best.saved)))
+    ) {
+      best = c;
+    }
+  }
+  return best;
+}
+
 /** Accept either bare name strings (name-only match) or full lots (quantity-aware). */
 function toLots(inventory: InventoryInput): InventoryLot[] {
   if (inventory.length === 0) return [];

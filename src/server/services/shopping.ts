@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db";
+import { isUuid } from "@/lib/utils";
 import { getRecipeWithReconciliation } from "./recipe";
 
 function norm(s: string): string {
@@ -40,6 +41,24 @@ export async function addManualItem(userId: string, label: string, quantity?: nu
     },
   });
   return { added: true };
+}
+
+/**
+ * Put items you just ran out of back on the list, by name ("Dinner done" [5.8]).
+ * The ids come from a form, so only the user's own items are read.
+ */
+export async function addInventoryItemsToList(userId: string, itemIds: string[]): Promise<{ added: number }> {
+  const ids = itemIds.filter(isUuid);
+  if (ids.length === 0) return { added: 0 };
+  const items = await prisma.inventoryItem.findMany({
+    where: { id: { in: ids }, userId },
+    select: { productName: true },
+  });
+  let added = 0;
+  for (const it of items) {
+    if ((await addManualItem(userId, it.productName)).added) added++;
+  }
+  return { added };
 }
 
 /**

@@ -49,6 +49,7 @@ const config: Config = {
           "soon-fg": c("--status-soon-fg"),
           "soon-bg": c("--status-soon-bg"),
           "soon-border": c("--status-soon-border"),
+          "soon-bar": c("--status-soon-bar"),
           fresh: c("--status-fresh"),
           "fresh-fg": c("--status-fresh-fg"),
           "fresh-bg": c("--status-fresh-bg"),
@@ -80,8 +81,9 @@ const config: Config = {
       },
       boxShadow: {
         xs: "0 1px 1px rgb(var(--shadow) / 0.04)",
-        card: "0 1px 2px rgb(var(--shadow) / 0.04), 0 6px 20px rgb(var(--shadow) / 0.05)",
-        pop: "0 4px 12px rgb(var(--shadow) / 0.08), 0 16px 48px rgb(var(--shadow) / 0.14)",
+        // Card lifts a little off the paper; pop is clearly stronger so overlays still separate (DESIGN.md).
+        card: "0 1px 2px rgb(var(--shadow) / 0.05), 0 8px 24px rgb(var(--shadow) / 0.08)",
+        pop: "0 6px 16px rgb(var(--shadow) / 0.10), 0 24px 64px rgb(var(--shadow) / 0.20)",
         nav: "0 -1px 0 rgb(var(--line) / 1), 0 -8px 24px rgb(var(--shadow) / 0.04)",
         "focus": "0 0 0 2px rgb(var(--surface) / 1), 0 0 0 4px rgb(var(--brand) / 1)",
       },

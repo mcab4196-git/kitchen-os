@@ -1,7 +1,8 @@
 import { prisma } from "@/server/db";
 import type { StorageLocation, ExpirySource, Prisma } from "@prisma/client";
-import { estimateExpiry, type ShelfLifeRuleish } from "@/lib/expiry";
+import { classifyStatus, estimateExpiry, type ShelfLifeRuleish } from "@/lib/expiry";
 import { computeDeduction } from "@/lib/deduct";
+import { isUuid } from "@/lib/utils";
 import { resolveIngredientByText } from "./reference";
 
 export interface CreateItemInput {
@@ -188,7 +189,9 @@ export async function consumeInventoryItem(
   useQuantity: number,
   useUnit: string,
   recipeId?: string | null
-): Promise<{ ok: true; newQuantity: number; usedUp: boolean; overuse: boolean } | { ok: false; reason: string }> {
+): Promise<
+  { ok: true; recordId: string; newQuantity: number; usedUp: boolean; overuse: boolean } | { ok: false; reason: string }
+> {
   const item = await prisma.inventoryItem.findFirst({
     where: { id, userId, isDeleted: false },
     include: { ingredient: true, category: true },
@@ -220,7 +223,7 @@ export async function consumeInventoryItem(
     });
   }
 
-  await prisma.$transaction([
+  const [record] = await prisma.$transaction([
     prisma.consumptionRecord.create({
       data: { inventoryItemId: id, quantityUsed: useQuantity, unit: useUnit, recipeId: recipeId ?? null },
     }),
@@ -234,7 +237,49 @@ export async function consumeInventoryItem(
     }),
   ]);
 
-  return { ok: true, newQuantity: result.newQuantity, usedUp: result.usedUp, overuse: result.overuse };
+  return {
+    ok: true,
+    recordId: record.id,
+    newQuantity: result.newQuantity,
+    usedUp: result.usedUp,
+    overuse: result.overuse,
+  };
+}
+
+/**
+ * What one Cook & deduct run changed, for "Dinner done" [5.8]: the records it
+ * wrote, each with its item as it is now (used-up items are soft-deleted, so
+ * they're still readable). A record has no userId, so ownership is checked
+ * through its item, and only records for this recipe count.
+ */
+export async function getCookSummary(userId: string, recipeId: string, recordIds: string[]) {
+  const ids = recordIds.filter(isUuid);
+  if (ids.length === 0 || !isUuid(recipeId)) return null;
+  const records = await prisma.consumptionRecord.findMany({
+    where: { id: { in: ids }, recipeId, inventoryItem: { userId } },
+    include: { inventoryItem: true, recipe: { select: { name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  if (records.length === 0) return null;
+  return { recipeName: records[0].recipe?.name ?? "Dinner", records };
+}
+
+/** The live item that most needs using next (today, tomorrow or within 3 days), if any. */
+export async function nextToUse(userId: string, now: Date = new Date()) {
+  // Anything more than a day past its date classifies as EXPIRED, so skip those.
+  const next = await prisma.inventoryItem.findFirst({
+    where: {
+      userId,
+      isDeleted: false,
+      quantity: { gt: 0 },
+      expirySource: { not: "UNKNOWN" },
+      expiryDate: { gt: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+    },
+    orderBy: { expiryDate: "asc" },
+  });
+  if (!next) return null;
+  const status = classifyStatus(next.expiryDate, next.expirySource, now);
+  return status === "CRITICAL" || status === "SOON" ? next : null;
 }
 
 export async function softDeleteInventoryItem(userId: string, id: string) {

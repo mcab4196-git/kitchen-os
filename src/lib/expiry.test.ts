@@ -4,8 +4,33 @@ import {
   classifyStatus,
   daysUntil,
   relativeLabel,
+  freshness,
   type ShelfLifeRuleish,
 } from "./expiry";
+
+describe("freshness — share of shelf life left [5.5]", () => {
+  const bought = new Date("2026-10-20T00:00:00Z");
+  const expires = new Date("2026-10-30T00:00:00Z");
+
+  it("is the fraction of the purchase-to-expiry span still ahead", () => {
+    expect(freshness(expires, "ESTIMATED", bought, new Date("2026-10-25T00:00:00Z"))).toBeCloseTo(0.5, 5);
+    expect(freshness(expires, "EXACT", bought, bought)).toBe(1);
+  });
+
+  it("is 0 once the expiry has passed", () => {
+    expect(freshness(expires, "EXACT", bought, new Date("2026-10-31T00:00:00Z"))).toBe(0);
+  });
+
+  it("is null without a reliable date, so an unknown is never drawn as a level", () => {
+    expect(freshness(null, "UNKNOWN", bought)).toBeNull();
+    expect(freshness(expires, "UNKNOWN", bought)).toBeNull();
+  });
+
+  it("caps at 1 when the purchase date is in the future or after expiry", () => {
+    expect(freshness(expires, "EXACT", new Date("2026-10-26T00:00:00Z"), new Date("2026-10-25T00:00:00Z"))).toBe(1);
+    expect(freshness(expires, "EXACT", new Date("2026-11-05T00:00:00Z"), new Date("2026-10-25T00:00:00Z"))).toBe(1);
+  });
+});
 
 const CHICKEN = "ing-chicken";
 const rules: ShelfLifeRuleish[] = [

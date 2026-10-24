@@ -38,6 +38,8 @@
   --status-soon-fg: 138 88 20;
   --status-soon-bg: 247 236 218;
   --status-soon-border: 231 211 172;
+  /* Freshness-bar fill: the base amber is under 3:1 on white, so the bar gets a deeper one. */
+  --status-soon-bar: 184 121 30;
 
   --status-fresh: 78 156 107;
   --status-fresh-fg: 45 120 77;
@@ -82,6 +84,7 @@
     --status-soon-fg: 230 185 120;
     --status-soon-bg: 44 36 22;
     --status-soon-border: 88 72 40;
+    --status-soon-bar: 224 169 84;
 
     --status-fresh: 95 185 133;
     --status-fresh-fg: 132 201 162;
@@ -189,5 +192,9 @@ summary {
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+  /* "No date" on the freshness bar: a hatch, so an unknown never reads as a level. */
+  .hatch {
+    background-image: repeating-linear-gradient(135deg, rgb(var(--line-strong) / 0.8) 0 4px, transparent 4px 8px);
   }
 }

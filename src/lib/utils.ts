@@ -51,6 +51,13 @@ function groupKey(cls: string): string | null {
   return key === null ? null : variant + key + (bang ? "!" : "");
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** For ids that arrive in a URL or form: anything else would make Postgres throw on a `@db.Uuid` column. */
+export function isUuid(s: string): boolean {
+  return UUID.test(s);
+}
+
 export function cn(...parts: Array<string | false | null | undefined>): string {
   const tokens: string[] = [];
   for (const part of parts) {

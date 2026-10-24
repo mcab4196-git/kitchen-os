@@ -1,12 +1,21 @@
-import { classifyStatus, relativeLabel, type ExpirySource } from "@/lib/expiry";
+import { classifyStatus, relativeLabel, type ExpirySource, type ExpiryStatus } from "@/lib/expiry";
 import { Badge, type Tone } from "@/components/ui/badge";
 
-const MAP: Record<string, { tone: Tone; label: string }> = {
-  EXPIRED: { tone: "critical", label: "Expired" },
-  CRITICAL: { tone: "critical", label: "Use now" },
-  SOON: { tone: "soon", label: "Use soon" },
-  FRESH: { tone: "fresh", label: "Fresh" },
-  UNKNOWN: { tone: "unknown", label: "No date" },
+/** The word for each status, shared with the freshness bar so the two can't drift. */
+export const EXPIRY_WORD: Record<ExpiryStatus, string> = {
+  EXPIRED: "Expired",
+  CRITICAL: "Use now",
+  SOON: "Use soon",
+  FRESH: "Fresh",
+  UNKNOWN: "No date",
+};
+
+const TONE: Record<ExpiryStatus, Tone> = {
+  EXPIRED: "critical",
+  CRITICAL: "critical",
+  SOON: "soon",
+  FRESH: "fresh",
+  UNKNOWN: "unknown",
 };
 
 export function ExpiryBadge({
@@ -25,7 +34,8 @@ export function ExpiryBadge({
   className?: string;
 }) {
   const status = classifyStatus(expiryDate, source);
-  const { tone, label } = MAP[status];
+  const tone = TONE[status];
+  const label = EXPIRY_WORD[status];
   const rel = relativeLabel(expiryDate, source, undefined, { absolute: absoluteDates });
   const estimated = source === "ESTIMATED" && status !== "UNKNOWN";
   const urgent = status === "CRITICAL" || status === "EXPIRED";

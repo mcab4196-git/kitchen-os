@@ -140,3 +140,52 @@ describe("water is always available", () => {
     expect(isAlwaysAvailable("coconut water")).toBe(false);
   });
 });
+
+import { lotsUsedBy, pickTonight } from "./recipe";
+
+describe("lotsUsedBy — which expiring items a dinner uses [5.8]", () => {
+  const lots = [
+    { tokens: ["Pork Belly", "pork belly"], id: "pork" },
+    { tokens: ["Tokwa"], id: "tokwa" },
+    { tokens: ["Kangkong"], id: "kangkong" },
+  ];
+
+  it("returns the lots a recipe's ingredients match, by the reconcile name rules", () => {
+    const tokwaBaboy = [{ name: "pork belly", quantity: 500, unit: "g" }, { name: "tokwa" }, { name: "soy sauce" }];
+    expect(lotsUsedBy(tokwaBaboy, lots).map((l) => l.id)).toEqual(["pork", "tokwa"]);
+  });
+
+  it("never counts water as using anything", () => {
+    expect(lotsUsedBy([{ name: "water" }], [{ tokens: ["coconut water"] }])).toEqual([]);
+  });
+});
+
+describe("pickTonight [5.8]", () => {
+  it("prefers the recipe that uses the most urgent stock", () => {
+    const pick = pickTonight([
+      { id: "a", saved: true, missing: 0, urgency: 1 },
+      { id: "b", saved: false, missing: 2, urgency: 3 },
+    ]);
+    expect(pick?.id).toBe("b");
+  });
+
+  it("breaks ties on fewer things to buy, then on a saved favourite", () => {
+    expect(
+      pickTonight([
+        { id: "a", saved: true, missing: 2, urgency: 2 },
+        { id: "b", saved: false, missing: 1, urgency: 2 },
+      ])?.id
+    ).toBe("b");
+    expect(
+      pickTonight([
+        { id: "a", saved: false, missing: 1, urgency: 2 },
+        { id: "b", saved: true, missing: 1, urgency: 2 },
+      ])?.id
+    ).toBe("b");
+  });
+
+  it("returns null when no idea uses anything that needs using", () => {
+    expect(pickTonight([{ id: "a", saved: true, missing: 0, urgency: 0 }])).toBeNull();
+    expect(pickTonight([])).toBeNull();
+  });
+});

@@ -1,7 +1,5 @@
-import { ExpiryBadge } from "./expiry-badge";
-import { statusRailClass } from "./status-rail";
-import { classifyStatus, type ExpirySource } from "@/lib/expiry";
-import { cn } from "@/lib/utils";
+import { FreshnessBar } from "./freshness-bar";
+import { type ExpirySource } from "@/lib/expiry";
 import { Card } from "@/components/ui/card";
 import { ItemActions } from "./item-actions";
 
@@ -22,12 +20,13 @@ export interface ItemCardData {
   opened: boolean;
   expiryDate: Date | null;
   expirySource: string;
+  purchaseDate: Date | null;
+  createdAt: Date;
   category: { name: string } | null;
 }
 
 export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; absoluteDates?: boolean }) {
   const usedUp = item.quantity <= 0;
-  const status = classifyStatus(item.expiryDate, item.expirySource as ExpirySource);
   const meta = [
     `${item.quantity} ${item.unit}`,
     item.category?.name,
@@ -36,7 +35,7 @@ export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; 
   ].filter(Boolean);
 
   return (
-    <Card as="li" className={cn("list-none", statusRailClass(status))}>
+    <Card as="li" className="list-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[15px] font-semibold text-ink">
@@ -56,10 +55,12 @@ export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; 
             ))}
           </p>
         </div>
-        <ExpiryBadge
+        <FreshnessBar
           expiryDate={item.expiryDate}
           source={item.expirySource as ExpirySource}
+          since={item.purchaseDate ?? item.createdAt}
           absoluteDates={absoluteDates}
+          className="shrink-0 pt-0.5"
         />
       </div>
 

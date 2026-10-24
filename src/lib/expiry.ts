@@ -140,6 +140,26 @@ export function daysUntil(date: Date, now: Date = new Date()): number {
 }
 
 /**
+ * Share of shelf life left (0..1) for the freshness bar [5.5], measured from
+ * `since` (the purchase date, or the date added when there isn't one) to expiry.
+ * Null when there's no reliable date, so an unknown is never drawn as a level.
+ */
+export function freshness(
+  expiryDate: Date | null,
+  source: ExpirySource,
+  since: Date,
+  now: Date = new Date()
+): number | null {
+  if (!expiryDate || source === "UNKNOWN") return null;
+  const left = expiryDate.getTime() - now.getTime();
+  if (left <= 0) return 0;
+  const total = expiryDate.getTime() - since.getTime();
+  // A purchase date after the expiry date is bad input, not "no life left".
+  if (total <= 0) return 1;
+  return Math.min(1, left / total);
+}
+
+/**
  * Classify for the UI badge.
  *   UNKNOWN  — no reliable date
  *   EXPIRED  — past
