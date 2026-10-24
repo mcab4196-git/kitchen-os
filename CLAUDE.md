@@ -19,11 +19,11 @@ npm run typecheck    # tsc --noEmit
 npm test             # vitest, pure logic only, no DB needed
 npm run build        # prisma generate && next build
 npm run db:migrate   # prisma migrate dev (uses DIRECT_URL, port 5432)
-npm run db:rls       # apply prisma/rls.sql via psql — re-run after adding tables
+npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction, safe to re-run) — after adding tables
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **130 tests / 12 files green, typecheck clean.** Run both before finishing any change.
+Baseline you must not break: **146 tests / 13 files green, typecheck clean.** Run both before finishing any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
 Run `npm ci`, or call the tools directly:
@@ -51,7 +51,9 @@ src/server/services/          ALL database access, every query scoped by userId
    (pattern: the `ownItemIds` check in `commitReceipt`). RLS in `prisma/rls.sql` is defense-in-depth only.
 2. **AI output is untrusted.** Validate with zod (`ai/schemas.ts`, `ai/recipe-schemas.ts`) before any DB write. The
    model never decides what the user has: `reconcileRecipe` does, in code. Allergens and dislikes are a hard filter in
-   code. Only the user-reviewed payload from the review screen is committed to inventory.
+   code: `recipeIsForbidden` (EU-14 groups from `lib/allergens.ts`) runs on every recipe a user can be offered,
+   including AI output, saved favourites and older suggestions. Only the user-reviewed payload from the review screen
+   is committed to inventory.
 3. **Expiry honesty.** `EXACT` / `ESTIMATED` / `UNKNOWN`: never invent a date, always label estimates. All
    labels go through `relativeLabel` / `classifyStatus` in `lib/expiry.ts`; don't fork them.
 4. **Units.** Every conversion goes through `convert()` in `lib/units.ts`, which returns `null` rather than guessing.

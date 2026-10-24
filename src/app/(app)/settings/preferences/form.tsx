@@ -49,7 +49,10 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
           </Field>
         </div>
 
-        <Field label="Allergies" hint="Comma-separated, e.g. peanuts, shellfish. Never suggested.">
+        <Field
+          label="Allergies"
+          hint="Comma-separated, e.g. peanuts, shellfish. Groups like dairy, gluten, eggs, shellfish or nuts block everything in them. Never suggested."
+        >
           <Input name="allergies" defaultValue={initial.allergies} placeholder="peanuts, shellfish" />
         </Field>
 

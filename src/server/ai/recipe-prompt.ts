@@ -1,4 +1,5 @@
 import type { GenerateRecipeInput } from "./provider";
+import { describeAllergy } from "@/lib/allergens";
 
 /** Build the recipe-generation instruction shared by all providers. */
 export function buildRecipePrompt(input: GenerateRecipeInput): string {
@@ -24,7 +25,9 @@ export function buildRecipePrompt(input: GenerateRecipeInput): string {
 
   const constraints: string[] = [`Serve ${p.householdSize} people.`, `Keep total time under ${p.maxCookMinutes} minutes.`, `Cook skill: ${p.skill}.`];
   if (p.diet) constraints.push(`Diet: ${p.diet}.`);
-  if (p.allergies.length) constraints.push(`MUST NOT contain (allergies): ${p.allergies.join(", ")}.`);
+  // Spell allergen groups out ("dairy (milk, butter, …)") so the model avoids them up
+  // front; the hard filter in code still drops anything that slips through (N2).
+  if (p.allergies.length) constraints.push(`MUST NOT contain (allergies): ${p.allergies.map(describeAllergy).join("; ")}.`);
   if (p.dislikes.length) constraints.push(`Avoid disliked foods: ${p.dislikes.join(", ")}.`);
   if (p.cuisines.length) constraints.push(`Prefer these cuisines when it fits: ${p.cuisines.join(", ")}.`);
   if (input.exclude && input.exclude.length) {

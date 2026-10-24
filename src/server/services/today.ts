@@ -2,7 +2,8 @@ import { prisma } from "@/server/db";
 import type { Prisma } from "@prisma/client";
 import { classifyStatus, type ExpirySource, type ExpiryStatus } from "@/lib/expiry";
 import { lotsUsedBy, pickTonight, reconcileRecipe } from "@/lib/recipe";
-import { ingredientListOf, listCurrentSuggestions, listSaved } from "./recipe";
+import { allowedFor, ingredientListOf, listCurrentSuggestions, listSaved } from "./recipe";
+import { getPreferences } from "./preferences";
 
 // Today and tomorrow outrank the rest of the 3-day window when picking tonight's dinner (§11).
 const URGENCY: Partial<Record<ExpiryStatus, number>> = { CRITICAL: 2, SOON: 1 };
@@ -40,12 +41,13 @@ export async function getToday(userId: string, now: Date = new Date()) {
 
 /**
  * Tonight's dinner, chosen only from ideas that already exist (current suggestions
- * and saved favourites), so a page load never spends an AI call. Null when none of
- * them uses anything that needs using; Today then points to "What's for dinner?".
+ * and saved favourites), so a page load never spends an AI call. Allergies and
+ * dislikes filter both (N2). Null when none of them uses anything that needs using;
+ * Today then points to "What's for dinner?".
  */
 async function chooseTonight(userId: string, items: TodayItem[]) {
-  const suggestions = await listCurrentSuggestions(userId);
-  const saved = (await listSaved(userId, suggestions.map((s) => s.id))).slice(0, SAVED_LIMIT);
+  const [suggestions, prefs] = await Promise.all([listCurrentSuggestions(userId), getPreferences(userId)]);
+  const saved = allowedFor(await listSaved(userId, suggestions.map((s) => s.id)), prefs).slice(0, SAVED_LIMIT);
 
   // The same lots the recipe page reconciles against, so Today and the recipe agree.
   const lots = items.map((item) => ({

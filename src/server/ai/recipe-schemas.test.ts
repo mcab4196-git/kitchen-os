@@ -39,3 +39,31 @@ describe("validateAndFilterRecipes", () => {
     expect(validateAndFilterRecipes({ nope: true }, { allergies: [], dislikes: [] }).ok).toBe(false);
   });
 });
+
+import { recipeIsForbidden } from "./recipe-schemas";
+
+describe("recipeIsForbidden — allergen groups (N2)", () => {
+  const recipe = (name: string, ...ingredients: string[]) => ({ name, ingredients: ingredients.map((n) => ({ name: n })) });
+  const none = { allergies: [] as string[], dislikes: [] as string[] };
+
+  it("an allergy to a group blocks what's in it, not just the literal word", () => {
+    expect(recipeIsForbidden(recipe("Garlic pasta", "spaghetti", "butter", "garlic"), { ...none, allergies: ["dairy"] })).toBe(true);
+    expect(recipeIsForbidden(recipe("Garlic pasta", "spaghetti", "olive oil", "garlic"), { ...none, allergies: ["gluten"] })).toBe(true);
+    expect(recipeIsForbidden(recipe("Sinigang na hipon", "hipon", "tamarind"), { ...none, allergies: ["shellfish"] })).toBe(true);
+  });
+
+  it("checks the dish name too, in case the ingredient list leaves the allergen out", () => {
+    expect(recipeIsForbidden(recipe("Kare-kare", "oxtail", "string beans"), { ...none, allergies: ["peanuts"] })).toBe(true);
+  });
+
+  it("keeps safe Filipino staples for a group allergy", () => {
+    expect(recipeIsForbidden(recipe("Ginataang kalabasa", "gata", "squash"), { ...none, allergies: ["dairy"] })).toBe(false);
+    expect(recipeIsForbidden(recipe("Tortang talong", "eggplant", "egg"), { ...none, allergies: ["eggs"] })).toBe(true);
+    expect(recipeIsForbidden(recipe("Ensaladang talong", "eggplant", "tomato"), { ...none, allergies: ["eggs"] })).toBe(false);
+  });
+
+  it("still blocks plain words and dislikes with the loose match", () => {
+    expect(recipeIsForbidden(recipe("Fruit salad", "strawberries"), { ...none, allergies: ["strawberry"] })).toBe(true);
+    expect(recipeIsForbidden(recipe("Adobo", "pork", "soy sauce"), { ...none, dislikes: ["soy sauce"] })).toBe(true);
+  });
+});

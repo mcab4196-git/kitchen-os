@@ -6,6 +6,7 @@
 
 import { z } from "zod";
 import { normName } from "@/lib/recipe";
+import { allergenGroupsFor, containsAllergen } from "@/lib/allergens";
 
 const num = z.preprocess((v) => {
   if (v === "" || v == null) return null;
@@ -37,6 +38,8 @@ export const recipesSchema = z.array(recipeSchema);
 export type ValidatedRecipe = z.infer<typeof recipeSchema>;
 
 function stem(w: string): string {
+  // "-ies" → "-y", so an allergy to "strawberry" also catches "strawberries".
+  if (w.length > 4 && w.endsWith("ies")) return w.slice(0, -3) + "y";
   return w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
 }
 function toTokens(s: string): string[] {
@@ -44,10 +47,10 @@ function toTokens(s: string): string[] {
 }
 
 /** True if any ingredient contains a forbidden term (token/stem/substring aware). */
-function containsForbidden(recipe: ValidatedRecipe, forbidden: string[]): boolean {
+function containsForbidden(ingredients: { name: string }[], forbidden: string[]): boolean {
   const forbiddenSets = forbidden.map(toTokens).filter((a) => a.length > 0);
   if (forbiddenSets.length === 0) return false;
-  return recipe.ingredients.some((ing) => {
+  return ingredients.some((ing) => {
     const ingTokens = toTokens(ing.name);
     // A forbidden term matches when every one of its tokens is present in the
     // ingredient as an equal or substring token. Errs toward exclusion (safe).
@@ -55,6 +58,25 @@ function containsForbidden(recipe: ValidatedRecipe, forbidden: string[]): boolea
       fts.every((t) => ingTokens.some((it) => it === t || it.includes(t) || t.includes(it)))
     );
   });
+}
+
+/**
+ * The hard filter, for any recipe: AI output, saved favourites and older
+ * suggestions alike. An allergy that names an EU-14 group ("dairy", "gluten",
+ * "shellfish") blocks everything in the group (N2), matched on whole words in each
+ * ingredient and in the dish name, so "egg" still allows eggplant. Any other
+ * allergy, and every dislike, uses the loose literal match above.
+ */
+export function recipeIsForbidden(
+  recipe: { name: string; ingredients: { name: string }[] },
+  opts: { allergies: string[]; dislikes: string[] }
+): boolean {
+  const groups = opts.allergies.flatMap(allergenGroupsFor);
+  const literal = [...opts.allergies.filter((a) => allergenGroupsFor(a).length === 0), ...opts.dislikes];
+  if (containsForbidden(recipe.ingredients, literal)) return true;
+  return groups.some(
+    (g) => containsAllergen(recipe.name, g) || recipe.ingredients.some((ing) => containsAllergen(ing.name, g))
+  );
 }
 
 /**
@@ -68,7 +90,6 @@ export function validateAndFilterRecipes(
   const parsed = recipesSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "AI returned recipes in an unexpected shape." };
 
-  const forbidden = [...opts.allergies, ...opts.dislikes];
-  const safe = parsed.data.filter((r) => !containsForbidden(r, forbidden));
+  const safe = parsed.data.filter((r) => !recipeIsForbidden(r, opts));
   return { ok: true, recipes: safe, filtered: parsed.data.length - safe.length };
 }

@@ -10,7 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:rls": "psql \"$DIRECT_URL\" -f prisma/rls.sql",
+    "db:rls": "prisma db execute --file prisma/rls.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",

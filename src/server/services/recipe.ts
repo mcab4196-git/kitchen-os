@@ -1,6 +1,6 @@
 import { prisma } from "@/server/db";
 import { getAIProvider } from "@/server/ai/provider";
-import { validateAndFilterRecipes, type ValidatedRecipe } from "@/server/ai/recipe-schemas";
+import { recipeIsForbidden, validateAndFilterRecipes, type ValidatedRecipe } from "@/server/ai/recipe-schemas";
 import { reconcileRecipe, scoreRecipe, normName, analyzeCookability } from "@/lib/recipe";
 import { planMeals, type PlanCandidate } from "@/lib/planner";
 import { convert, tidy } from "@/lib/units";
@@ -90,7 +90,7 @@ export async function generateSuggestions(
   //    you have the required protein AND enough weighted coverage (proteins/mains
   //    count far more than staples). Others don't block a slot — the AI supplies a
   //    fresh, inventory-grounded idea instead.
-  const saved = await prisma.recipe.findMany({ where: { userId, saved: true } });
+  const saved = allowedFor(await prisma.recipe.findMany({ where: { userId, saved: true } }), prefs);
   const rankedSaved = saved
     .map((r) => {
       const ings = ingredientListOf(r.nutrition);
@@ -129,8 +129,10 @@ export async function generateSuggestions(
         exclude: kept.map((k) => k.name),
       });
     } catch (e) {
+      // ISSUE-008: log the details; the user gets a plain message.
+      console.error("[recipes] AI generation failed", e);
       // If we have at least one saved recipe, degrade gracefully to those.
-      if (kept.length === 0) return { ok: false, error: e instanceof Error ? e.message : "Recipe generation failed." };
+      if (kept.length === 0) return { ok: false, error: "We couldn't get dinner ideas just now. Please try again in a minute." };
       raw = [];
     }
 
@@ -213,13 +215,29 @@ export async function toggleSaved(userId: string, recipeId: string): Promise<boo
   return next;
 }
 
-/** The current suggestion set (saved kept + AI fill), saved shown first. */
+/**
+ * The allergen/dislike hard filter for stored recipes: saved favourites, and
+ * suggestions made before the user changed their preferences. AI output is
+ * filtered as it arrives (validateAndFilterRecipes); this covers everything else.
+ */
+export function allowedFor<T extends { name: string; nutrition: unknown }>(
+  recipes: T[],
+  prefs: { allergies: string[]; dislikes: string[] }
+): T[] {
+  return recipes.filter((r) => !recipeIsForbidden({ name: r.name, ingredients: ingredientListOf(r.nutrition) }, prefs));
+}
+
+/** The current suggestion set (saved kept + AI fill), saved shown first, minus anything now forbidden. */
 export async function listCurrentSuggestions(userId: string) {
-  return prisma.recipe.findMany({
-    where: { userId, lastSuggestedAt: { not: null } },
-    orderBy: [{ lastSuggestedAt: "desc" }, { saved: "desc" }],
-    take: TARGET,
-  });
+  const [recipes, prefs] = await Promise.all([
+    prisma.recipe.findMany({
+      where: { userId, lastSuggestedAt: { not: null } },
+      orderBy: [{ lastSuggestedAt: "desc" }, { saved: "desc" }],
+      take: TARGET,
+    }),
+    getPreferences(userId),
+  ]);
+  return allowedFor(recipes, prefs);
 }
 
 /** The user's saved library, optionally excluding ids already shown as suggestions. */
@@ -340,7 +358,7 @@ export async function generateMealPlan(
   const prefs = await getPreferences(userId);
 
   // Candidate pool: saved recipes + freshly generated ones.
-  const saved = await prisma.recipe.findMany({ where: { userId, saved: true } });
+  const saved = allowedFor(await prisma.recipe.findMany({ where: { userId, saved: true } }), prefs);
   const savedCandidates: { id: string; ingredients: IngredientList; totalMinutes: number }[] = saved.map((r) => ({
     id: r.id,
     ingredients: ingredientListOf(r.nutrition),
@@ -368,8 +386,9 @@ export async function generateMealPlan(
     if (validated.ok) {
       for (const r of validated.recipes) newIds.push(await persistRecipe(userId, r));
     }
-  } catch {
-    // Fall back to saved-only planning if the AI call fails.
+  } catch (e) {
+    // Fall back to saved-only planning if the AI call fails; keep the details in the log.
+    console.error("[plan] AI generation failed", e);
   }
 
   const newRecipes = await prisma.recipe.findMany({ where: { id: { in: newIds } } });

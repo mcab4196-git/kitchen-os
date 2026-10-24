@@ -14,7 +14,7 @@ const AUTO_DISMISS_MS = 4600;
 /**
  * Confirmation toasts driven by the URL params the server actions already
  * redirect with (`?added`, `?cooked`, `?over`, `?planned`, `?recalculated`,
- * `?generated`, `?undo`, `?dup`). On mount we read them, show a toast, strip them from the
+ * `?generated`, `?undo`, `?dup`, `?receiptDeleted`, `?receiptDeleteFailed`). On mount we read them, show a toast, strip them from the
  * URL so a refresh or back-nav doesn't resurrect a stale banner. Mounted once in
  * the app shell.
  */
@@ -89,6 +89,18 @@ export function Toaster() {
       const id = params.get("undo")!;
       consumed.push("undo");
       next.push({ id: "undo", tone: "info", message: "Item removed.", undoId: id });
+    }
+    if (params.has("receiptDeleted")) {
+      consumed.push("receiptDeleted");
+      next.push({
+        id: "receiptDeleted",
+        tone: "success",
+        message: "Receipt deleted. Items already in your inventory stay.",
+      });
+    }
+    if (params.has("receiptDeleteFailed")) {
+      consumed.push("receiptDeleteFailed");
+      next.push({ id: "receiptDeleteFailed", tone: "info", message: "We couldn't delete that receipt. Please try again." });
     }
 
     if (next.length === 0) return;

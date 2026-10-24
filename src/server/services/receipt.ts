@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAIProvider } from "@/server/ai/provider";
 import { validateAndClean, simplifyProductName, type ReviewedItem } from "@/server/ai/schemas";
 import { receiptFileProblem, sniffReceiptType } from "@/lib/receipt-file";
+import { isUuid } from "@/lib/utils";
 import { resolveIngredientByText } from "./reference";
 import { createInventoryItem } from "./inventory";
 
@@ -51,7 +52,11 @@ export async function createAndParseReceipt(userId: string, file: File): Promise
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
     .upload(path, buffer, { contentType: mediaType, upsert: true });
-  if (upErr) return { ok: false, error: `Couldn't store the image: ${upErr.message}` };
+  // ISSUE-008: the details go to the server log, never to the user.
+  if (upErr) {
+    console.error("[receipt] storage upload failed", upErr);
+    return { ok: false, error: "We couldn't save the photo. Please try again." };
+  }
 
   const receipt = await prisma.receipt.create({
     data: { userId, imagePath: path, imageHash: hash, status: "PENDING" },
@@ -104,8 +109,11 @@ export async function createAndParseReceipt(userId: string, file: File): Promise
     return { ok: true, receiptId: receipt.id };
   } catch (e) {
     await prisma.receipt.update({ where: { id: receipt.id }, data: { status: "FAILED" } });
-    const msg = e instanceof Error ? e.message : "AI extraction failed.";
-    return { ok: false, error: msg };
+    console.error("[receipt] AI extraction failed", e);
+    return {
+      ok: false,
+      error: "We couldn't read this receipt just now. Try again in a minute, or with a flatter, well-lit photo.",
+    };
   }
 }
 
@@ -216,4 +224,27 @@ export async function getReceiptImageUrl(imagePath: string | null): Promise<stri
   const supabase = await createClient();
   const { data } = await supabase.storage.from(BUCKET).createSignedUrl(imagePath, 60 * 10);
   return data?.signedUrl ?? null;
+}
+
+/**
+ * Delete a receipt for good, as the scan page promises: its photo in Storage and its
+ * scanned lines (cascade). Inventory items it created stay (the foreign key clears
+ * their link), because they're the user's stock now. The photo goes first, so a
+ * failure never leaves a stored photo with no receipt left to delete it from.
+ */
+export async function deleteReceipt(userId: string, receiptId: string): Promise<boolean> {
+  if (!isUuid(receiptId)) return false;
+  const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, userId } });
+  if (!receipt) return false;
+
+  if (receipt.imagePath) {
+    const supabase = await createClient();
+    const { error } = await supabase.storage.from(BUCKET).remove([receipt.imagePath]);
+    if (error) {
+      console.error("[receipt] could not delete the photo", error);
+      return false;
+    }
+  }
+  await prisma.receipt.delete({ where: { id: receipt.id } });
+  return true;
 }
