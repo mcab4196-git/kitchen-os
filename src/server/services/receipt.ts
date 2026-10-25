@@ -6,7 +6,7 @@ import { validateAndClean, simplifyProductName, type ReviewedItem } from "@/serv
 import { receiptFileProblem, sniffReceiptType } from "@/lib/receipt-file";
 import { isUuid } from "@/lib/utils";
 import { resolveIngredientByText } from "./reference";
-import { createInventoryItem } from "./inventory";
+import { prepareInventoryItems } from "./inventory";
 import { claimAiUse, releaseAiUse } from "./ai-usage";
 
 const BUCKET = process.env.RECEIPTS_BUCKET ?? "receipts";
@@ -164,65 +164,77 @@ export async function commitReceipt(
   const ownItemIds = new Set(
     (await prisma.receiptItem.findMany({ where: { receiptId: receipt.id }, select: { id: true } })).map((r) => r.id)
   );
-  if (included.some((it) => !ownItemIds.has(it.receiptItemId))) {
+  if (
+    included.some((it) => !ownItemIds.has(it.receiptItemId)) ||
+    new Set(included.map((it) => it.receiptItemId)).size !== included.length
+  ) {
     return { ok: false, error: "Those items don't belong to this receipt." };
   }
 
-  // One transaction for the whole batch: a mid-loop failure (a DB blip, the
-  // @unique inventoryItemId colliding, an alias race) must roll every item back,
-  // not leave a half-commit that a retry then duplicates.
-  const count = await prisma.$transaction(
-    async (tx) => {
-      let n = 0;
-      for (const it of included) {
-        const invItem = await createInventoryItem(
-          userId,
-          {
-            productName: it.productName,
-            ingredientName: it.ingredientName,
-            categoryId: it.categoryId,
-            quantity: it.quantity ?? 1,
-            unit: it.unit ?? "pcs",
-            storageLocation: it.storageLocation,
-            purchaseDate: receipt.purchaseDate ?? new Date(),
-            opened: false,
-            exactExpiryDate: null, // let the expiry engine estimate
-            price: it.price,
-            currency: receipt.currency,
-            store: receipt.store,
-            source: "RECEIPT",
-            receiptId: receipt.id,
-          },
-          tx
-        );
-
-        await tx.receiptItem.update({
-          where: { id: it.receiptItemId },
-          data: { inventoryItemId: invItem.id },
-        });
-
-        // Alias learning: if this line resolved to a canonical ingredient, remember
-        // the raw receipt phrasing so the next receipt matches without asking.
-        if (invItem.ingredientId) {
-          const key = simplifyProductName(it.rawName);
-          if (key.length > 2) {
-            await tx.ingredientAlias.upsert({
-              where: { aliasText: key },
-              update: {},
-              create: { ingredientId: invItem.ingredientId, aliasText: key, source: "USER", confidence: 0.9 },
-            });
-          }
-        }
-        n++;
-      }
-
-      await tx.receipt.update({ where: { id: receipt.id }, data: { status: "COMMITTED" } });
-      return n;
-    },
-    { timeout: 20_000 }
+  // PLAN 5.6: every lookup happens here, in a few queries, so the transaction below
+  // is four statements however long the receipt is. Per-line queries inside one
+  // transaction ran past its 20 s limit on long receipts.
+  const purchaseDate = receipt.purchaseDate ?? new Date();
+  const rows = await prepareInventoryItems(
+    userId,
+    included.map((it) => ({
+      productName: it.productName,
+      ingredientName: it.ingredientName,
+      categoryId: it.categoryId,
+      quantity: it.quantity ?? 1,
+      unit: it.unit ?? "pcs",
+      storageLocation: it.storageLocation,
+      purchaseDate,
+      opened: false,
+      exactExpiryDate: null, // let the expiry engine estimate
+      price: it.price,
+      currency: receipt.currency,
+      store: receipt.store,
+      source: "RECEIPT",
+      receiptId: receipt.id,
+    })),
   );
 
-  return { ok: true, count };
+  // Alias learning: if a line resolved to a canonical ingredient, remember the raw
+  // receipt phrasing so the next receipt matches without asking. First writer wins.
+  const aliases = new Map<string, string>();
+  included.forEach((it, i) => {
+    const ingredientId = rows[i].ingredientId;
+    const key = simplifyProductName(it.rawName);
+    if (ingredientId && key.length > 2 && !aliases.has(key)) aliases.set(key, ingredientId);
+  });
+
+  // One transaction for the whole batch: a failure (a DB blip, the @unique
+  // inventoryItemId colliding) rolls every item back, not leaving a half-commit
+  // that a retry then duplicates.
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.inventoryItem.createMany({ data: rows });
+        const linked = await tx.$executeRaw`
+          update receipt_items as r
+          set inventory_item_id = v.inventory_item_id
+          from unnest(${included.map((it) => it.receiptItemId)}::uuid[], ${rows.map((r) => r.id)}::uuid[])
+            as v(id, inventory_item_id)
+          where r.id = v.id and r.receipt_id = ${receipt.id}::uuid`;
+        if (linked !== rows.length) throw new Error(`linked ${linked} of ${rows.length} receipt lines`);
+        if (aliases.size > 0) {
+          await tx.ingredientAlias.createMany({
+            data: [...aliases].map(([aliasText, ingredientId]) => ({ ingredientId, aliasText, source: "USER" as const, confidence: 0.9 })),
+            skipDuplicates: true,
+          });
+        }
+        await tx.receipt.update({ where: { id: receipt.id }, data: { status: "COMMITTED" } });
+      },
+      { timeout: 20_000 },
+    );
+  } catch (e) {
+    // ISSUE-008: the details go to the server log, never to the user.
+    console.error("[receipt] commit failed", e);
+    return { ok: false, error: "We couldn't add these items just now. Please try again." };
+  }
+
+  return { ok: true, count: rows.length };
 }
 
 /** A short-lived signed URL to display a stored receipt image. */

@@ -7,6 +7,7 @@ import type {
   RawRecipe,
 } from "./provider";
 import { buildRecipePrompt } from "./recipe-prompt";
+import { RECEIPT_CATEGORIES, RECEIPT_PROMPT } from "./schemas";
 
 /**
  * Free-tier vision provider (Google Gemini). Uses responseSchema to get
@@ -37,12 +38,7 @@ export class GeminiProvider implements AIProvider {
       model: this.model,
       contents: [
         { inlineData: { mimeType: mediaType, data: base64 } },
-        {
-          text:
-            "Extract every grocery line item from this receipt (image or PDF). Only include real " +
-            "purchased products — skip subtotals, taxes, discounts, loyalty lines, and payment/card " +
-            "details. Do not invent values: if a field isn't printed, use null.",
-        },
+        { text: RECEIPT_PROMPT },
       ],
       config: {
         responseMimeType: "application/json",
@@ -62,9 +58,14 @@ export class GeminiProvider implements AIProvider {
                   quantity: { type: Type.NUMBER, nullable: true },
                   unit: { type: Type.STRING, nullable: true },
                   price: { type: Type.NUMBER, nullable: true },
-                  category: { type: Type.STRING, nullable: true },
+                  category: {
+                    type: Type.STRING,
+                    format: "enum",
+                    enum: [...RECEIPT_CATEGORIES],
+                    description: "Best fit for what the product is",
+                  },
                 },
-                required: ["rawName"],
+                required: ["rawName", "category"],
               },
             },
           },

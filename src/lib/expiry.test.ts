@@ -5,8 +5,33 @@ import {
   daysUntil,
   relativeLabel,
   freshness,
+  expiryColumns,
   type ShelfLifeRuleish,
 } from "./expiry";
+
+describe("expiryColumns — what an item is saved with", () => {
+  const bought = new Date("2026-10-20T00:00:00Z");
+  const rules: ShelfLifeRuleish[] = [
+    { ingredientId: null, categoryName: "Dairy", storage: "REFRIGERATOR", opened: false, typicalDays: 10, minDays: 7, maxDays: 14 },
+  ];
+  const base = { purchaseDate: bought, storage: "REFRIGERATOR" as const, opened: false, rules };
+
+  it("keeps a date the user set as EXACT", () => {
+    const set = new Date("2026-11-01T00:00:00Z");
+    expect(expiryColumns({ ...base, exactExpiryDate: set, categoryName: "Dairy" })).toEqual({ expiryDate: set, expirySource: "EXACT", expiryConfidence: 1 });
+  });
+
+  it("labels a rule match ESTIMATED", () => {
+    const c = expiryColumns({ ...base, categoryName: "Dairy" });
+    expect(c.expirySource).toBe("ESTIMATED");
+    expect(c.expiryDate?.toISOString().slice(0, 10)).toBe("2026-10-30");
+    expect(c.expiryConfidence).toBeGreaterThan(0);
+  });
+
+  it("never invents a date without a category or ingredient", () => {
+    expect(expiryColumns({ ...base, categoryName: null })).toEqual({ expiryDate: null, expirySource: "UNKNOWN", expiryConfidence: null });
+  });
+});
 
 describe("freshness — share of shelf life left [5.5]", () => {
   const bought = new Date("2026-10-20T00:00:00Z");

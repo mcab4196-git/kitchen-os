@@ -7,6 +7,7 @@ import type {
   RawRecipe,
 } from "./provider";
 import { buildRecipePrompt } from "./recipe-prompt";
+import { RECEIPT_CATEGORIES, RECEIPT_PROMPT } from "./schemas";
 
 /**
  * Default vision provider. Uses tool-use to force structured JSON output — the
@@ -64,9 +65,13 @@ export class AnthropicProvider implements AIProvider {
                     quantity: { type: ["number", "null"], description: "Numeric quantity if present." },
                     unit: { type: ["string", "null"], description: "Unit if present, e.g. g, kg, ml, l, pcs." },
                     price: { type: ["number", "null"], description: "Line price if present." },
-                    category: { type: ["string", "null"], description: "Best-guess food category." },
+                    category: {
+                      type: "string",
+                      enum: [...RECEIPT_CATEGORIES],
+                      description: "Best fit for what the product is.",
+                    },
                   },
-                  required: ["rawName"],
+                  required: ["rawName", "category"],
                 },
               },
             },
@@ -82,11 +87,7 @@ export class AnthropicProvider implements AIProvider {
             mediaBlock,
             {
               type: "text",
-              text:
-                "Extract every grocery line item from this receipt (image or PDF). Only include real " +
-                "purchased products — skip subtotals, taxes, discounts, loyalty lines, and payment/card details. " +
-                "Do not invent values: if a field isn't printed, return null for it. " +
-                "Call the record_receipt tool with the result.",
+              text: `${RECEIPT_PROMPT} Call the record_receipt tool with the result.`,
             },
           ],
         },
