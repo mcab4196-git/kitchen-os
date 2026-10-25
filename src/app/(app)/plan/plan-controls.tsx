@@ -16,7 +16,7 @@ export function PlanControls() {
   return (
     <form action={action} className="flex flex-col gap-3">
       <fieldset>
-        <legend className="mb-2 text-[13px] font-medium text-ink">Plan length</legend>
+        <legend className="mb-2 text-small font-medium text-ink">Plan length</legend>
         <div className="grid grid-cols-2 gap-2">
           {LENGTHS.map((n) => (
             <label
@@ -50,13 +50,13 @@ export function PlanControls() {
       {pending && (
         <div className="animate-slide-up-fade rounded-control border border-line bg-card p-3">
           <IndeterminateBar />
-          <p className="mt-2 text-center text-[13px] text-muted">Building a plan from what you have…</p>
+          <p className="mt-2 text-center text-small text-muted">Building a plan from what you have…</p>
         </div>
       )}
       {state.error && (
         <p
           role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-[13px] text-status-critical-fg"
+          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-small text-status-critical-fg"
         >
           {state.error}
         </p>

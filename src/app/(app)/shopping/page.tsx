@@ -31,7 +31,7 @@ export default async function ShoppingPage() {
         actions={
           checkedCount > 0 ? (
             <form action={clearCheckedAction}>
-              <SubmitAction className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-muted hover:text-status-critical-fg">
+              <SubmitAction className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-card px-3 text-small font-medium text-muted hover:text-status-critical-fg">
                 <Icon name="trash" size={15} />
                 Clear {checkedCount}
               </SubmitAction>

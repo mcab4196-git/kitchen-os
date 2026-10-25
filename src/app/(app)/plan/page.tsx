@@ -41,7 +41,7 @@ export default async function PlanPage() {
             <section className="mt-8">
               <h2 className="mb-3 font-display text-title-sm text-ink">
                 Your plan{" "}
-                <span className="text-[13px] font-normal text-muted tabular">
+                <span className="text-small font-normal text-muted tabular">
                   from {start.toLocaleDateString()}
                 </span>
               </h2>
@@ -70,7 +70,7 @@ export default async function PlanPage() {
                         className="group flex flex-1 items-center justify-between gap-3 rounded-card border border-line bg-card p-3.5 shadow-card transition duration-fast ease-out hover:border-line-strong hover:shadow-pop active:translate-y-px"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-[14px] font-semibold text-ink">{item.recipe.name}</p>
+                          <p className="truncate text-compact font-semibold text-ink">{item.recipe.name}</p>
                           <p className="mt-0.5 text-2xs text-muted tabular">
                             Day {i + 1} · {(item.recipe.prepMinutes ?? 0) + (item.recipe.cookMinutes ?? 0)} min
                           </p>
@@ -82,7 +82,7 @@ export default async function PlanPage() {
                         />
                       </Link>
                     ) : (
-                      <div className="flex flex-1 items-center rounded-card border border-dashed border-line-strong p-3.5 text-[13px] leading-5 text-muted">
+                      <div className="flex flex-1 items-center rounded-card border border-dashed border-line-strong p-3.5 text-small leading-5 text-muted">
                         Not enough left to plan — add ingredients or scan a receipt.
                       </div>
                     )}
@@ -90,7 +90,7 @@ export default async function PlanPage() {
                 ))}
               </ol>
               {data.items.length < data.plan.days && (
-                <p className="mt-3 text-[13px] leading-5 text-muted">
+                <p className="mt-3 text-small leading-5 text-muted">
                   Planned {data.items.length} of {data.plan.days} days — add more ingredients (or scan a
                   receipt) for a fuller week.
                 </p>

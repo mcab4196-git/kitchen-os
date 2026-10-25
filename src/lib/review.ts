@@ -18,6 +18,25 @@ export interface ReviewLine {
   storageLocation: StorageLocation;
 }
 
+// Receipt lines that clearly aren't groceries, so Review leaves them unticked (the user can
+// tick any back). UK lines from the original list, plus what Philippine receipts print:
+// VAT lines, senior citizen and PWD discounts, totals and payment lines (PLAN 5.6).
+const NON_FOOD = new RegExp(
+  "\\b(" +
+    [
+      "carrier bag", "bag for life", "plastic bag", "bag charge", "deposit", "donation", "voucher", "coupon",
+      "loyalty", "points", "charity", "round ?up", "postage", "delivery", "service charge", "gift ?card",
+      "vat", "vatable", "vat[- ]exempt", "zero[- ]rated", "senior citizens?", "sc ?disc(ount)?", "pwd",
+      "discount", "sub-?total", "total", "amount due", "change", "cash", "gcash", "maya",
+    ].join("|") +
+    ")\\b",
+  "i",
+);
+
+export function isNonFood(name: string): boolean {
+  return NON_FOOD.test(name);
+}
+
 function ingredientOf(name: string, ref: ReviewRef) {
   const n = name.trim().toLowerCase();
   return n ? (ref.ingredients.find((g) => g.name.toLowerCase() === n) ?? null) : null;

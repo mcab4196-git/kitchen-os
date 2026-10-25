@@ -44,7 +44,7 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
         exactExpiryDate: item.expirySource === "EXACT" ? toDateInput(item.expiryDate) : undefined,
         opened: item.opened,
         price: item.price,
-        currency: item.currency ?? "EUR",
+        currency: item.currency ?? "PHP",
         notes: item.notes ?? "",
       }}
     />

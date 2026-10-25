@@ -47,7 +47,7 @@
   --status-fresh-border: 193 221 201;
 
   --status-unknown: 138 138 130;
-  --status-unknown-fg: 111 108 99;
+  --status-unknown-fg: 106 103 94;
   --status-unknown-bg: 239 237 232;
   --status-unknown-border: 219 214 204;
 }
@@ -161,7 +161,7 @@ summary {
    nudges the root scale (everything is rem-based); "Reduce motion" applies the
    same treatment as the OS media query above, on demand. */
 :root[data-larger-text="true"] {
-  font-size: 106.25%;
+  font-size: 112.5%;
 }
 
 :root[data-reduce-motion="true"] *,

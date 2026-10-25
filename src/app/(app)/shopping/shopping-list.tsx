@@ -189,7 +189,7 @@ export function ShoppingList({ items: serverItems }: { items: ShoppingItem[] }) 
                   </button>
 
                   <div className="min-w-0 flex-1 py-2">
-                    <span className={cn("text-[14px] text-ink tabular", it.checked && "line-through")}>
+                    <span className={cn("text-compact text-ink tabular", it.checked && "line-through")}>
                       {it.quantityNeeded ? `${it.quantityNeeded} ` : ""}
                       {it.unit ? `${it.unit} ` : ""}
                       {it.label}
@@ -225,13 +225,13 @@ export function ShoppingList({ items: serverItems }: { items: ShoppingItem[] }) 
             <div
               key={t.id}
               role="status"
-              className="pointer-events-auto flex w-full items-center gap-3 rounded-control bg-ink px-3.5 py-2.5 text-[13px] text-card shadow-pop animate-toast-in"
+              className="pointer-events-auto flex w-full items-center gap-3 rounded-control bg-ink px-3.5 py-2.5 text-small text-card shadow-pop animate-toast-in"
             >
               <span className="min-w-0 flex-1">{t.message}</span>
               <button
                 type="button"
                 onClick={t.onUndo}
-                className="-my-1.5 min-h-11 shrink-0 rounded-md bg-card/15 px-3 text-[13px] font-semibold text-card"
+                className="-my-1.5 min-h-11 shrink-0 rounded-md bg-card/15 px-3 text-small font-semibold text-card"
               >
                 Undo
               </button>

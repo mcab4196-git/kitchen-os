@@ -38,7 +38,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
       />
 
       {recipe.description && <p className="-mt-3 mb-2 text-sm leading-6 text-muted">{recipe.description}</p>}
-      <div className="flex items-center gap-3 text-[13px] text-muted tabular">
+      <div className="flex items-center gap-3 text-small text-muted tabular">
         <span className="inline-flex items-center gap-1">
           <Icon name="clock" size={14} />
           {time > 0 ? `${time} min` : "quick"}
@@ -70,7 +70,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
           })}
         </ul>
         {missingCount > 0 && (
-          <p className="mt-3 text-[13px] text-muted">
+          <p className="mt-3 text-small text-muted">
             You need to buy {missingCount} item{missingCount === 1 ? "" : "s"}: {reconciliation.missing.join(", ")}.
           </p>
         )}
@@ -81,7 +81,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
         <ol className="flex flex-col gap-4">
           {steps.map((s, i) => (
             <li key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand-ink tabular">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-small font-semibold text-brand-ink tabular">
                 {i + 1}
               </span>
               <p className="text-read text-ink">{s}</p>
@@ -91,7 +91,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
       </section>
 
       {(recipe.storageNotes || recipe.leftoverNotes) && (
-        <section className="mt-7 rounded-card border border-line bg-surface-2/60 p-4 text-[13px] leading-5 text-muted">
+        <section className="mt-7 rounded-card border border-line bg-surface-2/60 p-4 text-small leading-5 text-muted">
           {recipe.storageNotes && (
             <p>
               <span className="font-semibold text-ink">Storage:</span> {recipe.storageNotes}
@@ -110,7 +110,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
           <Button asChild className="flex-1">
             <Link href={`/meals/${recipe.id}/cook`}>
               <Icon name="flame" size={16} />
-              Cook this
+              Cook &amp; deduct
             </Link>
           </Button>
           <form action={addRecipeMissingAction} className="flex-1">

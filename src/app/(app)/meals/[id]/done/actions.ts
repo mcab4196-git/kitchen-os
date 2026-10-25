@@ -16,5 +16,5 @@ export async function addRanOutAction(formData: FormData): Promise<void> {
   const ids = String(formData.get("itemIds") ?? "").split(",").filter(Boolean);
   const { added } = await addInventoryItemsToList(user.id, ids);
   revalidatePath("/shopping");
-  redirect(`/shopping?added=${added}`);
+  redirect(`/shopping?restocked=${added}`);
 }

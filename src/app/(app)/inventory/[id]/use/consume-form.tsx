@@ -42,8 +42,8 @@ export function ConsumeForm({
       />
 
       <div className="mb-5 rounded-card border border-line bg-card p-4 shadow-card">
-        <p className="text-[15px] font-semibold text-ink">{productName}</p>
-        <p className="mt-0.5 text-[13px] text-muted tabular">
+        <p className="text-body font-semibold text-ink">{productName}</p>
+        <p className="mt-0.5 text-small text-muted tabular">
           In stock: {currentQuantity} {unit}
         </p>
       </div>
@@ -59,7 +59,7 @@ export function ConsumeForm({
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2.5 text-[13px] text-muted transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2.5 text-small text-muted transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
         >
           <Icon name="trash" size={15} />
           Remove this item

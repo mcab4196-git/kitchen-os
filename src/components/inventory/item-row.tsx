@@ -28,8 +28,8 @@ export function ItemRow({ item, absoluteDates = false }: { item: ItemCardData; a
         )}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[14.5px] font-medium text-ink">{item.productName}</span>
-          <span className="mt-0.5 block text-[12.5px] text-muted tabular">{meta.join(" · ")}</span>
+          <span className="block break-words text-compact font-medium text-ink">{item.productName}</span>
+          <span className="mt-0.5 block text-small text-muted tabular">{meta.join(" · ")}</span>
         </span>
         <FreshnessBar
           expiryDate={item.expiryDate}

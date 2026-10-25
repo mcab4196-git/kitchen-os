@@ -53,7 +53,7 @@ export default async function ReviewPage({
   const committed = receipt.status === "COMMITTED";
 
   const meta = (
-    <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line bg-card px-3.5 py-2.5 text-[13px] text-muted">
+    <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line bg-card px-3.5 py-2.5 text-small text-muted">
       <span className="font-medium text-ink">{receipt.store ?? "Unknown store"}</span>
       {receipt.purchaseDate && <span>· {new Date(receipt.purchaseDate).toLocaleDateString()}</span>}
       {receipt.total != null && <span className="tabular">· {money(receipt.total, receipt.currency)}</span>}
@@ -69,14 +69,14 @@ export default async function ReviewPage({
         href={imageUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mb-4 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2.5 text-[13px] font-medium text-brand transition-colors hover:bg-surface-2"
+        className="mb-4 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2.5 text-small font-medium text-brand transition-colors hover:bg-surface-2"
       >
         <Icon name="external" size={15} />
         Open receipt PDF
       </a>
     ) : (
       <details className="group mb-4 rounded-control border border-line bg-card px-3.5 py-2.5">
-        <summary className="flex cursor-pointer items-center justify-between text-[13px] text-muted marker:content-['']">
+        <summary className="flex cursor-pointer items-center justify-between text-small text-muted marker:content-['']">
           View receipt image
           <Icon name="chevron-right" size={15} className="transition-transform duration-fast group-open:rotate-90" />
         </summary>
@@ -93,11 +93,11 @@ export default async function ReviewPage({
         {imageBlock}
         <EmptyState
           icon="scan"
-          title="Extraction failed"
-          description="The AI couldn't read this one. Try a sharper, well-lit photo (or the original PDF) with the whole receipt in frame."
+          title="Try a clearer photo"
+          description="Lay the receipt flat in good light with all of it in frame, or upload the original PDF."
           action={
             <Button asChild>
-              <Link href="/scan">Try again</Link>
+              <Link href="/scan">Scan again</Link>
             </Button>
           }
         />
@@ -113,7 +113,7 @@ export default async function ReviewPage({
         {imageBlock}
         <ul className="flex flex-col gap-2">
           {receipt.items.map((it) => (
-            <li key={it.id} className="rounded-control border border-line bg-card p-3 text-[13px]">
+            <li key={it.id} className="rounded-control border border-line bg-card p-3 text-small">
               <span className="font-medium text-ink">{it.rawName}</span>
               <span className="text-muted tabular">
                 {" "}

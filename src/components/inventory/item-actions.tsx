@@ -28,7 +28,7 @@ export function ItemActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <div className="mt-3.5 flex items-center gap-1 border-t border-line pt-1 text-[13px]">
+    <div className="mt-3.5 flex items-center gap-1 border-t border-line pt-1 text-small">
       <button
         type="button"
         onClick={() => setUseOpen(true)}

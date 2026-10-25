@@ -31,8 +31,8 @@ function NavRow({
         <Icon name={icon} size={18} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold text-ink">{title}</p>
-        <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>
+        <p className="text-body font-semibold text-ink">{title}</p>
+        <p className="mt-0.5 text-small text-muted">{subtitle}</p>
       </div>
       <Icon
         name="chevron-right"
@@ -94,8 +94,8 @@ export default async function SettingsPage() {
       />
 
       <section className="mt-6 rounded-card border border-line bg-card p-4 shadow-card">
-        <p className="text-[15px] font-semibold text-ink">Expiry estimates</p>
-        <p className="mt-1 text-[13px] leading-5 text-muted">
+        <p className="text-body font-semibold text-ink">Expiry estimates</p>
+        <p className="mt-1 text-small leading-5 text-muted">
           Re-estimate expiry for all items using the latest shelf-life data. Dates you set yourself
           are left untouched.
         </p>

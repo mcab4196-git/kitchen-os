@@ -98,7 +98,8 @@ export async function consumeItem(_prev: ItemFormState, formData: FormData): Pro
 
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
-  redirect(result.overuse ? "/inventory?over=1" : "/inventory");
+  // PLAN 5.6: say it worked. Overuse has its own toast.
+  redirect(result.overuse ? "/inventory?over=1" : `/inventory?used=${result.usedUp ? "up" : "some"}`);
 }
 
 /** Soft-delete then send the user back to the list with an Undo affordance. */

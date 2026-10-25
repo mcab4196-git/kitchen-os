@@ -80,7 +80,7 @@ Shopping list.
 ## Evidence on Hand
 
 - App icon `public/icon.svg`; PWA manifest `public/manifest.webmanifest`.
-- Design mock `public/Kitchen OS Mobile.dc.html`, slated to move out of `public/`.
+- Design mock `design/Kitchen OS Mobile.dc.html` (moved out of `public/`, where it was served publicly).
 - Reference data in `prisma/seed.ts`: 12 categories, 23 ingredients, shelf-life rules and unit conversions.
 - No users, testimonials, usage metrics, press or waste-reduction results exist yet. Don't fabricate any (no
   "saves ₱X a month", no "cuts waste by Y%").

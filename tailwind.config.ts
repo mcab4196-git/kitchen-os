@@ -67,6 +67,10 @@ const config: Config = {
       fontSize: {
         // Semantic steps layered on top of the Tailwind defaults.
         "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
+        // rem, not px, so "Larger text" reaches them (PLAN 5.6). Size only, like text-[13px] was.
+        small: "0.8125rem", // 13px: secondary lines, chips, controls, alerts
+        compact: "0.875rem", // 14px: inputs, row titles
+        body: "0.9375rem", // 15px: the default
         "title-sm": ["1.375rem", { lineHeight: "1.75rem", letterSpacing: "-0.014em" }],
         "title": ["1.75rem", { lineHeight: "2.125rem", letterSpacing: "-0.02em" }],
         "title-lg": ["2.125rem", { lineHeight: "2.375rem", letterSpacing: "-0.024em" }],
@@ -100,7 +104,6 @@ const config: Config = {
       transitionTimingFunction: {
         out: "cubic-bezier(0.2, 0.8, 0.2, 1)",
         in: "cubic-bezier(0.4, 0, 1, 1)",
-        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       transitionDuration: {
         fast: "120ms",

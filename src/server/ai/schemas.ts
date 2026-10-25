@@ -79,7 +79,7 @@ function parseDate(s: string | null): Date | null {
 export function validateAndClean(raw: unknown): { ok: true; data: CleanReceipt } | { ok: false; error: string } {
   const parsed = receiptSchema.safeParse(raw);
   if (!parsed.success) {
-    return { ok: false, error: "AI returned data in an unexpected shape." };
+    return { ok: false, error: "We couldn't make sense of this receipt. Try again, or with a flatter, well-lit photo." };
   }
   const r = parsed.data;
 

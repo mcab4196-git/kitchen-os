@@ -30,13 +30,15 @@ export function SaveToggle({
       <input type="hidden" name="recipeId" value={recipeId} />
       <button
         type="submit"
-        aria-pressed={optimistic}
-        aria-label={optimistic ? "Remove from saved" : "Save recipe"}
+        // PLAN 5.6: one signal for the state, not two. Icon-only, it's a toggle with a fixed
+        // name; with its label, the visible "Save" / "Saved" is the name.
+        aria-pressed={showLabel ? undefined : optimistic}
+        aria-label={showLabel ? undefined : "Save recipe"}
         title={optimistic ? "Saved — tap to remove" : "Save recipe"}
         className={cn(
-          "relative inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-medium transition duration-fast ease-out active:scale-90 after:absolute after:-inset-1.5 after:content-['']",
+          "relative inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-small font-medium transition duration-fast ease-out active:scale-90 after:absolute after:-inset-1.5 after:content-['']",
           optimistic
-            ? "border-accent/30 bg-accent-soft text-accent-fg"
+            ? "border-brand/30 bg-brand-soft text-brand-ink"
             : "border-line bg-card text-muted hover:border-line-strong hover:text-ink",
         )}
       >

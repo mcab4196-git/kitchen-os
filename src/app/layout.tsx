@@ -37,7 +37,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
-      <body className="min-h-dvh bg-surface font-sans text-[15px] leading-normal text-ink antialiased">
+      <body className="min-h-dvh bg-surface font-sans text-body leading-normal text-ink antialiased">
         {children}
       </body>
     </html>

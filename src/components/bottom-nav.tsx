@@ -73,7 +73,7 @@ export function SideNav() {
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-brand-contrast">
           <Icon name="leaf" size={17} />
         </span>
-        <span className="font-display text-[15px] font-semibold text-ink">Kitchen OS</span>
+        <span className="font-display text-body font-semibold text-ink">Kitchen OS</span>
       </Link>
 
       <Link
@@ -104,7 +104,7 @@ export function SideNav() {
 
       <Link
         href="/receipts"
-        className="mt-auto flex items-center gap-3 rounded-control px-3 py-2 text-[13px] text-muted transition-colors hover:text-ink"
+        className="mt-auto flex items-center gap-3 rounded-control px-3 py-2 text-small text-muted transition-colors hover:text-ink"
       >
         <Icon name="clock" size={17} />
         Receipt history

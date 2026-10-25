@@ -22,7 +22,7 @@ export async function commitReceiptAction(_prev: CommitState, formData: FormData
   try {
     raw = JSON.parse(String(formData.get("items") ?? "[]"));
   } catch {
-    return { error: "Could not read the reviewed items." };
+    return { error: "Something went wrong reading that form. Reload the page and try again." };
   }
   const parsed = reviewedItemsSchema.safeParse(raw);
   if (!parsed.success) {
@@ -33,7 +33,7 @@ export async function commitReceiptAction(_prev: CommitState, formData: FormData
     if (line && typeof line.rawName === "string" && what) {
       return { error: `“${line.rawName}” needs ${what}. Tap Edit on that line, or untick it.` };
     }
-    return { error: "Could not read the reviewed items." };
+    return { error: "Something went wrong reading that form. Reload the page and try again." };
   }
   const items = parsed.data;
 

@@ -37,6 +37,7 @@ Run `npm ci`, or call the tools directly:
 
 ```
 middleware.ts                 session refresh + route guard (src/lib/supabase/middleware.ts)
+design/                       design mocks (kept out of public/, rule 8)
 prisma/                       schema, migrations, rls.sql, storage.sql, seed.ts
 src/app/(auth)/login          sign in / up / out actions
 src/app/(app)/<feature>/      page.tsx + actions.ts ("use server") + client forms
@@ -77,6 +78,8 @@ src/server/services/          ALL database access, every query scoped by userId
 - Comments explain *why* and cite spec sections or issues (`§17`, `ISSUE-009`). Match that density. Don't narrate *what*.
 - Styling: tokens from `tailwind.config.ts` and `globals.css`, no raw hex. Join classes with `cn()` from `lib/utils.ts`
   (custom; the project deliberately has no tailwind-merge). The visual system is in [DESIGN.md](DESIGN.md).
+- Type sizes use the rem tokens (`text-small` 13px, `text-compact` 14px, `text-body` 15px, `text-2xs`…), never
+  `text-[13px]`: px sizes ignore the "Larger text" preference.
 - Pages sit in a 760px column on desktop. A page that needs the full width marks its `<main>` with `data-wide`
   (only Today does).
 - Commits: conventional style with severity, e.g. `fix(P2): …`, `chore(qa): …`, `test(qa): …`.

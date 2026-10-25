@@ -29,7 +29,7 @@ export async function cookRecipe(_prev: CookState, formData: FormData): Promise<
   try {
     lines = linesSchema.parse(JSON.parse(String(formData.get("lines") ?? "[]")));
   } catch {
-    return { error: "Could not read the cook plan." };
+    return { error: "Something went wrong reading that form. Reload the page and try again." };
   }
 
   const problems: string[] = [];
@@ -48,7 +48,9 @@ export async function cookRecipe(_prev: CookState, formData: FormData): Promise<
   revalidatePath("/dashboard");
   if (recordIds.length === 0 && problems.length > 0) return { error: problems[0] };
   const over = overused > 0 ? `&over=${overused}` : "";
+  // PLAN 5.6: lines that failed are reported, not silently dropped.
+  const skipped = problems.length > 0 ? `&skipped=${problems.length}` : "";
   // [5.8] Land on the "Dinner done" summary; with nothing deducted there's nothing to sum up.
-  if (recordIds.length === 0 || !isUuid(recipeId)) redirect(`/inventory?cooked=${recordIds.length}${over}`);
-  redirect(`/meals/${recipeId}/done?r=${recordIds.join(",")}${over}`);
+  if (recordIds.length === 0 || !isUuid(recipeId)) redirect(`/inventory?cooked=${recordIds.length}${over}${skipped}`);
+  redirect(`/meals/${recipeId}/done?r=${recordIds.join(",")}${over}${skipped}`);
 }

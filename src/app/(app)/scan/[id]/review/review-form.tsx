@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
 import { commitReceiptAction, type CommitState } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import { EXPIRY_WORD } from "@/components/inventory/expiry-badge";
 import { EXPIRY_TEXT } from "@/components/inventory/freshness-bar";
 import { classifyStatus, relativeLabel, type ShelfLifeRuleish, type StorageLocation } from "@/lib/expiry";
-import { inferStorage, lineEstimate, type ReviewRef } from "@/lib/review";
+import { inferStorage, isNonFood, lineEstimate, type ReviewRef } from "@/lib/review";
 import { cn } from "@/lib/utils";
 
 const UNITS = ["", "g", "kg", "ml", "l", "pcs", "clove", "slice", "tbsp", "tsp", "cup", "oz", "lb"];
@@ -41,15 +41,6 @@ const cell =
   "min-h-11 w-full rounded-control border border-line-strong bg-card px-2.5 py-1.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 const LOW_CONFIDENCE = 0.7;
-
-// Lines that clearly aren't groceries. Presentation-only heuristic — the user
-// can still tick any of them back on.
-const NON_FOOD =
-  /\b(carrier bag|bag for life|plastic bag|bag charge|deposit|donation|voucher|coupon|loyalty|points|charity|round ?up|postage|delivery|service charge|gift ?card)\b/i;
-
-function isNonFood(name: string) {
-  return NON_FOOD.test(name);
-}
 
 /**
  * PLAN 5.4: Review is for checking, not data entry. Each line is one row (name,
@@ -87,10 +78,41 @@ export function ReviewForm({
   const [storageChosen, setStorageChosen] = useState<Set<string>>(() => new Set());
   const [state, action, pending] = useActionState<CommitState, FormData>(commitReceiptAction, {});
 
+  // PLAN 5.6: a phone call or a reload shouldn't wipe your corrections. The draft lives in
+  // this tab only (sessionStorage), and only a draft for exactly these lines is restored.
+  const draftKey = `kitchen-os:review:${receiptId}`;
+  // Saved only after you change something, so a fresh render never overwrites a draft.
+  const dirty = useRef(false);
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(sessionStorage.getItem(draftKey) ?? "null") as {
+        rows?: ReviewRow[];
+        chosen?: string[];
+      } | null;
+      const ids = initialRows.map((r) => r.receiptItemId).join();
+      if (draft?.rows && draft.rows.map((r) => r.receiptItemId).join() === ids) {
+        setRows(draft.rows);
+        setStorageChosen(new Set(draft.chosen ?? []));
+      }
+    } catch {
+      // Storage blocked or an old draft: start from the receipt.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!dirty.current) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ rows, chosen: [...storageChosen] }));
+    } catch {
+      // Full or blocked storage only costs the draft.
+    }
+  }, [draftKey, rows, storageChosen]);
+
   const purchaseDate = new Date(purchaseDateISO);
   const now = new Date();
 
   function update(i: number, patch: Partial<ReviewRow>) {
+    dirty.current = true;
     setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   }
 
@@ -127,6 +149,7 @@ export function ReviewForm({
   }
 
   function putAllIn(storageLocation: StorageLocation) {
+    dirty.current = true;
     setRows((rs) => rs.map((r) => (r.include ? { ...r, storageLocation } : r)));
     setStorageChosen(new Set(rows.filter((r) => r.include).map((r) => r.receiptItemId)));
   }
@@ -150,7 +173,7 @@ export function ReviewForm({
       {flaggedCount > 0 && (
         <div
           role="status"
-          className="flex items-start gap-2.5 rounded-control border border-line-strong bg-surface-2 px-3.5 py-2.5 text-[13px] leading-5 text-ink"
+          className="flex items-start gap-2.5 rounded-control border border-line-strong bg-surface-2 px-3.5 py-2.5 text-small leading-5 text-ink"
         >
           <Icon name="alert" size={15} className="mt-0.5 shrink-0" />
           <p>
@@ -162,15 +185,15 @@ export function ReviewForm({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[13px] text-muted tabular">
+        <p className="text-small text-muted tabular">
           {includedCount} of {rows.length} ticked
         </p>
-        <label className="flex items-center gap-2 text-[13px] text-muted">
+        <label className="flex items-center gap-2 text-small text-muted">
           Put all in
           <select
             value=""
             onChange={(e) => e.target.value && putAllIn(e.target.value as StorageLocation)}
-            className="min-h-11 rounded-control border border-line-strong bg-card px-2.5 text-[13px] text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+            className="min-h-11 rounded-control border border-line-strong bg-card px-2.5 text-small text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
           >
             <option value="">Choose…</option>
             {STORAGE.map(([v, l]) => (
@@ -196,7 +219,7 @@ export function ReviewForm({
                 <label className="flex min-h-11 items-center gap-2.5 py-1.5">
                   <Checkbox checked={r.include} onChange={(e) => update(i, { include: e.target.checked })} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium text-muted line-through">{r.rawName}</span>
+                    <span className="block truncate text-small font-medium text-muted line-through">{r.rawName}</span>
                     <span className="block text-2xs text-muted">Not food, left out. Tick to add it anyway.</span>
                   </span>
                 </label>
@@ -224,7 +247,7 @@ export function ReviewForm({
               <div className="flex items-center gap-2 pl-3.5 pr-1.5 pt-1">
                 <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5">
                   <Checkbox checked={r.include} onChange={(e) => update(i, { include: e.target.checked })} />
-                  <span className="min-w-0 truncate text-[15px] font-semibold text-ink">{name}</span>
+                  <span className="min-w-0 truncate text-body font-semibold text-ink">{name}</span>
                 </label>
                 {low && (
                   <Badge tone="neutral" className="shrink-0">
@@ -237,7 +260,7 @@ export function ReviewForm({
                   onClick={() => toggle(r.receiptItemId)}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  className="inline-flex h-11 shrink-0 items-center gap-1 rounded-control px-2.5 text-[13px] font-medium text-brand transition-colors duration-fast hover:bg-brand-soft"
+                  className="inline-flex h-11 shrink-0 items-center gap-1 rounded-control px-2.5 text-small font-medium text-brand transition-colors duration-fast hover:bg-brand-soft"
                 >
                   {isOpen ? "Done" : "Edit"}
                   <span className="sr-only"> {name}</span>
@@ -250,7 +273,7 @@ export function ReviewForm({
               </div>
 
               {/* What will be saved: the commit stores 1 pcs when the amount is blank. */}
-              <p className="flex flex-wrap gap-x-1.5 pb-3 pl-[42px] pr-3.5 text-[13px] leading-5 text-muted tabular">
+              <p className="flex flex-wrap gap-x-1.5 pb-3 pl-[42px] pr-3.5 text-small leading-5 text-muted tabular">
                 <span>
                   {r.quantity ?? 1} {r.unit || "pcs"}
                 </span>
@@ -268,7 +291,7 @@ export function ReviewForm({
                 <fieldset id={panelId} className="border-t border-line px-3.5 pb-3.5 pt-3">
                   <legend className="sr-only">Change {r.rawName}</legend>
                   {low && (
-                    <p className="mb-2.5 text-[13px] leading-5 text-ink">
+                    <p className="mb-2.5 text-small leading-5 text-ink">
                       Read as “{r.rawName}”. Check the name{r.quantity == null ? " and the amount" : ""}.
                     </p>
                   )}
@@ -361,7 +384,7 @@ export function ReviewForm({
       {state.error && (
         <p
           role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
         >
           {state.error}
         </p>

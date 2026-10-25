@@ -17,14 +17,17 @@ export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-app flex-col justify-center px-6 py-10">
       <header className="mb-8">
-        <span className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-contrast">
-          <Icon name="leaf" size={20} />
+        {/* PLAN 5.6: the name is a wordmark beside the logo, not an eyebrow above the heading. */}
+        <span className="mb-6 flex items-center gap-2.5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-contrast">
+            <Icon name="leaf" size={20} />
+          </span>
+          <span className="font-display text-title-sm text-ink">Kitchen OS</span>
         </span>
-        <p className="text-2xs font-semibold uppercase tracking-[0.16em] text-brand">Kitchen OS</p>
-        <h1 className="mt-2 font-display text-title-lg leading-tight text-ink text-balance">
+        <h1 className="font-display text-title-lg leading-tight text-ink text-balance">
           Know what you have. Cook before it expires.
         </h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
+        <p className="mt-3 text-pretty text-sm leading-6 text-muted">
           Sign in to track your inventory, expiry dates, and meals.
         </p>
       </header>
@@ -49,7 +52,7 @@ export default function LoginPage() {
         {error && (
           <p
             role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
           >
             {error}
           </p>
@@ -57,7 +60,7 @@ export default function LoginPage() {
         {signUpState.message && (
           <p
             role="status"
-            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-[13px] text-status-fresh-fg"
+            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-small text-status-fresh-fg"
           >
             {signUpState.message}
           </p>

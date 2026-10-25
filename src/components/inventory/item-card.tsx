@@ -38,7 +38,8 @@ export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; 
     <Card as="li" className="list-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold text-ink">
+          {/* Two lines, not one: the 160px bar leaves a phone little room (PLAN 5.6). */}
+          <p className="line-clamp-2 break-words text-body font-semibold text-ink">
             {item.productName}
             {usedUp && (
               <span className="ml-2 align-middle text-2xs font-medium uppercase tracking-wide text-muted">
@@ -46,7 +47,7 @@ export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; 
               </span>
             )}
           </p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted tabular">
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-small text-muted tabular">
             {meta.map((m, i) => (
               <span key={i} className="inline-flex items-center gap-1.5">
                 {i > 0 && <span className="h-0.5 w-0.5 rounded-full bg-faint" aria-hidden />}

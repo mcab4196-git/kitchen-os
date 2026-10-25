@@ -40,7 +40,7 @@ function namesOf(items: TodayItem[]) {
 function FreshRow({ item, absoluteDates }: { item: TodayItem; absoluteDates: boolean }) {
   return (
     <div className="flex min-h-11 items-center justify-between gap-3">
-      <span className="min-w-0 text-[14.5px] font-medium text-ink">
+      <span className="min-w-0 text-compact font-medium text-ink">
         {item.productName} <span className="font-normal text-muted tabular">· {itemDetail(item)}</span>
       </span>
       <FreshnessBar
@@ -147,7 +147,7 @@ export default async function TodayPage() {
     card = (
       <article className={TONIGHT_CARD}>
         <h2 className="font-display text-title-sm text-ink text-balance">Use the {tonight.uses[0].productName} tonight</h2>
-        <p className="mt-2 text-[15px] leading-6 text-ink">
+        <p className="mt-2 text-body leading-6 text-ink">
           Cook{" "}
           <Link
             href={`/meals/${r.id}`}
@@ -197,7 +197,7 @@ export default async function TodayPage() {
     card = (
       <article className={TONIGHT_CARD}>
         <h2 className="font-display text-title-sm text-ink text-balance">Plan dinner around the {focus.productName}</h2>
-        <p className="mt-2 text-[15px] leading-6 text-ink">
+        <p className="mt-2 text-body leading-6 text-ink">
           None of your saved or suggested dinners uses it yet. Get ideas that use what&apos;s expiring first.
         </p>
         <div className="mt-3 border-t border-line pt-1">
@@ -213,7 +213,7 @@ export default async function TodayPage() {
     );
   } else if (allGood) {
     card = (
-      <div className="flex items-center gap-2.5 rounded-card border border-status-fresh-border bg-status-fresh-bg p-4 text-[14px] text-status-fresh-fg">
+      <div className="flex items-center gap-2.5 rounded-card border border-status-fresh-border bg-status-fresh-bg p-4 text-compact text-status-fresh-fg">
         <Icon name="leaf" size={17} className="shrink-0" />
         Nothing expiring soon. Your kitchen is in good shape.
       </div>
@@ -242,7 +242,7 @@ export default async function TodayPage() {
           }
           className="mb-3"
         />
-        <p className="flex flex-wrap gap-x-4 text-[13.5px] leading-5 text-muted">
+        <p className="flex flex-wrap gap-x-4 text-[0.84375rem] leading-5 text-muted">
           <Link href="/inventory" className="inline-flex min-h-11 items-center gap-1 text-ink transition-colors hover:text-brand">
             <strong className="font-semibold tabular">{today.total}</strong> in stock
           </Link>
@@ -272,7 +272,7 @@ export default async function TodayPage() {
         <section className="mt-8 lg:col-start-1 lg:row-start-2 lg:mt-6">
           <div className="mb-2.5 flex items-baseline justify-between">
             <h2 className="font-display text-title-sm text-ink">Also to do</h2>
-            <Link href="/inventory" className="text-[13px] font-medium text-brand transition-colors hover:text-brand-ink">
+            <Link href="/inventory" className="text-small font-medium text-brand transition-colors hover:text-brand-ink">
               All inventory
             </Link>
           </div>
@@ -284,8 +284,8 @@ export default async function TodayPage() {
                   className="flex min-h-[3.75rem] items-center gap-3 px-3.5 py-2.5 transition-colors duration-fast hover:bg-surface-2"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-medium text-ink">{t.title}</span>
-                    <span className="mt-0.5 block truncate text-[13px] text-muted tabular">{t.detail}</span>
+                    <span className="block text-body font-medium text-ink">{t.title}</span>
+                    <span className="mt-0.5 block truncate text-small text-muted tabular">{t.detail}</span>
                   </span>
                   <FreshnessBar
                     expiryDate={t.item?.expiryDate ?? null}
@@ -299,7 +299,7 @@ export default async function TodayPage() {
             ))}
           </ul>
           {tasks.length > shown.length && (
-            <p className="mt-2 text-[13px] text-muted">
+            <p className="mt-2 text-small text-muted">
               {tasks.length - shown.length} more in{" "}
               <Link href="/inventory" className="font-medium text-brand hover:text-brand-ink">
                 Inventory

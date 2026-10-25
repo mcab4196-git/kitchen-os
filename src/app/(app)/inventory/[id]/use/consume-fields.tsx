@@ -77,7 +77,7 @@ export function ConsumeFields({
       <input type="hidden" name="useUnit" value={useUnit} />
 
       <div className="flex flex-col gap-1">
-        <span className="text-[13px] font-medium text-ink">How much did you use?</span>
+        <span className="text-small font-medium text-ink">How much did you use?</span>
         <p className="text-2xs text-muted tabular">
           In stock: {currentQuantity} {unit}
         </p>
@@ -109,7 +109,7 @@ export function ConsumeFields({
             aria-label="Amount to use"
             className="w-full min-w-0 bg-transparent text-center font-display text-title-lg text-ink tabular outline-none"
           />
-          <span className="text-[13px] text-muted">{useUnit}</span>
+          <span className="text-small text-muted">{useUnit}</span>
         </div>
         <button
           type="button"
@@ -129,7 +129,7 @@ export function ConsumeFields({
             <label
               key={f}
               className={cn(
-                "flex min-h-11 cursor-pointer select-none items-center justify-center rounded-control border text-[13.5px] font-medium transition-colors duration-fast",
+                "flex min-h-11 cursor-pointer select-none items-center justify-center rounded-control border text-[0.84375rem] font-medium transition-colors duration-fast",
                 "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
                 fraction === f
                   ? "border-brand bg-brand-soft text-brand-ink"
@@ -151,7 +151,7 @@ export function ConsumeFields({
         </div>
       </fieldset>
 
-      <label className="flex items-center justify-between gap-3 text-[13px] text-muted">
+      <label className="flex items-center justify-between gap-3 text-small text-muted">
         <span>Measured in</span>
         <Select
           value={useUnit}
@@ -175,7 +175,7 @@ export function ConsumeFields({
       <p
         role="status"
         aria-live="polite"
-        className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3.5 py-2.5 text-[13px] text-status-fresh-fg tabular"
+        className="rounded-control border border-line bg-surface-2 px-3.5 py-2.5 text-small text-ink tabular"
       >
         {statusLine}
       </p>
@@ -183,7 +183,7 @@ export function ConsumeFields({
       {state.error && (
         <p
           role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
         >
           {state.error}
         </p>

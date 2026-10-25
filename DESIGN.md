@@ -31,7 +31,7 @@ colors:
   status-fresh-bg: "#E7F1E9"
   status-fresh-border: "#C1DDC9"
   status-unknown: "#8A8A82"
-  status-unknown-fg: "#6F6C63"
+  status-unknown-fg: "#6A675E"
   status-unknown-bg: "#EFEDE8"
   status-unknown-border: "#DBD6CC"
 typography:
@@ -58,6 +58,16 @@ typography:
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.5
+  compact:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.45
+  small:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.45
   read:
     fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "1.0625rem"
@@ -238,7 +248,11 @@ high-contrast serif; Inter keeps every number, label and control plain and legib
 - **Title Large** (500, 2.125rem/2.375rem, -0.024em): login and not-found headlines, the big quantity on the Use screen.
 - **Title** (500, 1.75rem/2.125rem, -0.02em): every top-level page title (PageHeader, size lg).
 - **Title Small** (500, 1.375rem/1.75rem, -0.014em): section headings ("Use soon"), sheet titles, empty-state titles.
-- **Body** (400, 15px, 1.5): the default for everything else. Secondary lines drop to 13–13.5px in Muted.
+- **Body** (400, 15px, 1.5; `text-body`): the default for everything else.
+- **Compact** (14px; `text-compact`): input text and list-row titles.
+- **Small** (13px; `text-small`): secondary lines in Muted, chips, small controls, alert and error boxes. Page subtitles
+  sit just above it at 13.5px.
+- Every size is in rem, so the "Larger text" preference (root at 112.5%) reaches all of them. Don't set type in px.
 - **Read** (400, 1.0625rem/1.7rem): recipe steps and other long copy; keep lines near 65ch.
 - **Label** (500, 0.6875rem/1rem, 0.01em): badges, tab labels, meta. Bucket headers on Inventory use it uppercase with
   0.1em tracking.

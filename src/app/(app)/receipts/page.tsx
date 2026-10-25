@@ -65,8 +65,8 @@ export default async function ReceiptsPage() {
                   className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-card p-3.5 active:translate-y-px"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-[14px] font-semibold text-ink">{r.store ?? "Unknown store"}</p>
-                    <p className="mt-0.5 text-[13px] text-muted tabular">
+                    <p className="truncate text-compact font-semibold text-ink">{r.store ?? "Unknown store"}</p>
+                    <p className="mt-0.5 text-small text-muted tabular">
                       {date}
                       {` · ${r._count.items} item${r._count.items === 1 ? "" : "s"}`}
                       {r.total != null ? ` · ${r.total} ${r.currency ?? ""}` : ""}

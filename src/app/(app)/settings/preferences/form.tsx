@@ -96,7 +96,7 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
         {state.saved && (
           <p
             role="status"
-            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-[13px] text-status-fresh-fg"
+            className="rounded-control border border-status-fresh-border bg-status-fresh-bg px-3 py-2 text-small text-status-fresh-fg"
           >
             Preferences saved.
           </p>
@@ -104,7 +104,7 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
         {state.error && (
           <p
             role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
           >
             {state.error}
           </p>

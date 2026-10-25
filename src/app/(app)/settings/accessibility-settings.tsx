@@ -6,7 +6,7 @@ import { saveAccessibility } from "./actions";
 type Key = "largerText" | "reduceMotion" | "absoluteDates";
 
 const ROWS: { key: Key; label: string; hint: string }[] = [
-  { key: "largerText", label: "Larger text", hint: "Follows your phone's text size." },
+  { key: "largerText", label: "Larger text", hint: "Makes all text in the app a size bigger." },
   { key: "reduceMotion", label: "Reduce motion", hint: "Keeps progress indicators, drops the rest." },
   { key: "absoluteDates", label: "Show expiry dates as text", hint: "“7 Sep” instead of “in 2 days”." },
 ];
@@ -30,8 +30,8 @@ export function AccessibilitySettings({ initial }: { initial: Record<Key, boolea
         {ROWS.map((r) => (
           <li key={r.key} className="flex items-center gap-3 p-4">
             <span className="min-w-0 flex-1">
-              <span className="block text-[14.5px] font-medium text-ink">{r.label}</span>
-              <span className="mt-0.5 block text-[12.5px] leading-4 text-muted">{r.hint}</span>
+              <span className="block text-compact font-medium text-ink">{r.label}</span>
+              <span className="mt-0.5 block text-small leading-4 text-muted">{r.hint}</span>
             </span>
             <label className="relative inline-flex h-8 w-[52px] shrink-0 cursor-pointer items-center">
               <input

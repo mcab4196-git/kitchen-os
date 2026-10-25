@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { inferStorage, lineEstimate, type ReviewRef } from "./review";
+import { inferStorage, isNonFood, lineEstimate, type ReviewRef } from "./review";
 import type { ShelfLifeRuleish } from "./expiry";
 
 const ref: ReviewRef = {
@@ -34,6 +34,25 @@ describe("inferStorage — a line starts where its food usually lives (PLAN 5.4)
 
   it("falls back to the fridge when nothing is known", () => {
     expect(inferStorage({ ingredientName: "mystery snack", categoryId: "" }, ref)).toBe("REFRIGERATOR");
+  });
+});
+
+describe("isNonFood — lines Review leaves unticked", () => {
+  it("catches Philippine receipt lines that aren't groceries", () => {
+    for (const line of ["VATable Sales", "VAT-Exempt Sales", "Senior Citizen Disc", "SC DISC 20%", "PWD Discount", "SUBTOTAL", "Amount Due", "GCash", "Change"]) {
+      expect(isNonFood(line), line).toBe(true);
+    }
+  });
+
+  it("still catches the original UK lines", () => {
+    expect(isNonFood("Carrier bag")).toBe(true);
+    expect(isNonFood("Gift card")).toBe(true);
+  });
+
+  it("leaves real food alone, even when a word hides inside it", () => {
+    for (const food of ["Cashew nuts 100g", "Boneless chicken thigh", "Magnolia Fresh Milk 1L", "Datu Puti vinegar"]) {
+      expect(isNonFood(food), food).toBe(false);
+    }
   });
 });
 

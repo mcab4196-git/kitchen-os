@@ -14,7 +14,8 @@ const AUTO_DISMISS_MS = 4600;
 /**
  * Confirmation toasts driven by the URL params the server actions already
  * redirect with (`?added`, `?cooked`, `?over`, `?planned`, `?recalculated`,
- * `?generated`, `?undo`, `?dup`, `?receiptDeleted`, `?receiptDeleteFailed`). On mount we read them, show a toast, strip them from the
+ * `?generated`, `?undo`, `?dup`, `?receiptDeleted`, `?receiptDeleteFailed`, `?used`, `?restocked`,
+ * `?skipped`). On mount we read them, show a toast, strip them from the
  * URL so a refresh or back-nav doesn't resurrect a stale banner. Mounted once in
  * the app shell.
  */
@@ -57,6 +58,32 @@ export function Toaster() {
         id: "over",
         tone: "info",
         message: `You used more than you had of ${v} item${plural(v)} — ${v === 1 ? "it's" : "they're"} now at zero.`,
+      });
+    }
+    if (params.has("skipped")) {
+      const v = n("skipped");
+      consumed.push("skipped");
+      next.push({
+        id: "skipped",
+        tone: "info",
+        message: `${v} item${plural(v)} couldn't be updated, so ${v === 1 ? "it's" : "they're"} unchanged. Check ${v === 1 ? "it" : "them"} in your inventory.`,
+      });
+    }
+    if (params.has("used")) {
+      consumed.push("used");
+      next.push({
+        id: "used",
+        tone: "success",
+        message: params.get("used") === "up" ? "Used up and taken off your inventory." : "Inventory updated.",
+      });
+    }
+    if (params.has("restocked")) {
+      const v = n("restocked");
+      consumed.push("restocked");
+      next.push({
+        id: "restocked",
+        tone: "success",
+        message: v > 0 ? `Added ${v} item${plural(v)} that ran out.` : "Those are already on your list.",
       });
     }
     if (params.has("planned")) {
@@ -138,7 +165,7 @@ export function Toaster() {
             <div
               key={t.id}
               className={cn(
-                "pointer-events-auto flex w-full items-center gap-2.5 rounded-control border px-3.5 py-2.5 text-[13px] shadow-pop animate-toast-in",
+                "pointer-events-auto flex w-full items-center gap-2.5 rounded-control border px-3.5 py-2.5 text-small shadow-pop animate-toast-in",
                 t.tone === "success"
                   ? "border-status-fresh-border bg-status-fresh-bg text-status-fresh-fg"
                   : "border-line-strong bg-card text-ink",
@@ -155,7 +182,7 @@ export function Toaster() {
                   <input type="hidden" name="id" value={t.undoId} />
                   <button
                     type="submit"
-                    className="-my-2 inline-flex min-h-11 items-center rounded px-2 text-[13px] font-semibold text-brand underline underline-offset-2 hover:no-underline"
+                    className="-my-2 inline-flex min-h-11 items-center rounded px-2 text-small font-semibold text-brand underline underline-offset-2 hover:no-underline"
                   >
                     Undo
                   </button>

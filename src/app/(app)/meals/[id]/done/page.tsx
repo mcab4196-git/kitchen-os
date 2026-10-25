@@ -84,13 +84,13 @@ export default async function DinnerDonePage({
           <Icon name="check" size={36} strokeWidth={2.2} />
         </span>
         <h1 className="mt-4 font-display text-title text-ink">Dinner done</h1>
-        <p className="mt-1 max-w-[36ch] text-[15px] leading-6 text-muted">
+        <p className="mt-1 max-w-[36ch] text-body leading-6 text-muted">
           {summary.recipeName} is cooked. Your stock is updated.
         </p>
       </header>
 
       {inTime > 0 && (
-        <p className="mt-6 flex items-center gap-2.5 rounded-card border border-status-fresh-border bg-status-fresh-bg px-4 py-3 text-[15px] font-semibold text-status-fresh-fg">
+        <p className="mt-6 flex items-center gap-2.5 rounded-card border border-status-fresh-border bg-status-fresh-bg px-4 py-3 text-body font-semibold text-status-fresh-fg">
           <Icon name="leaf" size={19} className="shrink-0" />
           {inTime === 1 ? "1 item" : `${inTime} items`} used up before {inTime === 1 ? "it" : "they"} expired
         </p>
@@ -129,8 +129,8 @@ export default async function DinnerDonePage({
           className="mt-5 flex min-h-16 items-center gap-3 rounded-card border border-line bg-card px-3.5 py-2.5 shadow-card transition duration-fast ease-out hover:border-line-strong hover:shadow-pop active:translate-y-px"
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold text-ink">Up next: the {next.productName}</span>
-            <span className="mt-0.5 block text-[13px] text-muted tabular">
+            <span className="block text-body font-semibold text-ink">Up next: the {next.productName}</span>
+            <span className="mt-0.5 block text-small text-muted tabular">
               {tidy(next.quantity)} {next.unit} · {STORAGE_LABEL[next.storageLocation] ?? next.storageLocation}
             </span>
           </span>

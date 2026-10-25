@@ -41,7 +41,14 @@ export interface ItemFormInitial {
 
 type ItemAction = (prev: ItemFormState, formData: FormData) => Promise<ItemFormState>;
 
-const today = new Date().toISOString().slice(0, 10);
+/**
+ * Today on the device, as yyyy-mm-dd. toISOString() gives the UTC date, which is
+ * yesterday in Manila before 8 AM (PLAN 5.6).
+ */
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function shortDate(iso: string) {
   const d = new Date(iso + "T00:00:00");
@@ -85,7 +92,11 @@ export function ItemForm({
   const [categoryId, setCategoryId] = useState(initial.categoryId ?? "");
   const [storage, setStorage] = useState(initial.storageLocation ?? "REFRIGERATOR");
   const [opened, setOpened] = useState(initial.opened ?? false);
-  const [purchaseDate, setPurchaseDate] = useState(initial.purchaseDate ?? today);
+  const [purchaseDate, setPurchaseDate] = useState(initial.purchaseDate ?? "");
+  // Filled in after hydration: the server's clock and timezone aren't the phone's.
+  useEffect(() => {
+    if (!initial.purchaseDate) setPurchaseDate(localToday());
+  }, [initial.purchaseDate]);
   const [exactDate, setExactDate] = useState(initial.exactExpiryDate ?? "");
 
   const [preview, setPreview] = useState<EstimatePreview | null>(null);
@@ -164,7 +175,7 @@ export function ItemForm({
                 key={`${r.productName}-${i}`}
                 type="button"
                 onClick={() => applyChip(r)}
-                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-line bg-card px-3.5 text-[13px] font-medium text-ink transition duration-fast ease-out hover:border-line-strong active:scale-95"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-line bg-card px-3.5 text-small font-medium text-ink transition duration-fast ease-out hover:border-line-strong active:scale-95"
               >
                 {r.productName}
                 <span className="ml-1.5 text-muted tabular">
@@ -252,7 +263,7 @@ export function ItemForm({
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-0.5 text-[13px] font-medium text-ink">Where is it?</legend>
+          <legend className="mb-0.5 text-small font-medium text-ink">Where is it?</legend>
           <div className="grid grid-cols-2 gap-2">
             {STORAGE.map(([value, label]) => (
               <label
@@ -290,13 +301,13 @@ export function ItemForm({
           {!exactDate && preview?.ok && (
             <div
               role="status"
-              className="flex items-start gap-2.5 rounded-control border border-status-soon-border bg-status-soon-bg px-3.5 py-3 text-[12.5px] leading-relaxed text-status-soon-fg"
+              className="flex items-start gap-2.5 rounded-control border border-line bg-surface-2 px-3.5 py-3 text-small leading-relaxed text-ink"
             >
               <Icon name="clock" size={15} className="mt-0.5 shrink-0" />
               <p>
                 Left blank we&apos;ll estimate{" "}
                 <strong className="font-semibold">{shortDate(preview.expiryDateISO)}</strong>{" "}
-                <span className="opacity-70">(est.)</span> — {daysPhrase(preview)} for{" "}
+                <span className="text-muted">(est.)</span> — {daysPhrase(preview)} for{" "}
                 {preview.matchedIngredient ?? "this item"} in the {preview.storageLabel}. It stays
                 marked <strong className="font-semibold">(est.)</strong> until you set a real date.
               </p>
@@ -315,7 +326,7 @@ export function ItemForm({
         </label>
 
         <details className="group rounded-control border border-line bg-card px-3.5 py-2.5">
-          <summary className="flex cursor-pointer items-center justify-between text-[13px] font-medium text-muted marker:content-['']">
+          <summary className="flex cursor-pointer items-center justify-between text-small font-medium text-muted marker:content-['']">
             More — purchase date, category, price, notes
             <Icon
               name="chevron-right"
@@ -362,7 +373,7 @@ export function ItemForm({
               />
             </Field>
             <Field label="Currency" htmlFor="currency">
-              <Input id="currency" name="currency" defaultValue={initial.currency ?? "EUR"} />
+              <Input id="currency" name="currency" defaultValue={initial.currency ?? "PHP"} />
             </Field>
           </div>
           <Field label="Notes" htmlFor="notes" className="mt-3">
@@ -373,7 +384,7 @@ export function ItemForm({
         {state.error && (
           <p
             role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
           >
             {state.error}
           </p>

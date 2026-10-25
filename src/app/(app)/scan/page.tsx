@@ -77,7 +77,7 @@ export default function ScanPage() {
         actions={
           <Link
             href="/receipts"
-            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
+            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-small font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
           >
             <Icon name="clock" size={15} />
             History
@@ -120,7 +120,7 @@ export default function ScanPage() {
                   <Icon name="external" size={20} />
                 </span>
                 <span className="font-medium text-ink">{fileName}</span>
-                <span className="text-[13px] text-muted">PDF ready to extract</span>
+                <span className="text-small text-muted">PDF ready to extract</span>
               </>
             ) : (
               <>
@@ -128,7 +128,7 @@ export default function ScanPage() {
                   <Icon name="camera" size={20} />
                 </span>
                 <span className="font-medium text-ink">Photograph the whole receipt, flat and lit</span>
-                <span className="text-[13px] text-muted">Photos are resized for upload · PDFs up to 4&nbsp;MB</span>
+                <span className="text-small text-muted">Photos are resized for upload · PDFs up to 4&nbsp;MB</span>
               </>
             )}
           </div>
@@ -136,8 +136,12 @@ export default function ScanPage() {
           {pending && (
             <div className="absolute inset-0 flex animate-fade-in flex-col items-center justify-center gap-3 bg-card/85 px-8 backdrop-blur-sm">
               <IndeterminateBar className="max-w-[12rem]" />
-              <p role="status" aria-live="polite" className="text-[13px] font-medium text-ink">
+              <p role="status" aria-live="polite" className="text-small font-medium text-ink">
                 Reading your receipt…
+              </p>
+              {/* PLAN 5.6: an honest expectation for the wait. */}
+              <p className="text-center text-2xs leading-4 text-muted">
+                This usually takes under 30 seconds. Keep this page open.
               </p>
             </div>
           )}
@@ -156,7 +160,7 @@ export default function ScanPage() {
         {(tooBig ?? state.error) && (
           <p
             role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
           >
             {tooBig ?? state.error}
           </p>
@@ -172,7 +176,7 @@ export default function ScanPage() {
             type="button"
             onClick={() => pick(false)}
             disabled={pending}
-            className="flex min-h-11 flex-col items-center gap-1.5 justify-self-start rounded-control px-2 py-1.5 text-[12px] font-medium text-muted transition-colors duration-fast hover:text-ink disabled:opacity-40"
+            className="flex min-h-11 flex-col items-center gap-1.5 justify-self-start rounded-control px-2 py-1.5 text-small font-medium text-muted transition-colors duration-fast hover:text-ink disabled:opacity-40"
           >
             <Icon name="external" size={22} />
             Choose file

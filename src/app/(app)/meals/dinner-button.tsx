@@ -1,31 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { whatsForDinner, type MealsState } from "./actions";
 import { IndeterminateBar } from "@/components/ui/feedback";
 import { Icon } from "@/components/ui/icon";
 
-const STAGES = [
-  "Reading your inventory…",
-  "Matching against saved recipes…",
-  "Asking the AI to fill the gaps…",
-  "Checking allergies and dislikes…",
-  "Writing it up…",
-];
-
 export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
   const [state, action, pending] = useActionState<MealsState, FormData>(whatsForDinner, {});
-  const [stage, setStage] = useState(0);
-
-  useEffect(() => {
-    if (!pending) {
-      setStage(0);
-      return;
-    }
-    const t = setInterval(() => setStage((s) => Math.min(s + 1, STAGES.length - 1)), 1400);
-    return () => clearInterval(t);
-  }, [pending]);
 
   const subtitle =
     itemCount > 0
@@ -43,10 +24,10 @@ export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
           <Icon name="sparkles" size={20} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[16.5px] font-semibold leading-tight">
+          <span className="block text-[1.03125rem] font-semibold leading-tight">
             {pending ? "Thinking up dinner…" : "What's for dinner?"}
           </span>
-          <span className="mt-1 block text-[12.5px] leading-snug text-brand-contrast/80">{subtitle}</span>
+          <span className="mt-1 block text-small leading-snug text-brand-contrast/80">{subtitle}</span>
         </span>
         <Icon name="chevron-right" size={18} className="shrink-0 text-brand-contrast/80" />
       </button>
@@ -54,8 +35,10 @@ export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
       {pending && (
         <div className="mt-3 animate-slide-up-fade rounded-control border border-line bg-card p-3">
           <IndeterminateBar />
-          <p className="mt-2 text-center text-[13px] text-muted" aria-live="polite">
-            {STAGES[stage]}
+          {/* PLAN 5.6: one honest line, announced once. The old timed steps invented progress
+              and were read out every 1.4 s. */}
+          <p className="mt-2 text-center text-small text-muted" role="status">
+            Checking your saved recipes, then asking the AI for the rest. This usually takes under 30 seconds.
           </p>
         </div>
       )}
@@ -63,7 +46,7 @@ export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
       {state.error && (
         <p
           role="alert"
-          className="mt-3 rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-[13px] text-status-critical-fg"
+          className="mt-3 rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-small text-status-critical-fg"
         >
           {state.error}
         </p>

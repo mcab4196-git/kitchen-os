@@ -26,12 +26,12 @@ function Group({ title, items }: { title: string; items: AlertItem[] }) {
               className="flex items-center justify-between gap-3 rounded-control border border-line bg-card p-3"
             >
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-semibold text-ink">{it.productName}</p>
+                <p className="truncate text-compact font-semibold text-ink">{it.productName}</p>
                 <p className="text-2xs text-muted tabular">
                   {it.quantity} {it.unit} · <span className={l.cls}>{l.text}</span>
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-1 text-[13px]">
+              <div className="flex shrink-0 items-center gap-1 text-small">
                 <Link
                   href={`/inventory/${it.id}/use`}
                   className="-my-1.5 inline-flex h-11 items-center gap-1 rounded-control px-2.5 font-medium text-brand transition-colors hover:bg-brand-soft active:scale-95"

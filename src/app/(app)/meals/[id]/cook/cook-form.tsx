@@ -99,10 +99,10 @@ export function CookForm({
                   have {r.itemQuantity} {r.itemUnit}
                 </span>
               </div>
-              <p className="mt-1 pl-[28px] text-[13px] leading-5 text-muted">{recipeAsks(r)}</p>
+              <p className="mt-1 pl-[28px] text-small leading-5 text-muted">{recipeAsks(r)}</p>
 
               <div className="mt-2.5 flex items-center gap-2 pl-[28px]">
-                <span className="text-[13px] text-muted">Use</span>
+                <span className="text-small text-muted">Use</span>
                 <input
                   type="number"
                   step="any"
@@ -116,9 +116,9 @@ export function CookForm({
                     // Typing an amount means you used it.
                     update(i, v && v > 0 ? { useQuantity: v, include: true } : { useQuantity: v });
                   }}
-                  className="h-11 w-28 rounded-control border border-line-strong bg-card px-3 text-[15px] text-ink tabular focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+                  className="h-11 w-28 rounded-control border border-line-strong bg-card px-3 text-body text-ink tabular focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
                 />
-                <span className="text-[13px] text-muted">{r.itemUnit}</span>
+                <span className="text-small text-muted">{r.itemUnit}</span>
               </div>
               {(!r.convertible || !r.quantified) && (
                 <p className="mt-1.5 pl-[28px] text-2xs leading-4 text-muted">
@@ -133,7 +133,7 @@ export function CookForm({
           {state.error && (
             <p
               role="alert"
-              className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-[13px] text-status-critical-fg"
+              className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
             >
               {state.error}
             </p>

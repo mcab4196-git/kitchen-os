@@ -125,7 +125,7 @@ export function validateAndFilterRecipes(
   raw: unknown,
   opts: { allergies: string[]; dislikes: string[] }
 ): { ok: true; recipes: ValidatedRecipe[]; filtered: number } | { ok: false; error: string } {
-  if (!Array.isArray(raw)) return { ok: false, error: "AI returned recipes in an unexpected shape." };
+  if (!Array.isArray(raw)) return { ok: false, error: "The dinner ideas came back garbled. Please try again." };
 
   const wellFormed: ValidatedRecipe[] = [];
   for (const item of raw) {

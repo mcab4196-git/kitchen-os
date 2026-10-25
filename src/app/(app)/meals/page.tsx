@@ -44,7 +44,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
     >
       <div className="flex items-start justify-between gap-3">
         <Link href={`/meals/${r.id}`} className="min-w-0 flex-1 focus-visible:outline-none">
-          <p className="flex items-center gap-1 text-[15px] font-semibold text-ink">
+          <p className="flex items-center gap-1 text-body font-semibold text-ink">
             <span className="min-w-0 truncate">{r.name}</span>
             <Icon
               name="chevron-right"
@@ -52,7 +52,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
               className="shrink-0 -translate-x-1 text-faint opacity-0 transition-all duration-fast ease-out group-hover:translate-x-0 group-hover:opacity-100"
             />
           </p>
-          {r.description && <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-muted">{r.description}</p>}
+          {r.description && <p className="mt-1 line-clamp-2 text-small leading-5 text-muted">{r.description}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-2xs text-muted tabular">
             <span className="inline-flex items-center gap-1">
               <Icon name="clock" size={13} />
@@ -62,20 +62,24 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
             <span>serves {r.servings}</span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {r.usesExpiring > 0 ? (
+            {r.usesExpiring > 0 && (
               <Badge tone="fresh">
                 <Icon name="check" size={12} strokeWidth={2.5} />
                 Uses {r.usesExpiring} expiring
               </Badge>
-            ) : r.missing === 0 ? (
-              <Badge tone="fresh">
-                <Icon name="check" size={12} strokeWidth={2.5} />
-                Nothing to buy
-              </Badge>
-            ) : (
+            )}
+            {/* PLAN 5.6: what you'd have to buy shows even when the idea uses expiring stock. */}
+            {r.missing > 0 ? (
               <Badge tone="accent">
                 Buy {r.missing} item{r.missing === 1 ? "" : "s"}
               </Badge>
+            ) : (
+              r.usesExpiring === 0 && (
+                <Badge tone="fresh">
+                  <Icon name="check" size={12} strokeWidth={2.5} />
+                  Nothing to buy
+                </Badge>
+              )
             )}
             <Badge tone="neutral">{r.saved ? "Saved recipe" : "AI suggestion"}</Badge>
           </div>
@@ -148,7 +152,7 @@ export default async function MealsPage() {
         actions={
           <Link
             href="/plan"
-            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
+            className="inline-flex min-h-11 items-center gap-1 rounded-control border border-line bg-card px-3 text-small font-medium text-ink transition-colors duration-fast hover:bg-surface-2"
           >
             <Icon name="calendar" size={15} />
             Plan week

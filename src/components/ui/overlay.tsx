@@ -136,7 +136,7 @@ export function Sheet({ open, onOpenChange, title, description, children, classN
         <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-3 sm:pt-5">
           <div className="min-w-0">
             <h2 className="font-display text-title-sm text-ink">{title}</h2>
-            {description && <p className="mt-1 text-[13px] leading-5 text-muted">{description}</p>}
+            {description && <p className="mt-1 text-small leading-5 text-muted">{description}</p>}
           </div>
           <button
             type="button"
@@ -186,7 +186,7 @@ export function Dialog({ open, onOpenChange, title, description, children, class
         )}
       >
         <h2 className="font-display text-title-sm text-ink">{title}</h2>
-        {description && <p className="mt-1.5 text-[13.5px] leading-5 text-muted">{description}</p>}
+        {description && <p className="mt-1.5 text-[0.84375rem] leading-5 text-muted">{description}</p>}
         <div className="mt-4">{children}</div>
       </div>
     </div>,
