@@ -74,3 +74,21 @@ export function SubmitAction({
     </button>
   );
 }
+
+/**
+ * The one inline error box: Critical tint, announced as it appears. Shared so the
+ * forms that show it can't drift apart (PLAN 5.7).
+ */
+export function FormError({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p
+      role="alert"
+      className={cn(
+        "rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg",
+        className,
+      )}
+    >
+      {children}
+    </p>
+  );
+}

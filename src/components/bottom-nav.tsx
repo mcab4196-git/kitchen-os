@@ -70,7 +70,7 @@ export function SideNav() {
   return (
     <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r border-line px-3 py-6 lg:flex">
       <Link href="/dashboard" className="mb-5 flex items-center gap-2 px-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-brand-contrast">
+        <span className="flex h-8 w-8 items-center justify-center rounded-control bg-brand text-brand-contrast">
           <Icon name="leaf" size={17} />
         </span>
         <span className="font-display text-body font-semibold text-ink">Kitchen OS</span>

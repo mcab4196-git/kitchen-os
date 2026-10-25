@@ -10,6 +10,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Field, Input, Select, Checkbox } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { FormError } from "@/components/ui/feedback";
+import { ActionBar } from "@/components/ui/action-bar";
+import { SectionLabel } from "@/components/ui/section-label";
 
 const UNITS = ["g", "kg", "ml", "l", "pcs", "clove", "slice", "tbsp", "tsp", "cup", "oz", "lb"];
 const STORAGE = [
@@ -166,9 +169,9 @@ export function ItemForm({
 
       {recent.length > 0 && (
         <div className="mb-5">
-          <p className="mb-2 text-2xs font-medium uppercase tracking-[0.08em] text-muted">
+          <SectionLabel as="p" className="mb-2">
             Quick add from your usuals
-          </p>
+          </SectionLabel>
           <div className="no-scrollbar edge-fade-x -mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5">
             {recent.map((r, i) => (
               <button
@@ -382,22 +385,17 @@ export function ItemForm({
         </details>
 
         {state.error && (
-          <p
-            role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-          >
-            {state.error}
-          </p>
+          <FormError>{state.error}</FormError>
         )}
 
-        <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom))] -mx-4 mt-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur-sm lg:bottom-0">
+        <ActionBar className="mt-2">
           <Button type="submit" loading={pending} size="lg" className="w-full">
             {pending ? "Saving…" : submitLabel}
           </Button>
           <p className="mt-1.5 text-center text-2xs text-muted">
             Saves and returns to your inventory.
           </p>
-        </div>
+        </ActionBar>
       </form>
     </main>
   );

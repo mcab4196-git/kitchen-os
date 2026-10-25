@@ -5,6 +5,7 @@ import { savePreferences, type PrefsState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field, Input, Select } from "@/components/ui/field";
+import { FormError } from "@/components/ui/feedback";
 
 export interface PrefsInitial {
   householdSize: number;
@@ -102,12 +103,7 @@ export function PreferencesForm({ initial }: { initial: PrefsInitial }) {
           </p>
         )}
         {state.error && (
-          <p
-            role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-          >
-            {state.error}
-          </p>
+          <FormError>{state.error}</FormError>
         )}
 
         <Button type="submit" loading={pending} size="lg" className="mt-1">

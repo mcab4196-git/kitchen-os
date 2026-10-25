@@ -84,6 +84,11 @@ src/server/services/          ALL database access, every query scoped by userId
   (custom; the project deliberately has no tailwind-merge). The visual system is in [DESIGN.md](DESIGN.md).
 - Type sizes use the rem tokens (`text-small` 13px, `text-compact` 14px, `text-body` 15px, `text-2xs`…), never
   `text-[13px]`: px sizes ignore the "Larger text" preference.
+- Reach for the shared pieces before writing markup: `Card` / `LinkRow`, `ActionBar` (sticky main action),
+  `FormError` (form-level error), `SectionLabel` (group heading), `Button`, `Field`. `cn()` can't override a
+  component's padding (no tailwind-merge), so extend with classes that don't clash.
+- The design detector (`.claude/skills/impeccable/scripts/impeccable detect src/app src/components`) is at 0 findings;
+  the three sanctioned exceptions, with reasons, are in `.impeccable/config.json`.
 - Pages sit in a 760px column on desktop. A page that needs the full width marks its `<main>` with `data-wide`
   (only Today does).
 - Commits: conventional style with severity, e.g. `fix(P2): …`, `chore(qa): …`, `test(qa): …`.

@@ -12,6 +12,8 @@ import { EXPIRY_TEXT } from "@/components/inventory/freshness-bar";
 import { classifyStatus, relativeLabel, type ShelfLifeRuleish, type StorageLocation } from "@/lib/expiry";
 import { inferStorage, isNonFood, lineEstimate, type ReviewRef } from "@/lib/review";
 import { cn } from "@/lib/utils";
+import { FormError } from "@/components/ui/feedback";
+import { ActionBar } from "@/components/ui/action-bar";
 
 const UNITS = ["", "g", "kg", "ml", "l", "pcs", "clove", "slice", "tbsp", "tsp", "cup", "oz", "lb"];
 const STORAGE: readonly (readonly [StorageLocation, string])[] = [
@@ -382,19 +384,14 @@ export function ReviewForm({
       </ul>
 
       {state.error && (
-        <p
-          role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-        >
-          {state.error}
-        </p>
+        <FormError>{state.error}</FormError>
       )}
 
-      <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom)+0.75rem)] z-10 -mx-4 border-t border-line bg-surface/85 px-4 py-3 backdrop-blur-md lg:bottom-4 lg:mx-0 lg:rounded-card lg:border">
+      <ActionBar>
         <Button type="submit" loading={pending} disabled={includedCount === 0} size="lg" className="w-full">
           {pending ? "Adding…" : `Add ${includedCount} item${includedCount === 1 ? "" : "s"} to inventory`}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }

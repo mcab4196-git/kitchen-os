@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { SaveToggle } from "@/components/recipe/save-toggle";
 import { SubmitButton } from "@/components/ui/feedback";
 import { addRecipeMissingAction } from "@/app/(app)/shopping/actions";
+import { ActionBar } from "@/components/ui/action-bar";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
 
@@ -105,7 +106,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
         </section>
       )}
 
-      <div className="sticky bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom)+0.75rem)] z-10 mt-8 -mx-4 border-t border-line bg-surface/85 px-4 py-3 backdrop-blur-md lg:bottom-4 lg:mx-0 lg:rounded-card lg:border">
+      <ActionBar className="mt-8">
         <div className="flex gap-3">
           <Button asChild className="flex-1">
             <Link href={`/meals/${recipe.id}/cook`}>
@@ -124,7 +125,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
           Cooking deducts these amounts from your inventory — you&apos;ll confirm each one first.
           “Add to list” sends the missing ones to Shopping.
         </p>
-      </div>
+      </ActionBar>
     </main>
   );
 }

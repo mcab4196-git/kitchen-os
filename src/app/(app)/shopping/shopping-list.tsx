@@ -5,6 +5,7 @@ import { toggleCheckedAction, removeItemAction } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { SectionLabel } from "@/components/ui/section-label";
 
 export interface ShoppingItem {
   id: string;
@@ -157,9 +158,9 @@ export function ShoppingList({ items: serverItems }: { items: ShoppingItem[] }) 
       <div className="flex flex-col gap-6">
         {groups.map((g) => (
           <section key={g.name}>
-            <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-muted">
+            <SectionLabel className="mb-2">
               {g.name} · {g.rows.length}
-            </h2>
+            </SectionLabel>
             <ul className="flex flex-col gap-2">
               {g.rows.map((it) => (
                 <li

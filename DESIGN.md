@@ -254,8 +254,8 @@ high-contrast serif; Inter keeps every number, label and control plain and legib
   sit just above it at 13.5px.
 - Every size is in rem, so the "Larger text" preference (root at 112.5%) reaches all of them. Don't set type in px.
 - **Read** (400, 1.0625rem/1.7rem): recipe steps and other long copy; keep lines near 65ch.
-- **Label** (500, 0.6875rem/1rem, 0.01em): badges, tab labels, meta. Bucket headers on Inventory use it uppercase with
-  0.1em tracking.
+- **Label** (500, 0.6875rem/1rem, 0.01em): badges, tab labels, meta. Group headings (Inventory buckets, Alerts,
+  Shopping aisles, Settings sections) use it semibold, uppercase, 0.1em tracking, in Muted: `SectionLabel`.
 
 ### Named Rules
 **The Serif Titles Rule.** Fraunces sets titles only: page titles, section headings, sheet and empty-state titles, and the
@@ -344,13 +344,21 @@ Sturdy and forgiving.
 - **Shadow Strategy:** Card at rest, Pop on hover when interactive (see Elevation).
 - **Border:** a 1px hairline, strengthening on hover.
 - **Internal Padding:** 16px (14px for inset cards and link rows).
-- There is one Card implementation (`components/ui/card.tsx`). Link rows add a trailing chevron that nudges 2px on hover.
+- There is one Card implementation (`components/ui/card.tsx`). Link rows (`LinkRow`) add a trailing chevron that
+  nudges 2px on hover; Settings and the meal plan use them.
+
+### Action bar
+The sticky bar that holds a screen's main action: Save on the item form, Add to inventory on Review, Cook & deduct.
+On phones it rides 12px above the tab bar in translucent Rice Paper with a blur, then settles after the content, so it
+never covers the end of a form. On desktop it's a rounded card at the foot of the column. One component:
+`components/ui/action-bar.tsx`.
 
 ### Inputs / Fields
 - **Style:** Card White, a Hairline Strong 1px border, 0.7rem radius, 44px tall, 14px text. Labels sit above in 13px
   medium Ink; hints sit below in Label/Muted.
 - **Focus:** the border turns Pandan with a 2px Pandan ring at 25%.
-- **Error / Disabled:** the error replaces the hint in Critical text with `role="alert"`; disabled drops to 50%.
+- **Error / Disabled:** a field's error replaces its hint in Critical text with `role="alert"`; disabled drops to 50%.
+  A form-level error is one box in the Critical tint (`FormError`), above the action bar.
 
 ### Navigation
 - **Phone:** a fixed bottom tab bar in translucent Card White with a blurred backdrop and the Nav shadow. Five tabs

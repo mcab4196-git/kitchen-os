@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { makePlan, type PlanState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { IndeterminateBar } from "@/components/ui/feedback";
+import { IndeterminateBar, FormError } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils";
 
 const LENGTHS = [3, 7];
@@ -54,12 +54,7 @@ export function PlanControls() {
         </div>
       )}
       {state.error && (
-        <p
-          role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-small text-status-critical-fg"
-        >
-          {state.error}
-        </p>
+        <FormError className="text-center">{state.error}</FormError>
       )}
     </form>
   );

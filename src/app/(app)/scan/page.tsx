@@ -7,7 +7,7 @@ import { uploadReceipt, type ScanState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Icon } from "@/components/ui/icon";
-import { IndeterminateBar } from "@/components/ui/feedback";
+import { IndeterminateBar, FormError } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils";
 import { MAX_RECEIPT_BYTES } from "@/lib/receipt-file";
 import { shrinkImage } from "./shrink-image";
@@ -158,12 +158,7 @@ export default function ScanPage() {
         </div>
 
         {(tooBig ?? state.error) && (
-          <p
-            role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-          >
-            {tooBig ?? state.error}
-          </p>
+          <FormError>{tooBig ?? state.error}</FormError>
         )}
 
         <p className="text-2xs leading-4 text-muted">

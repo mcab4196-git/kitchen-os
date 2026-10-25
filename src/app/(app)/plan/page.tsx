@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestPlan } from "@/server/services/recipe";
 import { PlanControls } from "./plan-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
+import { LinkRow } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -65,22 +64,12 @@ export default async function PlanPage() {
                       </span>
                     </div>
                     {item?.recipe ? (
-                      <Link
-                        href={`/meals/${item.recipe.id}`}
-                        className="group flex flex-1 items-center justify-between gap-3 rounded-card border border-line bg-card p-3.5 shadow-card transition duration-fast ease-out hover:border-line-strong hover:shadow-pop active:translate-y-px"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-compact font-semibold text-ink">{item.recipe.name}</p>
-                          <p className="mt-0.5 text-2xs text-muted tabular">
-                            Day {i + 1} · {(item.recipe.prepMinutes ?? 0) + (item.recipe.cookMinutes ?? 0)} min
-                          </p>
-                        </div>
-                        <Icon
-                          name="chevron-right"
-                          size={17}
-                          className="shrink-0 text-faint transition-transform duration-fast group-hover:translate-x-0.5"
-                        />
-                      </Link>
+                      <LinkRow href={`/meals/${item.recipe.id}`} className="flex-1">
+                        <p className="truncate text-compact font-semibold text-ink">{item.recipe.name}</p>
+                        <p className="mt-0.5 text-2xs text-muted tabular">
+                          Day {i + 1} · {(item.recipe.prepMinutes ?? 0) + (item.recipe.cookMinutes ?? 0)} min
+                        </p>
+                      </LinkRow>
                     ) : (
                       <div className="flex flex-1 items-center rounded-card border border-dashed border-line-strong p-3.5 text-small leading-5 text-muted">
                         Not enough left to plan — add ingredients or scan a receipt.

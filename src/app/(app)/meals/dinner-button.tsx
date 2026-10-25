@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { whatsForDinner, type MealsState } from "./actions";
-import { IndeterminateBar } from "@/components/ui/feedback";
+import { IndeterminateBar, FormError } from "@/components/ui/feedback";
 import { Icon } from "@/components/ui/icon";
 
 export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
@@ -18,7 +18,7 @@ export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
       <button
         type="submit"
         disabled={pending}
-        className="flex w-full items-center gap-3 rounded-2xl bg-brand p-4 text-left text-brand-contrast shadow-xs transition duration-fast ease-out hover:bg-brand-ink active:scale-[0.99] disabled:opacity-70"
+        className="flex w-full items-center gap-3 rounded-card bg-brand p-4 text-left text-brand-contrast shadow-xs transition duration-fast ease-out hover:bg-brand-ink active:scale-[0.99] disabled:opacity-70"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-contrast/15">
           <Icon name="sparkles" size={20} />
@@ -44,12 +44,7 @@ export function DinnerButton({ itemCount = 0 }: { itemCount?: number }) {
       )}
 
       {state.error && (
-        <p
-          role="alert"
-          className="mt-3 rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-center text-small text-status-critical-fg"
-        >
-          {state.error}
-        </p>
+        <FormError className="mt-3 text-center">{state.error}</FormError>
       )}
     </form>
   );
