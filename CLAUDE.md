@@ -26,7 +26,7 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **190 tests / 16 files green, typecheck and lint clean.** Run all three before finishing
+Baseline you must not break: **194 tests / 16 files green, typecheck and lint clean.** Run all three before finishing
 any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
@@ -133,6 +133,12 @@ src/server/services/          ALL database access, every query scoped by userId
 See `.env.example`. Server-only keys never get a `NEXT_PUBLIC_` prefix. `src/instrumentation.ts` validates the
 environment once at server start with `checkEnv()` from `src/lib/env.ts`, and the app stops booting if it's invalid.
 Code still reads `process.env` directly. The key for the selected `AI_PROVIDER` (default `gemini`) is required.
+
+Sign-up confirmation links: `emailLinkOrigin()` (`lib/redirect.ts`) uses `NEXT_PUBLIC_SITE_URL` when it's a public URL,
+else the host the request came to; it never trusts a localhost value in production. Supabase only follows return
+addresses on its allow-list (dashboard → Authentication → URL Configuration: Site URL
+`https://kitchen-os.mcabello.dev`, Redirect URLs `https://kitchen-os.mcabello.dev/**`), otherwise it falls back to
+the Site URL.
 
 Receipt uploads: the scan page shrinks photos on the device (`scan/shrink-image.ts`) before upload, and the server
 trusts only the file's bytes (`sniffReceiptType`) and a 4 MB limit, all in `src/lib/receipt-file.ts`. The Server Action

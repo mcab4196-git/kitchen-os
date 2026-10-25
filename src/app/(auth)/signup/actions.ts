@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { emailLinkOrigin } from "@/lib/redirect";
 import { preferencesFromForm } from "@/lib/preferences-form";
 import { updatePreferences } from "@/server/services/preferences";
 import { betaSeatsLeft } from "@/server/services/beta";
@@ -25,11 +27,17 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
   if ((await betaSeatsLeft()) <= 0) return { error: BETA_FULL, step: 1 };
 
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  // The confirmation link comes back to the site the person signed up on, not localhost.
+  const h = await headers();
+  const origin = emailLinkOrigin(
+    process.env.NEXT_PUBLIC_SITE_URL,
+    h.get("x-forwarded-host") ?? h.get("host"),
+    h.get("x-forwarded-proto"),
+  );
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${siteUrl}/auth/callback` },
+    options: { emailRedirectTo: `${origin}/auth/callback` },
   });
   if (error) {
     // The beta cap trigger (rls.sql) reaches us as Supabase Auth's generic database error.
