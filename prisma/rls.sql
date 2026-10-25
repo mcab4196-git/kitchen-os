@@ -33,6 +33,44 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- ─────────────── 1b. Closed beta: at most 10 accounts ───────────────
+-- Owner, 2026-10-25: a beta for the people the link is shared with. Enforced here, not
+-- only in the app, because the anon key is public and anyone can call Supabase's
+-- sign-up API directly. The app asks beta_seats_left() first to show a friendly
+-- message. To open more seats, change the 10 below and re-run `npm run db:rls`.
+create or replace function public.beta_seats_left()
+returns integer
+language sql
+stable
+security definer set search_path = public, auth
+as $$
+  select greatest(0, 10 - (select count(*)::int from auth.users));
+$$;
+
+create or replace function public.enforce_beta_cap()
+returns trigger
+language plpgsql
+security definer set search_path = public, auth
+as $$
+begin
+  -- Serialise sign-ups so two at once can't both take the last seat.
+  perform pg_advisory_xact_lock(hashtext('kitchen-os:beta-cap'));
+  if public.beta_seats_left() <= 0 then
+    raise exception 'kitchen_os_beta_full' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+
+-- Server-side only: the seat count isn't for the browser client.
+revoke execute on function public.beta_seats_left() from public, anon, authenticated;
+revoke execute on function public.enforce_beta_cap() from public, anon, authenticated;
+
+drop trigger if exists enforce_beta_cap on auth.users;
+create trigger enforce_beta_cap
+  before insert on auth.users
+  for each row execute function public.enforce_beta_cap();
+
 -- ─────────────── 2. Enable RLS on all user-owned tables ───────────────
 alter table public.profiles            enable row level security;
 alter table public.user_preferences    enable row level security;

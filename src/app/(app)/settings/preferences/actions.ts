@@ -3,21 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updatePreferences } from "@/server/services/preferences";
+import { preferencesFromForm } from "@/lib/preferences-form";
+import { getPreferences, updatePreferences } from "@/server/services/preferences";
 
 export type PrefsState = { error?: string; saved?: boolean };
-
-function list(v: FormDataEntryValue | null): string[] {
-  return String(v ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function int(v: FormDataEntryValue | null, fallback: number): number {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : fallback;
-}
 
 export async function savePreferences(_prev: PrefsState, formData: FormData): Promise<PrefsState> {
   const supabase = await createClient();
@@ -26,18 +15,24 @@ export async function savePreferences(_prev: PrefsState, formData: FormData): Pr
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  await updatePreferences(user.id, {
-    householdSize: int(formData.get("householdSize"), 2),
-    diet: String(formData.get("diet") ?? "") || null,
-    allergies: list(formData.get("allergies")),
-    dislikes: list(formData.get("dislikes")),
-    cuisines: list(formData.get("cuisines")),
-    skill: String(formData.get("skill") ?? "intermediate"),
-    maxCookMinutes: int(formData.get("maxCookMinutes"), 45),
-    unitSystem: String(formData.get("unitSystem") ?? "metric"),
-    currency: String(formData.get("currency") ?? "EUR").toUpperCase(),
-    expiringDays: int(formData.get("expiringDays"), 2),
-  });
+  // The shared reader bounds every field; anything missing keeps the saved value.
+  const current = await getPreferences(user.id);
+  const thresholds = (current.notificationThresholds ?? {}) as { expiringDays?: number };
+  await updatePreferences(
+    user.id,
+    preferencesFromForm(formData, {
+      householdSize: current.householdSize,
+      diet: current.diet,
+      allergies: current.allergies,
+      dislikes: current.dislikes,
+      cuisines: current.cuisines,
+      skill: current.skill,
+      maxCookMinutes: current.maxCookMinutes,
+      unitSystem: current.unitSystem,
+      currency: current.currency,
+      expiringDays: thresholds.expiringDays ?? 2,
+    }),
+  );
 
   revalidatePath("/settings/preferences");
   return { saved: true };

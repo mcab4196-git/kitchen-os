@@ -26,7 +26,7 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **180 tests / 15 files green, typecheck and lint clean.** Run all three before finishing
+Baseline you must not break: **198 tests / 17 files green, typecheck and lint clean.** Run all three before finishing
 any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
@@ -39,7 +39,8 @@ Run `npm ci`, or call the tools directly:
 middleware.ts                 session refresh + route guard (src/lib/supabase/middleware.ts)
 design/                       design mocks (kept out of public/, rule 8)
 prisma/                       schema, migrations, rls.sql, storage.sql, seed.ts
-src/app/(auth)/login          sign in / up / out actions
+src/app/(auth)/login          sign in / out (Create account links to /signup)
+src/app/(auth)/signup         two-step sign-up: account, then kitchen preferences (skippable); beta-full state
 src/app/(app)/<feature>/      page.tsx + actions.ts ("use server") + client forms
 src/app/auth/callback         email-confirm code exchange
 src/components/ui             primitives (button, card, field, overlay, toaster…)
@@ -60,7 +61,8 @@ src/server/services/          ALL database access, every query scoped by userId
    code: `recipeIsForbidden` (EU-14 groups from `lib/allergens.ts`) runs on every recipe a user can be offered,
    including AI output, saved favourites and older suggestions. Only the user-reviewed payload from the review screen
    is committed to inventory. Every AI call first claims a slot with `claimAiUse()` (`services/ai-usage.ts`) against
-   the per-user daily limits in `lib/ai-limits.ts`, and hands it back with `releaseAiUse()` if the provider fails.
+   the per-user daily limits and the shared ceiling for everyone in `lib/ai-limits.ts`, and hands it back with
+   `releaseAiUse()` if the provider fails.
 3. **Expiry honesty.** `EXACT` / `ESTIMATED` / `UNKNOWN`: never invent a date, always label estimates. All
    labels go through `relativeLabel` / `classifyStatus` in `lib/expiry.ts`; don't fork them.
 4. **Units.** Every conversion goes through `convert()` in `lib/units.ts`, which returns `null` rather than guessing.
@@ -112,6 +114,12 @@ src/server/services/          ALL database access, every query scoped by userId
   default (iad1, Washington) put every query across the Atlantic. Move the two together.
 - Form fields send `""` for "none": `reviewedItemSchema` turns blank text into `null` and drops a category id that
   isn't a UUID. An empty category id used to fail the whole receipt commit.
+- **Closed beta:** a `before insert` trigger on `auth.users` (`enforce_beta_cap` in `rls.sql`) refuses an 11th account,
+  because the anon key is public and Supabase's sign-up API can be called directly. The seat count lives only in
+  `beta_seats_left()`; the sign-up page asks it first (`services/beta.ts`). Change the number there and re-run
+  `npm run db:rls`. Supabase Auth reports the refusal as a generic "Database error saving new user".
+- Preferences from any form go through `preferencesFromForm()` (`lib/preferences-form.ts`), which bounds every field;
+  Settings and sign-up share the fields in `components/preferences/core-fields.tsx`.
 - Money and quantities are `Float`. Round for display with `tidy()`.
 - Day boundaries (`setHours(0,0,0,0)`) run in the **server** timezone, which is UTC on Vercel, not the user's.
 - Each "Plan" run creates a new `MealPlan`. Old plans are not pruned.
@@ -125,6 +133,12 @@ src/server/services/          ALL database access, every query scoped by userId
 See `.env.example`. Server-only keys never get a `NEXT_PUBLIC_` prefix. `src/instrumentation.ts` validates the
 environment once at server start with `checkEnv()` from `src/lib/env.ts`, and the app stops booting if it's invalid.
 Code still reads `process.env` directly. The key for the selected `AI_PROVIDER` (default `gemini`) is required.
+
+Sign-up confirmation links: `emailLinkOrigin()` (`lib/redirect.ts`) uses `NEXT_PUBLIC_SITE_URL` when it's a public URL,
+else the host the request came to; it never trusts a localhost value in production. Supabase only follows return
+addresses on its allow-list (dashboard → Authentication → URL Configuration: Site URL
+`https://kitchen-os.mcabello.dev`, Redirect URLs `https://kitchen-os.mcabello.dev/**`), otherwise it falls back to
+the Site URL.
 
 Receipt uploads: the scan page shrinks photos on the device (`scan/shrink-image.ts`) before upload, and the server
 trusts only the file's bytes (`sniffReceiptType`) and a 4 MB limit, all in `src/lib/receipt-file.ts`. The Server Action

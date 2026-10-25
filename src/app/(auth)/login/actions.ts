@@ -2,8 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signInErrorMessage } from "@/lib/auth-errors";
 
-export type AuthState = { error?: string; message?: string };
+export type AuthState = { error?: string };
 
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "");
@@ -11,24 +12,11 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  if (error) return { error: signInErrorMessage(error) };
   redirect("/dashboard");
 }
 
-export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-  const supabase = await createClient();
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: `${siteUrl}/auth/callback` },
-  });
-  if (error) return { error: error.message };
-  return { message: "Check your email to confirm your account, then sign in." };
-}
+// Sign-up lives in ../signup/actions.ts, with the onboarding step (PLAN 6.2).
 
 export async function signOut() {
   const supabase = await createClient();

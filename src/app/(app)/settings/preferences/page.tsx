@@ -15,10 +15,10 @@ export default async function PreferencesPage() {
     <PreferencesForm
       initial={{
         householdSize: p.householdSize,
-        diet: p.diet ?? "",
-        allergies: p.allergies.join(", "),
-        dislikes: p.dislikes.join(", "),
-        cuisines: p.cuisines.join(", "),
+        diet: p.diet,
+        allergies: p.allergies,
+        dislikes: p.dislikes,
+        cuisines: p.cuisines,
         skill: p.skill,
         maxCookMinutes: p.maxCookMinutes,
         unitSystem: p.unitSystem,
