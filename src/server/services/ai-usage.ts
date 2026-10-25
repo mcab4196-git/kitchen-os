@@ -4,22 +4,25 @@ import { aiAllowance, allowanceMessage, AI_WINDOW_MS, type AiTask } from "@/lib/
 export type AiClaim = { ok: true; id: string } | { ok: false; error: string };
 
 /**
- * N6: reserve one AI call against the user's allowance before making it. The
- * advisory lock (per user and task, released at commit) makes check-then-insert
- * atomic, so two taps at once can't both take the last slot.
+ * N6: reserve one AI call against the user's allowance and the shared ceiling
+ * (PLAN 6.3) before making it. One advisory lock for every claim (released at
+ * commit) makes check-then-insert atomic, so two taps at once can't both take the
+ * last slot. At beta scale the claims are tiny, so serialising them all costs nothing.
  */
 export async function claimAiUse(userId: string, task: AiTask): Promise<AiClaim> {
   const now = new Date();
+  const since = new Date(now.getTime() - AI_WINDOW_MS);
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`select pg_advisory_xact_lock(hashtext(${`ai:${userId}:${task}`}))`;
-    const recent = await tx.aiUsage.findMany({
-      where: { userId, task, createdAt: { gt: new Date(now.getTime() - AI_WINDOW_MS) } },
-      select: { createdAt: true },
+    await tx.$executeRaw`select pg_advisory_xact_lock(hashtext('kitchen-os:ai-claims'))`;
+    const everyone = await tx.aiUsage.findMany({
+      where: { createdAt: { gt: since } },
+      select: { userId: true, task: true, createdAt: true },
     });
     const verdict = aiAllowance(
       task,
-      recent.map((r) => r.createdAt),
+      everyone.filter((r) => r.userId === userId && r.task === task).map((r) => r.createdAt),
       now,
+      everyone.map((r) => r.createdAt),
     );
     if (!verdict.ok) return { ok: false, error: allowanceMessage(task, verdict, now) };
 

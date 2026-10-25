@@ -51,14 +51,19 @@ Shipped in v1.0.0:
 - **Alerts:** expired / today / soon against a per-user threshold; opt-in browser notification.
 - **Preferences:** household size, diet, allergies, dislikes, cuisines, cooking skill, max cook time, units, currency,
   and how many days ahead to warn.
-- **Accounts:** email and password.
+- **Accounts:** email and password. Sign-up is two steps: the account, then the kitchen (household size, diet,
+  allergies, dislikes, cuisines, skill, cook time). The second step can be skipped; defaults are PHP and metric.
 
 Constraints:
 
+- **Closed beta** (owner, 2026-10-25): at most 10 accounts, for the people the owner shares the link with. Enforced by
+  a database trigger, not just the sign-up page.
 - AI output is never trusted. Availability, shortfalls and allergen exclusion are computed in code. Allergens are a
   hard filter.
-- The product is **free**, so AI calls stay within firm per-user caps: 10 receipt scans, 20 rounds of dinner ideas
-  and 5 meal plans in any 24 hours, with a 30-second wait between requests for new ideas or plans (owner, 2026-10-25).
+- The product is **free**, so AI calls stay within firm caps (set by Claude at the owner's request, 2026-10-25): per
+  user, 8 receipt scans, 10 rounds of dinner ideas and 3 meal plans in any 24 hours, with a 30-second wait between
+  requests for new ideas or plans; and 200 calls in any 24 hours for everyone together, because all users share one
+  AI key and its daily quota.
 - Users are public. One user's data or corrections must never change what another user sees.
 
 Open decisions (record, don't assume):

@@ -1,17 +1,7 @@
 import { prisma } from "@/server/db";
+import type { PreferencesInput } from "@/lib/preferences-form";
 
-export interface PreferencesInput {
-  householdSize: number;
-  diet: string | null;
-  allergies: string[];
-  dislikes: string[];
-  cuisines: string[];
-  skill: string;
-  maxCookMinutes: number;
-  unitSystem: string;
-  currency: string;
-  expiringDays: number;
-}
+export type { PreferencesInput };
 
 /**
  * Accessibility toggles. Stored alongside `expiringDays` in the

@@ -372,6 +372,13 @@ Sheets slide up 16px and fade; dialogs scale from 96%. Both use a 40% Ink scrim,
 close and focus restore. Toasts sit above the tab bar: success in the Fresh tint, info in Card White, and Undo when an
 item is removed.
 
+### Sign-in and sign-up
+Both use one header (`(auth)/auth-header.tsx`): the wordmark beside the logo tile, a Title Large heading, one Muted
+line. Sign-up is two steps in one form: the account, then the kitchen (the shared preference fields). A two-segment
+Pandan bar sits above the heading and the subtitle says "Step 1 of 2" in words; the bar is decoration. Step 2 has
+Create account (primary), Back and "Skip for now" (ghost), since the defaults already work. When the beta is full,
+the page says so before anyone types.
+
 ### Floating action button
 A 56px Pandan pill, on Today and Inventory on phones only, that carries the screen's main action in the thumb zone:
 **Scan receipt** on Today, because scanning beats typing, and **Add** on Inventory (owner, 2026-10-25; Today's header
