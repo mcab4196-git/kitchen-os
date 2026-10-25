@@ -41,7 +41,7 @@ export function ItemCard({ item, absoluteDates = false }: { item: ItemCardData; 
           <p className="truncate text-[15px] font-semibold text-ink">
             {item.productName}
             {usedUp && (
-              <span className="ml-2 align-middle text-2xs font-medium uppercase tracking-wide text-faint">
+              <span className="ml-2 align-middle text-2xs font-medium uppercase tracking-wide text-muted">
                 used up
               </span>
             )}

@@ -12,6 +12,21 @@ export async function getFormReference() {
   return { categories, ingredients };
 }
 
+/** Every shelf-life rule (seed data, a few hundred rows at most) for Review's live estimates. */
+export async function getShelfLifeRules() {
+  return prisma.shelfLifeRule.findMany({
+    select: {
+      ingredientId: true,
+      categoryName: true,
+      storage: true,
+      opened: true,
+      typicalDays: true,
+      minDays: true,
+      maxDays: true,
+    },
+  });
+}
+
 /**
  * Resolve a free-text name to a canonical ingredient via the alias table
  * (lower-cased exact match). This is the lightweight, manual-add version of the

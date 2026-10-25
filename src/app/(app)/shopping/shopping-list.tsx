@@ -157,7 +157,7 @@ export function ShoppingList({ items: serverItems }: { items: ShoppingItem[] }) 
       <div className="flex flex-col gap-6">
         {groups.map((g) => (
           <section key={g.name}>
-            <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-faint">
+            <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-muted">
               {g.name} · {g.rows.length}
             </h2>
             <ul className="flex flex-col gap-2">
@@ -231,7 +231,7 @@ export function ShoppingList({ items: serverItems }: { items: ShoppingItem[] }) 
               <button
                 type="button"
                 onClick={t.onUndo}
-                className="min-h-9 shrink-0 rounded-md bg-card/15 px-3 text-[13px] font-semibold text-card"
+                className="-my-1.5 min-h-11 shrink-0 rounded-md bg-card/15 px-3 text-[13px] font-semibold text-card"
               >
                 Undo
               </button>

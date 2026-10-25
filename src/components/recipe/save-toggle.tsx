@@ -34,10 +34,10 @@ export function SaveToggle({
         aria-label={optimistic ? "Remove from saved" : "Save recipe"}
         title={optimistic ? "Saved — tap to remove" : "Save recipe"}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-medium transition duration-fast ease-out active:scale-90",
+          "relative inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-medium transition duration-fast ease-out active:scale-90 after:absolute after:-inset-1.5 after:content-['']",
           optimistic
             ? "border-accent/30 bg-accent-soft text-accent-fg"
-            : "border-line bg-card text-faint hover:border-line-strong hover:text-muted",
+            : "border-line bg-card text-muted hover:border-line-strong hover:text-ink",
         )}
       >
         <Icon

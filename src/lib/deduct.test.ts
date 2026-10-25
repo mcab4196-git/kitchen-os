@@ -1,5 +1,41 @@
 import { describe, it, expect } from "vitest";
-import { computeDeduction } from "./deduct";
+import { computeDeduction, suggestCookUse } from "./deduct";
+
+describe("suggestCookUse — what Cook & deduct suggests (PLAN 5.4)", () => {
+  it("suggests nothing for a line without an amount, instead of the whole pack", () => {
+    expect(suggestCookUse({ quantity: null, unit: null }, { quantity: 500, unit: "g" })).toEqual({
+      suggestedUse: 0,
+      convertible: true,
+      quantified: false,
+    });
+  });
+
+  it("reads a bare number as pieces: 2 eggs from a dozen is 2, not 12", () => {
+    expect(suggestCookUse({ quantity: 2, unit: null }, { quantity: 12, unit: "pcs" })).toEqual({
+      suggestedUse: 2,
+      convertible: true,
+      quantified: true,
+    });
+  });
+
+  it("converts into the stock item's unit", () => {
+    expect(suggestCookUse({ quantity: 300, unit: "g" }, { quantity: 1, unit: "kg" }).suggestedUse).toBe(0.3);
+    const onions = { quantity: 1000, unit: "g", ingredient: { typicalPieceGrams: 150 } };
+    expect(suggestCookUse({ quantity: 2, unit: "pcs" }, onions).suggestedUse).toBe(300);
+  });
+
+  it("never suggests more than is in stock", () => {
+    expect(suggestCookUse({ quantity: 1, unit: "kg" }, { quantity: 500, unit: "g" }).suggestedUse).toBe(500);
+  });
+
+  it("flags an amount it can't convert and suggests nothing", () => {
+    expect(suggestCookUse({ quantity: 2, unit: "cup" }, { quantity: 1000, unit: "g" })).toEqual({
+      suggestedUse: 0,
+      convertible: false,
+      quantified: true,
+    });
+  });
+});
 
 describe("computeDeduction — the §27 scenario", () => {
   it("chicken 500 g, use 300 g -> 200 g remaining", () => {

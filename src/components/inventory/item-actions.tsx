@@ -28,18 +28,18 @@ export function ItemActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <div className="mt-3.5 flex items-center gap-1 border-t border-line pt-3 text-[13px]">
+    <div className="mt-3.5 flex items-center gap-1 border-t border-line pt-1 text-[13px]">
       <button
         type="button"
         onClick={() => setUseOpen(true)}
-        className="inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 font-medium text-brand transition-colors duration-fast hover:bg-brand-soft active:scale-95"
+        className="inline-flex h-11 items-center gap-1.5 rounded-control px-2.5 font-medium text-brand transition-colors duration-fast hover:bg-brand-soft active:scale-95"
       >
         <Icon name="minus" size={15} />
         Use
       </button>
       <Link
         href={`/inventory/${id}/edit`}
-        className="inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-ink active:scale-95"
+        className="inline-flex h-11 items-center gap-1.5 rounded-control px-2.5 text-muted transition-colors duration-fast hover:bg-surface-2 hover:text-ink active:scale-95"
       >
         <Icon name="pencil" size={15} />
         Edit
@@ -48,7 +48,7 @@ export function ItemActions({
         type="button"
         onClick={() => setConfirmOpen(true)}
         aria-label={`Remove ${productName}`}
-        className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-faint transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
+        className="ml-auto inline-flex h-11 items-center gap-1.5 rounded-control px-2.5 text-muted transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
       >
         <Icon name="trash" size={15} />
         Remove

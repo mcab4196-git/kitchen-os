@@ -48,7 +48,7 @@
     "shadows": [
       { "name": "xs", "value": "0 1px 1px rgb(var(--shadow) / 0.04)", "purpose": "Whisper under primary buttons and the active chip." },
       { "name": "card", "value": "0 1px 2px rgb(var(--shadow) / 0.05), 0 8px 24px rgb(var(--shadow) / 0.08)", "purpose": "Cards and link rows at rest; slightly lifted (2026-10-25)." },
-      { "name": "pop", "value": "0 6px 16px rgb(var(--shadow) / 0.10), 0 24px 64px rgb(var(--shadow) / 0.20)", "purpose": "Sheets, dialogs, toasts, the floating Add button, hovered interactive cards (strengthened 2026-10-25)." },
+      { "name": "pop", "value": "0 6px 16px rgb(var(--shadow) / 0.10), 0 24px 64px rgb(var(--shadow) / 0.20)", "purpose": "Sheets, dialogs, toasts, the floating action button, hovered interactive cards (strengthened 2026-10-25)." },
       { "name": "nav", "value": "0 -1px 0 rgb(var(--line) / 1), 0 -8px 24px rgb(var(--shadow) / 0.04)", "purpose": "Top edge of the bottom tab bar." },
       { "name": "focus", "value": "0 0 0 2px rgb(var(--surface) / 1), 0 0 0 4px rgb(var(--brand) / 1)", "purpose": "Focus ring where an outline can't be used." }
     ],
@@ -165,20 +165,20 @@
       { "name": "The Kalabasa Is For Buying Rule", "body": "Orange marks what you need to get. Never white text on Kalabasa or on status amber; use the soft tint with its ink.", "section": "colors" },
       { "name": "The Serif Titles Rule", "body": "Fraunces sets titles only: page titles, section headings, sheet and empty-state titles, and the wordmark. Anything a person taps, scans or compares is Inter.", "section": "typography" },
       { "name": "The Tabular Numbers Rule", "body": "Quantities, counts and dates use tabular figures (.tabular), so columns and counters don't jitter.", "section": "typography" },
-      { "name": "The Paper On A Counter Rule", "body": "Resting surfaces get a hairline and the Card shadow. Only things that float (sheets, dialogs, toasts, the floating Add button) and an interactive card under the pointer take Pop.", "section": "elevation" },
+      { "name": "The Paper On A Counter Rule", "body": "Resting surfaces get a hairline and the Card shadow. Only things that float (sheets, dialogs, toasts, the floating action button) and an interactive card under the pointer take Pop.", "section": "elevation" },
       { "name": "The Double-Rule Rule", "body": "The double border marks the single most important card on a screen. Never more than one per screen, and never on list rows.", "section": "shapes" },
       { "name": "The Label Carries It Rule", "body": "A freshness bar never appears without its text label, and never shows a number. The bar is hidden from assistive tech, because the label beside it says the same thing.", "section": "components" }
     ],
     "dos": [
       "Do style through the Tailwind tokens (bg-brand, text-status-soon-fg), never raw hex in components, and join classes with cn().",
       "Do show every status as its word first: Use now, Use soon, Fresh, Expired, No date, with \"est.\" on every estimate.",
-      "Do keep every control at least 44px tall, and keep the main actions in the thumb zone on phones (the floating Add button) and in the sidebar or page header on desktop.",
+      "Do keep every control at least 44px tall, and keep the main actions in the thumb zone on phones (the floating action button) and in the sidebar or page header on desktop.",
       "Do use Fraunces for titles and Inter for everything else, with tabular figures for numbers.",
       "Do honour reduced motion: remove motion that moves, but keep spinners and progress turning (.motion-keep)."
     ],
     "donts": [
       "Don't use game vocabulary (HP, quest, KO, level, reward, party). The JRPG influence lives in form only, confirmed by the owner on 2026-10-25.",
-      "Don't use Faint for text people must read: it's 3.4:1 on white. Today it's still on inactive tab labels and input placeholders (logged for PLAN 5.3).",
+      "Don't use Faint for text people must read: it's 3.4:1 on white. It's for icons, chevrons and separator dots only; section labels, placeholders, hints and inactive tabs use Muted (PLAN 5.3).",
       "Don't put a coloured stripe thicker than 1px down the side of a card or row. The old 4px status rail was replaced by the freshness bar in PLAN 5.8.",
       "Don't put an eyebrow or kicker above a heading.",
       "Don't put white text on Kalabasa or status amber.",

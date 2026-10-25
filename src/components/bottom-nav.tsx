@@ -39,7 +39,7 @@ export function BottomNav() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "group relative flex min-h-[3.75rem] flex-col items-center justify-center gap-1 px-1 py-2 text-center text-2xs font-medium leading-tight transition-colors duration-fast",
-                  active ? "text-brand" : "text-faint hover:text-muted",
+                  active ? "text-brand" : "text-muted hover:text-ink",
                 )}
               >
                 <span
@@ -104,7 +104,7 @@ export function SideNav() {
 
       <Link
         href="/receipts"
-        className="mt-auto flex items-center gap-3 rounded-control px-3 py-2 text-[13px] text-faint transition-colors hover:text-muted"
+        className="mt-auto flex items-center gap-3 rounded-control px-3 py-2 text-[13px] text-muted transition-colors hover:text-ink"
       >
         <Icon name="clock" size={17} />
         Receipt history

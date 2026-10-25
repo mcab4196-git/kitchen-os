@@ -16,7 +16,7 @@ function Group({ title, items }: { title: string; items: AlertItem[] }) {
   if (items.length === 0) return null;
   return (
     <section className="mt-6">
-      <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.12em] text-faint">{title}</h2>
+      <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.12em] text-muted">{title}</h2>
       <ul className="flex flex-col gap-2">
         {items.map((it) => {
           const l = label(it.daysLeft);
@@ -34,14 +34,14 @@ function Group({ title, items }: { title: string; items: AlertItem[] }) {
               <div className="flex shrink-0 items-center gap-1 text-[13px]">
                 <Link
                   href={`/inventory/${it.id}/use`}
-                  className="inline-flex h-8 items-center gap-1 rounded-control px-2.5 font-medium text-brand transition-colors hover:bg-brand-soft active:scale-95"
+                  className="-my-1.5 inline-flex h-11 items-center gap-1 rounded-control px-2.5 font-medium text-brand transition-colors hover:bg-brand-soft active:scale-95"
                 >
                   <Icon name="minus" size={14} />
                   Use
                 </Link>
                 <Link
                   href={`/inventory/${it.id}/edit`}
-                  className="inline-flex h-8 items-center rounded-control px-2.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95"
+                  className="-my-1.5 inline-flex h-11 items-center rounded-control px-2.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink active:scale-95"
                 >
                   Edit
                 </Link>

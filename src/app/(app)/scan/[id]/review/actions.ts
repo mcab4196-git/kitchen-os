@@ -18,12 +18,24 @@ export async function commitReceiptAction(_prev: CommitState, formData: FormData
   const receiptId = String(formData.get("receiptId") ?? "");
   if (!receiptId) return { error: "Missing receipt." };
 
-  let items;
+  let raw: unknown;
   try {
-    items = reviewedItemsSchema.parse(JSON.parse(String(formData.get("items") ?? "[]")));
+    raw = JSON.parse(String(formData.get("items") ?? "[]"));
   } catch {
     return { error: "Could not read the reviewed items." };
   }
+  const parsed = reviewedItemsSchema.safeParse(raw);
+  if (!parsed.success) {
+    // PLAN 5.4: point at the line, so the fix is one Edit away rather than a hunt.
+    const [index, field] = parsed.error.issues[0]?.path ?? [];
+    const line = Array.isArray(raw) && typeof index === "number" ? (raw[index] as { rawName?: unknown }) : null;
+    const what = field === "productName" ? "a name" : field === "quantity" ? "an amount above 0" : null;
+    if (line && typeof line.rawName === "string" && what) {
+      return { error: `“${line.rawName}” needs ${what}. Tap Edit on that line, or untick it.` };
+    }
+    return { error: "Could not read the reviewed items." };
+  }
+  const items = parsed.data;
 
   const result = await commitReceipt(user.id, receiptId, items);
   if (!result.ok) return { error: result.error };

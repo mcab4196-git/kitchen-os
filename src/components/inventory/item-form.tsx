@@ -155,7 +155,7 @@ export function ItemForm({
 
       {recent.length > 0 && (
         <div className="mb-5">
-          <p className="mb-2 text-2xs font-medium uppercase tracking-[0.08em] text-faint">
+          <p className="mb-2 text-2xs font-medium uppercase tracking-[0.08em] text-muted">
             Quick add from your usuals
           </p>
           <div className="no-scrollbar edge-fade-x -mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5">
@@ -383,7 +383,7 @@ export function ItemForm({
           <Button type="submit" loading={pending} size="lg" className="w-full">
             {pending ? "Saving…" : submitLabel}
           </Button>
-          <p className="mt-1.5 text-center text-2xs text-faint">
+          <p className="mt-1.5 text-center text-2xs text-muted">
             Saves and returns to your inventory.
           </p>
         </div>

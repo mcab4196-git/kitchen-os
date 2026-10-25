@@ -6,8 +6,8 @@ import { cookRecipe, type CookState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Checkbox } from "@/components/ui/field";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { tidy } from "@/lib/units";
 
 export interface CookLine {
   inventoryItemId: string;
@@ -15,8 +15,17 @@ export interface CookLine {
   itemQuantity: number;
   itemUnit: string;
   ingredientName: string;
+  recipeQuantity: number | null;
+  recipeUnit: string | null;
   suggestedUse: number;
   convertible: boolean;
+  quantified: boolean;
+}
+
+/** What the recipe asks for, so nobody has to go back and check (PLAN 5.4). */
+function recipeAsks(l: CookLine): string {
+  if (!l.quantified || l.recipeQuantity == null) return `Recipe: ${l.ingredientName}, no amount given`;
+  return `Recipe: ${tidy(l.recipeQuantity)}${l.recipeUnit ? ` ${l.recipeUnit}` : ""} ${l.ingredientName}`;
 }
 
 interface Row extends CookLine {
@@ -33,8 +42,9 @@ export function CookForm({
   recipeName: string;
   initial: CookLine[];
 }) {
+  // A line with no suggested amount starts unticked and empty: the cook decides.
   const [rows, setRows] = useState<Row[]>(
-    initial.map((l) => ({ ...l, include: l.suggestedUse > 0, useQuantity: l.suggestedUse })),
+    initial.map((l) => ({ ...l, include: l.suggestedUse > 0, useQuantity: l.suggestedUse > 0 ? l.suggestedUse : null })),
   );
   const [state, action, pending] = useActionState<CookState, FormData>(cookRecipe, {});
 
@@ -73,23 +83,25 @@ export function CookForm({
               key={r.inventoryItemId}
               className={cn(
                 "rounded-card border bg-card p-3.5 shadow-card transition duration-fast ease-out",
-                r.include ? "border-line" : "border-dashed border-line opacity-55",
+                // Unticked rows stay readable: they may need an amount typed in.
+                r.include ? "border-line" : "border-dashed border-line-strong bg-surface-2/60 shadow-none",
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2.5 text-sm">
+                <label className="-my-1.5 flex min-h-11 min-w-0 items-center gap-2.5 text-sm">
                   <Checkbox
                     checked={r.include}
                     onChange={(e) => update(i, { include: e.target.checked })}
                   />
-                  <span className="font-semibold text-ink">{r.itemName}</span>
+                  <span className="truncate font-semibold text-ink">{r.itemName}</span>
                 </label>
-                <span className="text-2xs text-muted tabular">
+                <span className="shrink-0 text-2xs text-muted tabular">
                   have {r.itemQuantity} {r.itemUnit}
                 </span>
               </div>
+              <p className="mt-1 pl-[28px] text-[13px] leading-5 text-muted">{recipeAsks(r)}</p>
 
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-2.5 flex items-center gap-2 pl-[28px]">
                 <span className="text-[13px] text-muted">Use</span>
                 <input
                   type="number"
@@ -97,19 +109,24 @@ export function CookForm({
                   min="0"
                   max={r.itemQuantity}
                   inputMode="decimal"
+                  aria-label={`Amount of ${r.itemName} to use, in ${r.itemUnit}`}
                   value={r.useQuantity ?? ""}
-                  onChange={(e) =>
-                    update(i, { useQuantity: e.target.value === "" ? null : Number(e.target.value) })
-                  }
-                  className="h-9 w-24 rounded-control border border-line-strong bg-card px-2.5 text-sm text-ink tabular focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+                  onChange={(e) => {
+                    const v = e.target.value === "" ? null : Number(e.target.value);
+                    // Typing an amount means you used it.
+                    update(i, v && v > 0 ? { useQuantity: v, include: true } : { useQuantity: v });
+                  }}
+                  className="h-11 w-28 rounded-control border border-line-strong bg-card px-3 text-[15px] text-ink tabular focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
                 />
                 <span className="text-[13px] text-muted">{r.itemUnit}</span>
-                {!r.convertible && (
-                  <Badge tone="soon" className="ml-1">
-                    check amount
-                  </Badge>
-                )}
               </div>
+              {(!r.convertible || !r.quantified) && (
+                <p className="mt-1.5 pl-[28px] text-2xs leading-4 text-muted">
+                  {r.convertible
+                    ? "Enter how much you used, or leave it unticked."
+                    : `We can't turn ${r.recipeUnit ?? "that"} into ${r.itemUnit}. Enter how much you used.`}
+                </p>
+              )}
             </div>
           ))}
 

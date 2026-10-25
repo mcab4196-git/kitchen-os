@@ -155,7 +155,7 @@ export function Toaster() {
                   <input type="hidden" name="id" value={t.undoId} />
                   <button
                     type="submit"
-                    className="rounded px-2 py-0.5 text-[13px] font-semibold text-brand underline underline-offset-2 hover:no-underline"
+                    className="-my-2 inline-flex min-h-11 items-center rounded px-2 text-[13px] font-semibold text-brand underline underline-offset-2 hover:no-underline"
                   >
                     Undo
                   </button>
@@ -165,7 +165,7 @@ export function Toaster() {
                 type="button"
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss"
-                className="-mr-1 shrink-0 rounded p-1 opacity-60 transition-opacity hover:opacity-100"
+                className="-my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded"
               >
                 <Icon name="x" size={14} />
               </button>

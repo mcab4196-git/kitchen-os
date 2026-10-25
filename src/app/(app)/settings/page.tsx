@@ -82,7 +82,7 @@ export default async function SettingsPage() {
         />
       </div>
 
-      <h2 className="mb-2 mt-8 text-2xs font-semibold uppercase tracking-[0.1em] text-faint">
+      <h2 className="mb-2 mt-8 text-2xs font-semibold uppercase tracking-[0.1em] text-muted">
         Accessibility
       </h2>
       <AccessibilitySettings

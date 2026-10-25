@@ -278,19 +278,19 @@ above the page. Shadows are tinted from Ink through `--shadow` (black in dark mo
 - **Card** (`box-shadow: 0 1px 2px rgb(var(--shadow) / 0.05), 0 8px 24px rgb(var(--shadow) / 0.08)`): cards and link rows
   at rest. Raised slightly on 2026-10-25 so cards read as lifted off the page.
 - **Pop** (`box-shadow: 0 6px 16px rgb(var(--shadow) / 0.10), 0 24px 64px rgb(var(--shadow) / 0.20)`): sheets, dialogs,
-  toasts, the floating Add button, and hovered interactive cards. Strengthened on 2026-10-25 so overlays separate
+  toasts, the floating action button, and hovered interactive cards. Strengthened on 2026-10-25 so overlays separate
   clearly from the lifted cards.
 - **Nav** (`box-shadow: 0 -1px 0 rgb(var(--line) / 1), 0 -8px 24px rgb(var(--shadow) / 0.04)`): the bottom tab bar's top
   edge.
 
 ### Named Rules
 **The Paper On A Counter Rule.** Resting surfaces get a hairline and the Card shadow. Only things that float (sheets,
-dialogs, toasts, the floating Add button) and an interactive card under the pointer take Pop.
+dialogs, toasts, the floating action button) and an interactive card under the pointer take Pop.
 
 ## Shapes
 
 Gently rounded controls (0.7rem) and cards (1rem); sheets round their top corners (1.25rem). Badges, filter chips, the
-floating Add button and the toaster are pills. Borders are 1px hairlines; empty states use a dashed Hairline Strong border
+floating action button and the toaster are pills. Borders are 1px hairlines; empty states use a dashed Hairline Strong border
 on Rice Paper Shade. Icons are 1.75px outline strokes, thickening to 2px when active.
 
 The **double rule** is a 3px double border in Hairline Strong (#C9C2B4) on a 16px-radius card: Today's Tonight card and
@@ -313,7 +313,7 @@ Sturdy and forgiving.
   drops to 45% opacity. Loading keeps the width and shows a centred spinner.
 
 ### Chips
-- **Style:** pills, 38px tall, 13px medium text, an optional tabular count. Inactive chips are Card White with a hairline
+- **Style:** pills, 38px tall with the tap area extended to 44px, 13px medium text, an optional tabular count. Inactive chips are Card White with a hairline
   and Muted text.
 - **State:** active is solid Pandan with white text and the Whisper shadow. Chips press to 95%.
 
@@ -350,9 +350,10 @@ Sheets slide up 16px and fade; dialogs scale from 96%. Both use a 40% Ink scrim,
 close and focus restore. Toasts sit above the tab bar: success in the Fresh tint, info in Card White, and Undo when an
 item is removed.
 
-### Floating Add button
-A 56px Pandan pill, on Today and Inventory on phones only, that carries the screen's main action in the thumb zone. It's
-sticky, like the Save bar on forms: it floats above the tab bar while there's more page below, then settles under the
+### Floating action button
+A 56px Pandan pill, on Today and Inventory on phones only, that carries the screen's main action in the thumb zone:
+**Scan receipt** on Today, because scanning beats typing, and **Add** on Inventory (owner, 2026-10-25; Today's header
+keeps a secondary Add). It's sticky, like the Save bar on forms: it floats above the tab bar while there's more page below, then settles under the
 last item, so it never covers the end of a list. It goes last in the page's `<main>`, and its offset matches the
 shell's bottom padding, so it settles without a jump.
 
@@ -374,13 +375,20 @@ recipe), freshness rows for the expiring items it uses, Not enough and Missing l
 Other ideas (secondary). When no idea uses the expiring stock, it becomes "Plan dinner around the …" with a single
 "What's for dinner?" button. When nothing needs using, a Fresh-tinted note takes its place.
 
+### Receipt review lines
+Checking, not data entry (PLAN 5.4). Each line is one row: a checkbox labelled with the product name, an Edit toggle,
+and a meta line (amount · where it goes · the expiry it will get, in status text colour, with "est."). A line starts in
+its category's usual storage place, and "Put all in…" moves every ticked line at once. The fields open only when you
+tap Edit, or when the AI wasn't sure how to read the line: those start open, with a neutral "Check this" badge and a
+Hairline Strong border. AI confidence never borrows an expiry colour or a side stripe.
+
 ## Do's and Don'ts
 
 ### Do:
 - **Do** style through the Tailwind tokens (`bg-brand`, `text-status-soon-fg`), never raw hex in components, and join
   classes with `cn()`.
 - **Do** show every status as its word first: Use now, Use soon, Fresh, Expired, No date, with "est." on every estimate.
-- **Do** keep every control at least 44px tall, and keep the main actions in the thumb zone on phones (the floating Add
+- **Do** keep every control at least 44px tall, and keep the main actions in the thumb zone on phones (the floating action
   button) and in the sidebar or page header on desktop.
 - **Do** use Fraunces for titles and Inter for everything else, with tabular figures for numbers.
 - **Do** honour reduced motion: remove motion that moves, but keep spinners and progress turning (`.motion-keep`).
@@ -388,8 +396,8 @@ Other ideas (secondary). When no idea uses the expiring stock, it becomes "Plan 
 ### Don't:
 - **Don't** use game vocabulary (HP, quest, KO, level, reward, party). The JRPG influence lives in form only, confirmed by
   the owner on 2026-10-25.
-- **Don't** use Faint for text people must read: it's 3.4:1 on white. Today it's still on inactive tab labels and input
-  placeholders (logged for PLAN 5.3).
+- **Don't** use Faint for text people must read: it's 3.4:1 on white. It's for icons, chevrons and separator dots only;
+  section labels, placeholders, hints and inactive tabs use Muted (PLAN 5.3).
 - **Don't** put a coloured stripe thicker than 1px down the side of a card or row. The old 4px status rail was replaced by
   the freshness bar in PLAN 5.8.
 - **Don't** put an eyebrow or kicker above a heading.

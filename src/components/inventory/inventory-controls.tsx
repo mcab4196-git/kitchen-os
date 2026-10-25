@@ -93,7 +93,7 @@ export function InventoryControls({ counts }: { counts?: Record<string, number> 
               aria-pressed={active}
               onClick={() => setParam("filter", value)}
               className={cn(
-                "inline-flex min-h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition duration-fast ease-out active:scale-95",
+                "relative inline-flex min-h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 after:absolute after:inset-x-0 after:-inset-y-[3px] after:content-[''] text-[13px] font-medium transition duration-fast ease-out active:scale-95",
                 active
                   ? "border-brand bg-brand text-brand-contrast shadow-xs"
                   : "border-line bg-card text-muted hover:border-line-strong hover:text-ink",
@@ -101,7 +101,7 @@ export function InventoryControls({ counts }: { counts?: Record<string, number> 
             >
               {label}
               {count != null && (
-                <span className={cn("tabular", active ? "text-brand-contrast/75" : "text-faint")}>{count}</span>
+                <span className={cn("tabular", active ? "text-brand-contrast/75" : "text-muted")}>{count}</span>
               )}
             </button>
           );

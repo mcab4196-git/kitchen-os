@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getReceiptWithItems, getReceiptImageUrl } from "@/server/services/receipt";
-import { getFormReference } from "@/server/services/reference";
+import { getFormReference, getShelfLifeRules } from "@/server/services/reference";
 import { normalizeUnit } from "@/lib/units";
+import { inferStorage, type ReviewRef } from "@/lib/review";
+import type { ShelfLifeRuleish } from "@/lib/expiry";
 import { ReviewForm, type ReviewRow } from "./review-form";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -11,12 +13,22 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Badge, type Tone } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 
-const STATUS_TONE: Record<string, Tone> = {
-  COMMITTED: "fresh",
-  PARSED: "soon",
-  PENDING: "unknown",
-  FAILED: "critical",
+// Words, not the database enum; and no expiry colours, which only ever mean expiry.
+const STATUS: Record<string, { tone: Tone; label: string }> = {
+  COMMITTED: { tone: "brand", label: "Added" },
+  PARSED: { tone: "neutral", label: "To review" },
+  PENDING: { tone: "neutral", label: "Reading…" },
+  FAILED: { tone: "critical", label: "Couldn't read" },
 };
+
+function money(total: number, currency: string | null): string {
+  if (!currency) return String(total);
+  try {
+    return new Intl.NumberFormat("en-PH", { style: "currency", currency }).format(total);
+  } catch {
+    return `${total} ${currency}`; // not an ISO code the runtime knows
+  }
+}
 
 export default async function ReviewPage({
   params,
@@ -30,7 +42,11 @@ export default async function ReviewPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [receipt, ref] = await Promise.all([getReceiptWithItems(user!.id, id), getFormReference()]);
+  const [receipt, ref, rules] = await Promise.all([
+    getReceiptWithItems(user!.id, id),
+    getFormReference(),
+    getShelfLifeRules(),
+  ]);
   if (!receipt) notFound();
   const imageUrl = await getReceiptImageUrl(receipt.imagePath);
   const isPdf = receipt.imagePath?.toLowerCase().endsWith(".pdf");
@@ -40,13 +56,9 @@ export default async function ReviewPage({
     <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line bg-card px-3.5 py-2.5 text-[13px] text-muted">
       <span className="font-medium text-ink">{receipt.store ?? "Unknown store"}</span>
       {receipt.purchaseDate && <span>· {new Date(receipt.purchaseDate).toLocaleDateString()}</span>}
-      {receipt.total != null && (
-        <span className="tabular">
-          · {receipt.total} {receipt.currency ?? ""}
-        </span>
-      )}
-      <Badge tone={STATUS_TONE[receipt.status] ?? "neutral"} className="ml-auto">
-        {receipt.status}
+      {receipt.total != null && <span className="tabular">· {money(receipt.total, receipt.currency)}</span>}
+      <Badge tone={STATUS[receipt.status]?.tone ?? "neutral"} className="ml-auto">
+        {STATUS[receipt.status]?.label ?? receipt.status}
       </Badge>
     </div>
   );
@@ -118,21 +130,29 @@ export default async function ReviewPage({
     );
   }
 
+  const reviewRef: ReviewRef = {
+    categories: ref.categories.map((c) => ({ id: c.id, name: c.name, defaultStorage: c.defaultStorageLocation })),
+    ingredients: ref.ingredients.map((g) => ({ id: g.id, name: g.canonicalName, categoryId: g.categoryId })),
+  };
+
   const rows: ReviewRow[] = receipt.items.map((it) => {
     const cat = it.categoryGuess
       ? ref.categories.find((c) => c.name.toLowerCase() === it.categoryGuess!.toLowerCase())
       : undefined;
     const matched = it.ingredientId ? ref.ingredients.find((g) => g.id === it.ingredientId) : undefined;
+    const ingredientName = matched?.canonicalName ?? "";
+    const categoryId = cat?.id ?? matched?.categoryId ?? "";
     return {
       receiptItemId: it.id,
       rawName: it.rawName,
       include: true,
       productName: it.rawName,
-      ingredientName: matched?.canonicalName ?? "",
-      categoryId: cat?.id ?? matched?.categoryId ?? "",
+      ingredientName,
+      categoryId,
       quantity: it.quantity ?? null,
       unit: normalizeUnit(it.unit) ?? matched?.defaultUnit ?? "",
-      storageLocation: "REFRIGERATOR",
+      // PLAN 5.4: start where this food usually lives, not the fridge for everything.
+      storageLocation: inferStorage({ ingredientName, categoryId }, reviewRef),
       price: it.price ?? null,
       confidence: it.extractionConfidence ?? 1,
     };
@@ -142,7 +162,7 @@ export default async function ReviewPage({
     <main className="animate-fade-in">
       <PageHeader
         title="Review groceries"
-        subtitle="Check each line, fix anything the AI got wrong, then add them. Attach an ingredient so we can estimate expiry."
+        subtitle="Untick anything you don't want to keep track of, check the lines marked for a check, then add. Tap Edit to change a line."
         back="/scan"
         size="md"
       />
@@ -152,13 +172,10 @@ export default async function ReviewPage({
       <ReviewForm
         receiptId={receipt.id}
         initialRows={rows}
-        categories={ref.categories.map((c) => ({ id: c.id, name: c.name }))}
-        ingredients={ref.ingredients.map((g) => ({
-          id: g.id,
-          name: g.canonicalName,
-          categoryId: g.categoryId,
-          defaultUnit: g.defaultUnit,
-        }))}
+        reference={reviewRef}
+        rules={rules as ShelfLifeRuleish[]}
+        purchaseDateISO={(receipt.purchaseDate ?? new Date()).toISOString()}
+        ingredientUnits={Object.fromEntries(ref.ingredients.map((g) => [g.canonicalName, g.defaultUnit]))}
       />
     </main>
   );

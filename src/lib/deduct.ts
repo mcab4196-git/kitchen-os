@@ -42,3 +42,25 @@ export function computeDeduction(input: DeductInput): DeductResult {
     overuse,
   };
 }
+
+export interface CookSuggestion {
+  suggestedUse: number; // in the stock item's unit; 0 means "you decide"
+  convertible: boolean; // false: the recipe amount couldn't be turned into the item's unit
+  quantified: boolean; // false: the recipe doesn't say how much
+}
+
+/**
+ * How much of a stock item one recipe line uses, in the item's own unit (PLAN 5.4).
+ * A line with no amount ("salt", "garlic to taste") suggests nothing, so the cook
+ * decides rather than the whole pack being deducted. A bare number ("2 eggs")
+ * counts pieces. Never more than what's in stock.
+ */
+export function suggestCookUse(
+  line: { quantity: number | null; unit: string | null },
+  stock: { quantity: number; unit: string; ingredient?: Ingredientish },
+): CookSuggestion {
+  if (!line.quantity || line.quantity <= 0) return { suggestedUse: 0, convertible: true, quantified: false };
+  const inStockUnit = convert(line.quantity, line.unit || "pcs", stock.unit, stock.ingredient);
+  if (inStockUnit == null) return { suggestedUse: 0, convertible: false, quantified: true };
+  return { suggestedUse: Math.min(stock.quantity, tidy(inStockUnit)), convertible: true, quantified: true };
+}

@@ -8,7 +8,7 @@ import {
 } from "@/server/ai/recipe-schemas";
 import { reconcileRecipe, scoreRecipe, normName, analyzeCookability } from "@/lib/recipe";
 import { planMeals, type PlanCandidate } from "@/lib/planner";
-import { convert, tidy } from "@/lib/units";
+import { suggestCookUse } from "@/lib/deduct";
 import { classifyStatus } from "@/lib/expiry";
 import { getPreferences } from "./preferences";
 import { resolveIngredientByText } from "./reference";
@@ -291,8 +291,11 @@ export interface CookPlanLine {
   itemQuantity: number;
   itemUnit: string;
   ingredientName: string; // recipe ingredient this maps to
-  suggestedUse: number; // in itemUnit
+  recipeQuantity: number | null; // what the recipe asks for, shown so nobody has to remember it
+  recipeUnit: string | null;
+  suggestedUse: number; // in itemUnit; 0 => the user decides
   convertible: boolean; // false => we couldn't convert the recipe amount; user should check
+  quantified: boolean; // false => the recipe gives no amount
 }
 
 /**
@@ -305,9 +308,11 @@ export async function buildCookPlan(userId: string, recipeId: string) {
   if (!recipe) return null;
 
   const ingredients = ingredientListOf(recipe.nutrition);
+  // Expiring first (principle 4): with two packs of the same thing, cook the older one.
   const items = await prisma.inventoryItem.findMany({
     where: { userId, isDeleted: false, quantity: { gt: 0 } },
     include: { ingredient: true },
+    orderBy: [{ expiryDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
   });
 
   const usedItemIds = new Set<string>();
@@ -328,20 +333,11 @@ export async function buildCookPlan(userId: string, recipeId: string) {
     if (!match) continue;
     usedItemIds.add(match.id);
 
-    // Suggest an amount to deduct, converting the recipe quantity into the item's unit.
-    let suggested = match.quantity;
-    let convertible = true;
-    if (ing.quantity && ing.unit) {
-      const conv = convert(ing.quantity, ing.unit, match.unit, {
-        typicalPieceGrams: match.ingredient?.typicalPieceGrams ?? null,
-      });
-      if (conv == null) {
-        convertible = false;
-        suggested = 0;
-      } else {
-        suggested = Math.min(match.quantity, tidy(conv));
-      }
-    }
+    const suggestion = suggestCookUse(ing, {
+      quantity: match.quantity,
+      unit: match.unit,
+      ingredient: { typicalPieceGrams: match.ingredient?.typicalPieceGrams ?? null },
+    });
 
     lines.push({
       inventoryItemId: match.id,
@@ -349,8 +345,9 @@ export async function buildCookPlan(userId: string, recipeId: string) {
       itemQuantity: match.quantity,
       itemUnit: match.unit,
       ingredientName: ing.name,
-      suggestedUse: suggested,
-      convertible,
+      recipeQuantity: ing.quantity,
+      recipeUnit: ing.unit,
+      ...suggestion,
     });
   }
 

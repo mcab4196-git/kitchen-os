@@ -2,7 +2,8 @@ import { classifyStatus, freshness, relativeLabel, type ExpirySource, type Expir
 import { cn } from "@/lib/utils";
 import { EXPIRY_WORD } from "./expiry-badge";
 
-const LABEL: Record<ExpiryStatus, string> = {
+/** Status text colours, shared with Review's estimates (PLAN 5.4). */
+export const EXPIRY_TEXT: Record<ExpiryStatus, string> = {
   EXPIRED: "text-status-critical-fg",
   CRITICAL: "text-status-critical-fg",
   SOON: "text-status-soon-fg",
@@ -48,7 +49,7 @@ export function FreshnessBar({
 
   return (
     <span className={cn("block w-40", className)}>
-      <span className={cn("mb-1.5 block whitespace-nowrap text-right text-2xs font-semibold", LABEL[status])}>
+      <span className={cn("mb-1.5 block whitespace-nowrap text-right text-2xs font-semibold", EXPIRY_TEXT[status])}>
         {status === "UNKNOWN" ? EXPIRY_WORD.UNKNOWN : `${EXPIRY_WORD[status]} · ${rel}`}
         {estimated && <span className="font-medium opacity-75"> est.</span>}
       </span>

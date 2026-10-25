@@ -58,7 +58,7 @@ export default async function PlanPage() {
                       <span
                         className={cn(
                           "font-display text-title-sm tabular",
-                          item ? "text-ink" : "text-faint",
+                          item ? "text-ink" : "text-muted",
                         )}
                       >
                         {date.getDate()}

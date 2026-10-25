@@ -36,7 +36,12 @@ function ingredientsOf(nutrition: unknown): RecipeIngredientLite[] {
 function RecipeCard({ r }: { r: RecipeCardData }) {
   const time = (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
   return (
-    <Card as="li" interactive className="group list-none">
+    <Card
+      as="li"
+      interactive
+      // The link fills the card, so keyboard focus rings the whole card (WCAG 2.4.7).
+      className="group list-none has-[a:focus-visible]:outline has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-brand"
+    >
       <div className="flex items-start justify-between gap-3">
         <Link href={`/meals/${r.id}`} className="min-w-0 flex-1 focus-visible:outline-none">
           <p className="flex items-center gap-1 text-[15px] font-semibold text-ink">

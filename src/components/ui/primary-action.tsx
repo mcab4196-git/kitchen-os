@@ -5,8 +5,9 @@ import { Icon, type IconName } from "@/components/ui/icon";
 
 /**
  * A raised pill action in the thumb zone, just above the mobile tab bar.
- * The header "Add" sits in the hardest-to-reach corner of a phone; this puts the
- * kitchen's primary action where a thumb already rests. Mobile only — desktop
+ * A header action sits in the hardest-to-reach corner of a phone; this puts the
+ * screen's primary action where a thumb already rests: Scan receipt on Today, Add
+ * on Inventory (PLAN 5.4). Mobile only — desktop
  * keeps the SideNav "Scan receipt" button and per-screen header actions.
  *
  * Sticky, not fixed [5.9]: it floats while there's more page below, then settles

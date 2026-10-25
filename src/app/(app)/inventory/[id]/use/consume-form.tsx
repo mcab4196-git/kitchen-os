@@ -59,7 +59,7 @@ export function ConsumeForm({
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2.5 text-[13px] text-faint transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2.5 text-[13px] text-muted transition-colors duration-fast hover:bg-status-critical-bg hover:text-status-critical-fg active:scale-95"
         >
           <Icon name="trash" size={15} />
           Remove this item

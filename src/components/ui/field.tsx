@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 /** One shared control surface. Min height 44px (comfortable touch target). */
 export const controlClass =
   "min-h-11 w-full rounded-control border border-line-strong bg-card px-3 text-sm text-ink " +
-  "placeholder:text-faint transition duration-fast ease-out " +
+  "placeholder:text-muted transition duration-fast ease-out " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 " +
   "disabled:opacity-50";
 

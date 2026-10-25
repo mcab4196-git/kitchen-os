@@ -233,10 +233,10 @@ export default async function TodayPage() {
           title="Today"
           subtitle={<TodayDate suffix={todo === 0 ? "nothing urgent" : `${plural(todo, "thing")} to do`} />}
           actions={
-            <Button asChild size="sm" className="lg:hidden">
-              <Link href="/scan">
-                <Icon name="scan" size={16} />
-                Scan
+            <Button asChild variant="secondary" size="sm" className="lg:hidden">
+              <Link href="/inventory/new">
+                <Icon name="plus" size={16} />
+                Add
               </Link>
             </Button>
           }
@@ -309,7 +309,8 @@ export default async function TodayPage() {
         </section>
       )}
 
-      <PrimaryAction href="/inventory/new" label="Add" icon="plus" />
+      {/* PLAN 5.4: scanning beats typing, so Today's thumb-zone action is Scan; Inventory keeps Add. */}
+      <PrimaryAction href="/scan" label="Scan receipt" icon="scan" />
     </main>
   );
 }

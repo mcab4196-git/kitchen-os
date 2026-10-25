@@ -31,7 +31,7 @@ export default async function ShoppingPage() {
         actions={
           checkedCount > 0 ? (
             <form action={clearCheckedAction}>
-              <SubmitAction className="inline-flex h-9 items-center gap-1.5 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-muted hover:text-status-critical-fg">
+              <SubmitAction className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-card px-3 text-[13px] font-medium text-muted hover:text-status-critical-fg">
                 <Icon name="trash" size={15} />
                 Clear {checkedCount}
               </SubmitAction>
@@ -41,7 +41,7 @@ export default async function ShoppingPage() {
       />
 
       <form action={addItemAction} className="mb-4 flex gap-2">
-        <input name="label" required placeholder="Add an item…" className={cn(controlClass, "flex-1")} />
+        <input name="label" required aria-label="Item to buy" placeholder="Add an item…" className={cn(controlClass, "flex-1")} />
         <SubmitButton size="md" className="px-4">
           <Icon name="plus" size={16} />
           Add

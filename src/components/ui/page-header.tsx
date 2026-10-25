@@ -38,7 +38,7 @@ export function PageHeader({
           if (typeof window !== "undefined" && window.history.length > 1) router.back();
           else router.push(backFallback);
         }}
-        className="-ml-2 inline-flex h-9 items-center gap-1 rounded-control px-2 text-sm text-muted transition-colors duration-fast hover:text-ink"
+        className="-my-1 -ml-2 inline-flex h-11 items-center gap-1 rounded-control px-2 text-sm text-muted transition-colors duration-fast hover:text-ink"
       >
         <Icon name="arrow-left" size={18} />
         Back
@@ -46,7 +46,7 @@ export function PageHeader({
     ) : back ? (
       <Link
         href={back}
-        className="-ml-2 inline-flex h-9 items-center gap-1 rounded-control px-2 text-sm text-muted transition-colors duration-fast hover:text-ink"
+        className="-my-1 -ml-2 inline-flex h-11 items-center gap-1 rounded-control px-2 text-sm text-muted transition-colors duration-fast hover:text-ink"
       >
         <Icon name="arrow-left" size={18} />
         Back
