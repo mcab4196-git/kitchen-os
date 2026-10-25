@@ -111,4 +111,19 @@ describe("reviewedItemsSchema", () => {
       ]).success
     ).toBe(false);
   });
+
+  it("reads blank fields as none, so an empty category never reaches the database (PLAN 5.6)", () => {
+    const r = reviewedItemsSchema.parse([
+      { receiptItemId: "x", rawName: "Mini-Pak Choi 300g", include: true, productName: "Mini-Pak Choi 300g",
+        ingredientName: "  ", categoryId: "", unit: "", storageLocation: "REFRIGERATOR" },
+    ]);
+    expect(r[0]).toMatchObject({ ingredientName: null, categoryId: null, unit: null });
+  });
+
+  it("drops a category id that isn't a UUID and keeps one that is", () => {
+    const row = { receiptItemId: "x", rawName: "n", include: true, productName: "n", storageLocation: "PANTRY" };
+    expect(reviewedItemsSchema.parse([{ ...row, categoryId: "not-a-uuid" }])[0].categoryId).toBeNull();
+    const id = "5b0f8d2e-3c1a-4f6b-9e2d-7a1c3b5d9f01";
+    expect(reviewedItemsSchema.parse([{ ...row, categoryId: id }])[0].categoryId).toBe(id);
+  });
 });

@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/server/db";
 import type { StorageLocation, ExpirySource, Prisma } from "@prisma/client";
-import { classifyStatus, estimateExpiry, type ShelfLifeRuleish } from "@/lib/expiry";
+import { classifyStatus, expiryColumns, type ExpiryColumns, type ShelfLifeRuleish } from "@/lib/expiry";
 import { computeDeduction } from "@/lib/deduct";
 import { isUuid } from "@/lib/utils";
 import { resolveIngredientByText } from "./reference";
@@ -52,20 +53,22 @@ async function decideExpiry(args: {
   storage: StorageLocation;
   opened: boolean;
   openedAt?: Date | null;
-}): Promise<{ expiryDate: Date | null; expirySource: ExpirySource; expiryConfidence: number | null }> {
-  if (args.exactExpiryDate) {
-    return { expiryDate: args.exactExpiryDate, expirySource: "EXACT", expiryConfidence: 1 };
-  }
-  if (!args.ingredient?.id && !args.categoryName) {
-    return { expiryDate: null, expirySource: "UNKNOWN", expiryConfidence: null };
-  }
+}): Promise<ExpiryColumns> {
+  // No rule can match without an ingredient or a category, so skip the query.
+  const rules =
+    !args.exactExpiryDate && (args.ingredient?.id || args.categoryName)
+      ? await prisma.shelfLifeRule.findMany({
+          where: {
+            OR: [
+              ...(args.ingredient?.id ? [{ ingredientId: args.ingredient.id }] : []),
+              ...(args.categoryName ? [{ categoryName: args.categoryName }] : []),
+            ],
+          },
+        })
+      : [];
 
-  const orClauses: Array<{ ingredientId: string } | { categoryName: string }> = [];
-  if (args.ingredient?.id) orClauses.push({ ingredientId: args.ingredient.id });
-  if (args.categoryName) orClauses.push({ categoryName: args.categoryName });
-  const rules = await prisma.shelfLifeRule.findMany({ where: { OR: orClauses } });
-
-  const est = estimateExpiry({
+  return expiryColumns({
+    exactExpiryDate: args.exactExpiryDate,
     purchaseDate: args.purchaseDate,
     storage: args.storage,
     opened: args.opened,
@@ -74,11 +77,6 @@ async function decideExpiry(args: {
     categoryName: args.categoryName,
     rules: rules as ShelfLifeRuleish[],
   });
-
-  if (est.source === "ESTIMATED") {
-    return { expiryDate: est.expiryDate, expirySource: "ESTIMATED", expiryConfidence: est.confidence };
-  }
-  return { expiryDate: null, expirySource: "UNKNOWN", expiryConfidence: null };
 }
 
 async function categoryNameFor(categoryId: string | null, ingredient: ResolvedIngredient): Promise<string | null> {
@@ -131,6 +129,99 @@ export async function createInventoryItem(
       source: input.source ?? "MANUAL",
       receiptId: input.receiptId ?? null,
     },
+  });
+}
+
+/**
+ * Rows for many new items from a handful of queries in total, not a few per item, so
+ * a receipt commit can write them in one statement inside a short transaction
+ * (PLAN 5.6: per-line queries ran past the transaction's time limit on long receipts
+ * when the server and database were an ocean apart). Same rules as
+ * `createInventoryItem`: the ingredient by id or alias, the item's own category else
+ * the ingredient's (an unknown category id is dropped, not written), and expiry from
+ * `expiryColumns`. Each row gets its id here so the caller can link to it.
+ */
+export async function prepareInventoryItems(
+  userId: string,
+  inputs: CreateItemInput[],
+): Promise<(Prisma.InventoryItemCreateManyInput & { id: string })[]> {
+  const ingredientIds = [...new Set(inputs.map((i) => i.ingredientId).filter((v): v is string => !!v && isUuid(v)))];
+  const aliasTexts = [
+    ...new Set(inputs.filter((i) => !i.ingredientId && i.ingredientName?.trim()).map((i) => i.ingredientName!.trim().toLowerCase())),
+  ];
+  const [byId, aliases, categories] = await Promise.all([
+    ingredientIds.length
+      ? prisma.ingredient.findMany({ where: { id: { in: ingredientIds } }, include: { category: true } })
+      : [],
+    aliasTexts.length
+      ? prisma.ingredientAlias.findMany({
+          where: { aliasText: { in: aliasTexts } },
+          include: { ingredient: { include: { category: true } } },
+        })
+      : [],
+    prisma.category.findMany(),
+  ]);
+  const ingredientById = new Map(byId.map((g) => [g.id, g]));
+  const ingredientByAlias = new Map(aliases.map((a) => [a.aliasText, a.ingredient]));
+  const categoryById = new Map(categories.map((c) => [c.id, c]));
+
+  const resolved = inputs.map((input) => {
+    const ingredient: ResolvedIngredient = input.ingredientId
+      ? (ingredientById.get(input.ingredientId) ?? null)
+      : input.ingredientName?.trim()
+        ? (ingredientByAlias.get(input.ingredientName.trim().toLowerCase()) ?? null)
+        : null;
+    const own = input.categoryId ? categoryById.get(input.categoryId) : undefined;
+    const categoryId = own?.id ?? ingredient?.categoryId ?? null;
+    const categoryName = (categoryId ? categoryById.get(categoryId)?.name : null) ?? ingredient?.category?.name ?? null;
+    return { input, ingredient, categoryId, categoryName };
+  });
+
+  const ruleIngredients = [...new Set(resolved.map((r) => r.ingredient?.id).filter((v): v is string => !!v))];
+  const ruleCategories = [...new Set(resolved.map((r) => r.categoryName).filter((v): v is string => !!v))];
+  const rules =
+    ruleIngredients.length || ruleCategories.length
+      ? await prisma.shelfLifeRule.findMany({
+          where: {
+            OR: [
+              ...(ruleIngredients.length ? [{ ingredientId: { in: ruleIngredients } }] : []),
+              ...(ruleCategories.length ? [{ categoryName: { in: ruleCategories } }] : []),
+            ],
+          },
+        })
+      : [];
+
+  return resolved.map(({ input, ingredient, categoryId, categoryName }) => {
+    const openedAt = input.openedAt ?? (input.opened ? input.purchaseDate : null);
+    return {
+      id: randomUUID(),
+      userId,
+      productName: input.productName,
+      ingredientId: ingredient?.id ?? null,
+      categoryId,
+      quantity: input.quantity,
+      unit: input.unit,
+      purchaseDate: input.purchaseDate,
+      ...expiryColumns({
+        exactExpiryDate: input.exactExpiryDate,
+        purchaseDate: input.purchaseDate,
+        storage: input.storageLocation,
+        opened: input.opened,
+        openedAt,
+        ingredientId: ingredient?.id ?? null,
+        categoryName,
+        rules: rules as ShelfLifeRuleish[],
+      }),
+      storageLocation: input.storageLocation,
+      opened: input.opened,
+      openedAt,
+      price: input.price ?? null,
+      currency: input.currency ?? null,
+      store: input.store ?? null,
+      notes: input.notes ?? null,
+      source: input.source ?? "MANUAL",
+      receiptId: input.receiptId ?? null,
+    };
   });
 }
 

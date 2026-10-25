@@ -6,7 +6,27 @@
 
 import { z } from "zod";
 import { normalizeUnit } from "@/lib/units";
+import { isUuid } from "@/lib/utils";
 import type { RawReceipt } from "./provider";
+
+/**
+ * The seeded category names (prisma/seed.ts; keep the two in sync). The receipt AI
+ * picks one per line, because without a category a line gets no storage place and
+ * no expiry estimate (PLAN 5.6: a scan returned no category for 110 of 110 lines).
+ */
+export const RECEIPT_CATEGORIES = [
+  "Meat", "Fish", "Dairy", "Vegetable", "Fruit", "Bakery", "Grain", "Pantry", "Frozen", "Condiment", "Beverage", "Other",
+] as const;
+
+/** The receipt instructions both providers send, so their output matches. */
+export const RECEIPT_PROMPT =
+  "Extract every grocery line item from this receipt (image or PDF). Only include real purchased " +
+  "products: skip subtotals, taxes and VAT lines, discounts (including senior citizen and PWD), " +
+  "loyalty lines, and payment or card details. For each line: rawName exactly as printed; " +
+  "quantity and unit from the line, or from the pack size in the product name (\"Pak Choi 300g\" is " +
+  "300 g, \"Milk 1L\" is 1 l, \"2 x Yoghurt\" is 2 pcs), else null; category: the best fit from the " +
+  "list for what the product is, whatever the receipt's language. Never invent prices, dates or " +
+  "totals: if one isn't printed, use null.";
 
 // Coerce "" -> null, numeric strings -> number, leave numbers alone.
 const nullableNumber = z.preprocess((v) => {
@@ -122,6 +142,8 @@ export function validateAndClean(raw: unknown): { ok: true; data: CleanReceipt }
  * "Barilla Penne Rigate 500G" -> "barilla penne rigate", "Chicken Breast 0.5kg"
  * -> "chicken breast". Strips size/quantity tokens and stray numbers. Pure.
  */
+const blankToNull = (s: string | null) => s?.trim() || null;
+
 /**
  * Schema for the items a user submits from the review screen. The AI's output
  * is never committed directly — only this reviewed, user-approved payload is.
@@ -131,10 +153,17 @@ export const reviewedItemSchema = z.object({
   rawName: z.string(),
   include: z.boolean(),
   productName: z.string().min(1),
-  ingredientName: z.string().nullable().optional().default(null),
-  categoryId: z.string().nullable().optional().default(null),
+  // PLAN 5.6: a blank field means "none". An empty category id reached the database as
+  // an invalid UUID and failed the whole receipt; anything that isn't a UUID is dropped.
+  ingredientName: z.string().nullable().optional().default(null).transform(blankToNull),
+  categoryId: z
+    .string()
+    .nullable()
+    .optional()
+    .default(null)
+    .transform((s) => (s && isUuid(s) ? s : null)),
   quantity: z.number().positive().nullable().optional().default(null),
-  unit: z.string().nullable().optional().default(null),
+  unit: z.string().nullable().optional().default(null).transform(blankToNull),
   storageLocation: z.enum(["REFRIGERATOR", "FREEZER", "PANTRY", "CUPBOARD", "OTHER"]),
   price: z.number().nonnegative().nullable().optional().default(null),
 });

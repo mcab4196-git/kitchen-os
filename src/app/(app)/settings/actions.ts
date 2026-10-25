@@ -19,18 +19,23 @@ export async function recalculateExpiry(): Promise<void> {
   redirect(`/settings?recalculated=${count}`);
 }
 
-/** Save the Accessibility toggle group. Submits on every change. */
-export async function saveAccessibility(formData: FormData): Promise<void> {
+/** Save the Accessibility toggle group, called on every change with all three values. */
+export async function saveAccessibility(prefs: {
+  largerText: boolean;
+  reduceMotion: boolean;
+  absoluteDates: boolean;
+}): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Arguments from the client are untrusted: only a real `true` turns a setting on.
   await updateAccessibilityPrefs(user.id, {
-    largerText: formData.get("largerText") === "on",
-    reduceMotion: formData.get("reduceMotion") === "on",
-    absoluteDates: formData.get("absoluteDates") === "on",
+    largerText: prefs?.largerText === true,
+    reduceMotion: prefs?.reduceMotion === true,
+    absoluteDates: prefs?.absoluteDates === true,
   });
 
   revalidatePath("/settings");

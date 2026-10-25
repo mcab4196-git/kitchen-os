@@ -133,6 +133,25 @@ export function estimateExpiry(input: EstimateInput): EstimateResult {
   };
 }
 
+export interface ExpiryColumns {
+  expiryDate: Date | null;
+  expirySource: ExpirySource;
+  expiryConfidence: number | null;
+}
+
+/**
+ * The three expiry columns an item is saved with: a date the user set is EXACT, a
+ * matching shelf-life rule is ESTIMATED, anything else is UNKNOWN. Shared by the
+ * single-item and batch (receipt) paths so they can't drift.
+ */
+export function expiryColumns(input: EstimateInput & { exactExpiryDate?: Date | null }): ExpiryColumns {
+  if (input.exactExpiryDate) return { expiryDate: input.exactExpiryDate, expirySource: "EXACT", expiryConfidence: 1 };
+  const est = estimateExpiry(input);
+  return est.source === "ESTIMATED"
+    ? { expiryDate: est.expiryDate, expirySource: "ESTIMATED", expiryConfidence: est.confidence }
+    : { expiryDate: null, expirySource: "UNKNOWN", expiryConfidence: null };
+}
+
 /** Whole days from `now` until `date` (negative if past). */
 export function daysUntil(date: Date, now: Date = new Date()): number {
   const ms = date.getTime() - now.getTime();

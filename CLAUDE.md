@@ -26,7 +26,7 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **172 tests / 15 files green, typecheck and lint clean.** Run all three before finishing
+Baseline you must not break: **180 tests / 15 files green, typecheck and lint clean.** Run all three before finishing
 any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).
@@ -64,9 +64,13 @@ src/server/services/          ALL database access, every query scoped by userId
 3. **Expiry honesty.** `EXACT` / `ESTIMATED` / `UNKNOWN`: never invent a date, always label estimates. All
    labels go through `relativeLabel` / `classifyStatus` in `lib/expiry.ts`; don't fork them.
 4. **Units.** Every conversion goes through `convert()` in `lib/units.ts`, which returns `null` rather than guessing.
-   `UNIT_DEFS` mirrors the `unit_conversions` seed table, so keep the two in sync.
+   `UNIT_DEFS` mirrors the `unit_conversions` seed table, so keep the two in sync. Likewise `RECEIPT_CATEGORIES`
+   (`ai/schemas.ts`, the list the receipt AI picks from) mirrors the seeded categories.
 5. **Pure logic stays pure and tested.** New domain logic goes in `src/lib` (or `server/ai/*schemas*`) with a `*.test.ts`.
-6. **Multi-row writes are transactional.** Use `prisma.$transaction` and pass `tx` down (see `createInventoryItem(…, db)`).
+6. **Multi-row writes are transactional, and short.** Use `prisma.$transaction` and pass `tx` down (see
+   `createInventoryItem(…, db)`). Do lookups before the transaction and write in batches: the receipt commit runs
+   `prepareInventoryItems()` first, then four statements, because per-row queries inside one transaction ran past its
+   20 s limit on a 50-line receipt.
 7. **Vendor-neutral AI.** Only `*-provider.ts` imports a vendor SDK; everything else uses `AIProvider` from `provider.ts`.
 8. **`public/` is served at `/`.** Never put docs, QA notes or design files there.
 9. **Inventory deletes are soft** (`isDeleted`), because Undo depends on it.
@@ -97,7 +101,12 @@ src/server/services/          ALL database access, every query scoped by userId
 
 - A recipe's real ingredient list lives in `Recipe.nutrition.ingredientList` (JSON). `RecipeIngredient` rows exist only
   for ingredients that resolve to one of the ~23 seeded canonical ingredients.
-- `ingredient_aliases` is **global** across users and learns from receipt commits (`receipt.ts`, alias upsert).
+- `ingredient_aliases` is **global** across users and learns from receipt commits (`receipt.ts`, alias insert, first
+  writer wins).
+- The database is in Supabase **eu-west-1**, so `vercel.json` pins functions to **dub1** (Dublin) next to it. The
+  default (iad1, Washington) put every query across the Atlantic. Move the two together.
+- Form fields send `""` for "none": `reviewedItemSchema` turns blank text into `null` and drops a category id that
+  isn't a UUID. An empty category id used to fail the whole receipt commit.
 - Money and quantities are `Float`. Round for display with `tidy()`.
 - Day boundaries (`setHours(0,0,0,0)`) run in the **server** timezone, which is UTC on Vercel, not the user's.
 - Each "Plan" run creates a new `MealPlan`. Old plans are not pruned.
