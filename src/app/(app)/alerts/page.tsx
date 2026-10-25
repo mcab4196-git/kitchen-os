@@ -4,6 +4,7 @@ import { getExpiryAlerts, type AlertItem } from "@/server/services/notifications
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
+import { SectionLabel } from "@/components/ui/section-label";
 
 function label(days: number): { text: string; cls: string } {
   if (days < 0) return { text: `expired ${Math.abs(days)}d ago`, cls: "text-status-critical-fg" };
@@ -16,7 +17,7 @@ function Group({ title, items }: { title: string; items: AlertItem[] }) {
   if (items.length === 0) return null;
   return (
     <section className="mt-6">
-      <h2 className="mb-2 text-2xs font-semibold uppercase tracking-[0.12em] text-muted">{title}</h2>
+      <SectionLabel className="mb-2">{title}</SectionLabel>
       <ul className="flex flex-col gap-2">
         {items.map((it) => {
           const l = label(it.daysLeft);

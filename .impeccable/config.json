@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "#000",
+        "files": [
+          "src/app/globals.css"
+        ],
+        "createdAt": "2026-10-25T13:25:02.162Z",
+        "reason": "Claude: alpha-only mask in .edge-fade-x; the colour itself is never painted"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#161612",
+        "files": [
+          "src/app/layout.tsx"
+        ],
+        "createdAt": "2026-10-25T13:25:02.216Z",
+        "reason": "Claude: dark themeColor meta needs a literal; it is the dark surface token from .impeccable/design.json"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "4px",
+        "files": [
+          "src/app/globals.css"
+        ],
+        "createdAt": "2026-10-25T13:25:02.264Z",
+        "reason": "Claude: focus-ring radius for unrounded elements; in the base layer so rounded-* utilities win (PLAN 5.3)"
+      }
+    ]
+  }
+}

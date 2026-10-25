@@ -12,6 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { getPreferences, accessibilityPrefs } from "@/server/services/preferences";
 import { classifyStatus, type ExpirySource, type ExpiryStatus } from "@/lib/expiry";
+import { SectionLabel } from "@/components/ui/section-label";
 
 type BucketTone = "critical" | "soon" | "fresh" | "unknown";
 
@@ -126,9 +127,9 @@ export default async function InventoryPage({
               <section key={b.key}>
                 <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center gap-2 bg-surface/95 px-4 py-1.5 backdrop-blur-sm lg:-mx-1 lg:px-1">
                   <span className={cn("h-2 w-2 shrink-0 rounded-full", DOT[b.tone])} aria-hidden />
-                  <h2 className="text-2xs font-semibold uppercase tracking-[0.1em] text-muted">
+                  <SectionLabel>
                     {b.label} · {inBucket.length}
-                  </h2>
+                  </SectionLabel>
                 </div>
                 <ul className="flex flex-col gap-3">
                   {inBucket.map((item) =>

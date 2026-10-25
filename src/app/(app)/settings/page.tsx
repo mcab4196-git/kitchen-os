@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getPreferences, accessibilityPrefs } from "@/server/services/preferences";
 import { signOut } from "@/app/(auth)/login/actions";
@@ -8,6 +7,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/feedback";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { SectionLabel } from "@/components/ui/section-label";
+import { LinkRow } from "@/components/ui/card";
 
 function NavRow({
   href,
@@ -22,24 +23,19 @@ function NavRow({
   title: string;
   subtitle: string;
 }) {
+  // The shared link row (PLAN 5.7): same padding, chevron and focus ring as every other.
   return (
-    <Link
-      href={href}
-      className="group flex min-h-16 items-center gap-3 rounded-card border border-line bg-card p-4 shadow-card transition duration-fast ease-out hover:border-line-strong hover:shadow-pop active:translate-y-px"
-    >
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tint}`}>
-        <Icon name={icon} size={18} />
+    <LinkRow href={href} className="min-h-16">
+      <span className="flex items-center gap-3">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tint}`}>
+          <Icon name={icon} size={18} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-body font-semibold text-ink">{title}</span>
+          <span className="mt-0.5 block text-small text-muted">{subtitle}</span>
+        </span>
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-ink">{title}</p>
-        <p className="mt-0.5 text-small text-muted">{subtitle}</p>
-      </div>
-      <Icon
-        name="chevron-right"
-        size={18}
-        className="shrink-0 text-faint transition-transform duration-fast group-hover:translate-x-0.5"
-      />
-    </Link>
+    </LinkRow>
   );
 }
 
@@ -82,9 +78,9 @@ export default async function SettingsPage() {
         />
       </div>
 
-      <h2 className="mb-2 mt-8 text-2xs font-semibold uppercase tracking-[0.1em] text-muted">
+      <SectionLabel className="mb-2 mt-8">
         Accessibility
-      </h2>
+      </SectionLabel>
       <AccessibilitySettings
         initial={{
           largerText: a11y.largerText,

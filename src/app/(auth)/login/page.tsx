@@ -5,6 +5,7 @@ import { signIn, signUp, type AuthState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
+import { FormError } from "@/components/ui/feedback";
 
 const initial: AuthState = {};
 
@@ -19,7 +20,7 @@ export default function LoginPage() {
       <header className="mb-8">
         {/* PLAN 5.6: the name is a wordmark beside the logo, not an eyebrow above the heading. */}
         <span className="mb-6 flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-contrast">
+          <span className="flex h-10 w-10 items-center justify-center rounded-control bg-brand text-brand-contrast">
             <Icon name="leaf" size={20} />
           </span>
           <span className="font-display text-title-sm text-ink">Kitchen OS</span>
@@ -50,12 +51,7 @@ export default function LoginPage() {
         </Field>
 
         {error && (
-          <p
-            role="alert"
-            className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-          >
-            {error}
-          </p>
+          <FormError>{error}</FormError>
         )}
         {signUpState.message && (
           <p

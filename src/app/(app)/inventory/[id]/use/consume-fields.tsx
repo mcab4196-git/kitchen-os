@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { FormError } from "@/components/ui/feedback";
 
 const FRACTIONS: [string, string, number][] = [
   ["¼", "a quarter", 0.25],
@@ -181,12 +182,7 @@ export function ConsumeFields({
       </p>
 
       {state.error && (
-        <p
-          role="alert"
-          className="rounded-control border border-status-critical-border bg-status-critical-bg px-3 py-2 text-small text-status-critical-fg"
-        >
-          {state.error}
-        </p>
+        <FormError>{state.error}</FormError>
       )}
 
       <div className="flex gap-3">
