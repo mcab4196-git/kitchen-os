@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signInErrorMessage } from "@/lib/auth-errors";
 
 export type AuthState = { error?: string };
 
@@ -11,7 +12,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  if (error) return { error: signInErrorMessage(error) };
   redirect("/dashboard");
 }
 

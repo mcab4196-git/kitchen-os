@@ -26,7 +26,7 @@ npm run db:rls       # apply prisma/rls.sql (prisma db execute; one transaction,
 npm run db:seed      # reference data (idempotent)
 ```
 
-Baseline you must not break: **194 tests / 16 files green, typecheck and lint clean.** Run all three before finishing
+Baseline you must not break: **198 tests / 17 files green, typecheck and lint clean.** Run all three before finishing
 any change.
 
 If npm scripts fail with "'vitest' is not recognized", `node_modules/.bin` is missing (seen in the OneDrive copy).

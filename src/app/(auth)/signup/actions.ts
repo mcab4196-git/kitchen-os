@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { emailLinkOrigin } from "@/lib/redirect";
+import { signUpErrorMessage } from "@/lib/auth-errors";
 import { preferencesFromForm } from "@/lib/preferences-form";
 import { updatePreferences } from "@/server/services/preferences";
 import { betaSeatsLeft } from "@/server/services/beta";
@@ -42,7 +43,7 @@ export async function signUp(_prev: SignUpState, formData: FormData): Promise<Si
   if (error) {
     // The beta cap trigger (rls.sql) reaches us as Supabase Auth's generic database error.
     if (/database error/i.test(error.message)) return { error: BETA_FULL, step: 1 };
-    return { error: error.message, step: 1 };
+    return { error: signUpErrorMessage(error), step: 1 };
   }
 
   // Supabase answers an email that's already registered with a user that has no
