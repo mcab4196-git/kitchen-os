@@ -58,7 +58,8 @@ src/server/services/          ALL database access, every query scoped by userId
    model never decides what the user has: `reconcileRecipe` does, in code. Allergens and dislikes are a hard filter in
    code: `recipeIsForbidden` (EU-14 groups from `lib/allergens.ts`) runs on every recipe a user can be offered,
    including AI output, saved favourites and older suggestions. Only the user-reviewed payload from the review screen
-   is committed to inventory.
+   is committed to inventory. Every AI call first claims a slot with `claimAiUse()` (`services/ai-usage.ts`) against
+   the per-user daily limits in `lib/ai-limits.ts`, and hands it back with `releaseAiUse()` if the provider fails.
 3. **Expiry honesty.** `EXACT` / `ESTIMATED` / `UNKNOWN`: never invent a date, always label estimates. All
    labels go through `relativeLabel` / `classifyStatus` in `lib/expiry.ts`; don't fork them.
 4. **Units.** Every conversion goes through `convert()` in `lib/units.ts`, which returns `null` rather than guessing.
@@ -97,6 +98,10 @@ src/server/services/          ALL database access, every query scoped by userId
 - Money and quantities are `Float`. Round for display with `tidy()`.
 - Day boundaries (`setHours(0,0,0,0)`) run in the **server** timezone, which is UTC on Vercel, not the user's.
 - Each "Plan" run creates a new `MealPlan`. Old plans are not pruned.
+- `ai_usage` holds one row per AI call (scan, dinner ideas, plan) and is what the daily limits count, because receipts
+  and suggestions can be deleted. Rows are kept as a usage record. RLS is on with no policies: server-only.
+- `.env` points at the live Supabase database; there is no separate dev database. Apply a new migration with
+  `npx prisma migrate deploy` (pending migrations only), not `migrate dev`, which can offer to reset on drift.
 
 ## Environment
 

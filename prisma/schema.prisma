@@ -73,6 +73,12 @@ enum UnitKind {
   COUNT
 }
 
+enum AiTask {
+  RECEIPT_SCAN
+  DINNER_IDEAS
+  MEAL_PLAN
+}
+
 // ─────────────────────────── User ───────────────────────────
 
 // Mirrors auth.users (Supabase). A trigger in rls.sql inserts a row on signup.
@@ -88,6 +94,7 @@ model Profile {
   mealPlans        MealPlan[]
   shoppingLists    ShoppingList[]
   notifications    Notification[]
+  aiUsage          AiUsage[]
 
   @@map("profiles")
 }
@@ -410,4 +417,20 @@ model Notification {
 
   @@index([userId, read])
   @@map("notifications")
+}
+
+// ─────────────────────────── AI usage ───────────────────────────
+
+// N6: one row per AI call. Each user's daily allowance (lib/ai-limits.ts) is
+// counted here, not from receipts or recipes, because users can delete those.
+model AiUsage {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  task      AiTask
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, task, createdAt])
+  @@map("ai_usage")
 }

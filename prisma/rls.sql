@@ -48,6 +48,10 @@ alter table public.shopping_list_items enable row level security;
 alter table public.consumption_records enable row level security;
 alter table public.notifications       enable row level security;
 
+-- AI usage (N6) is server-only: RLS on and no policies, so the client can neither
+-- read it nor reset its own allowance.
+alter table public.ai_usage            enable row level security;
+
 -- Reference tables are readable by any authenticated user, writable by no one
 -- via the client (seeded/maintained server-side through Prisma).
 alter table public.categories        enable row level security;

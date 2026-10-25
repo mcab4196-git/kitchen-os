@@ -7,6 +7,7 @@ import { receiptFileProblem, sniffReceiptType } from "@/lib/receipt-file";
 import { isUuid } from "@/lib/utils";
 import { resolveIngredientByText } from "./reference";
 import { createInventoryItem } from "./inventory";
+import { claimAiUse, releaseAiUse } from "./ai-usage";
 
 const BUCKET = process.env.RECEIPTS_BUCKET ?? "receipts";
 
@@ -45,6 +46,10 @@ export async function createAndParseReceipt(userId: string, file: File): Promise
     await prisma.receipt.delete({ where: { id: existing.id } });
   }
 
+  // N6: claim the AI call before uploading, so a photo that won't be read isn't stored.
+  const claim = await claimAiUse(userId, "RECEIPT_SCAN");
+  if (!claim.ok) return { ok: false, error: claim.error };
+
   // Upload to Storage under the user's folder (hash-named, so idempotent).
   const ext = (mediaType.split("/")[1] ?? "jpg").replace("jpeg", "jpg");
   const path = `${userId}/${hash}.${ext}`;
@@ -55,6 +60,7 @@ export async function createAndParseReceipt(userId: string, file: File): Promise
   // ISSUE-008: the details go to the server log, never to the user.
   if (upErr) {
     console.error("[receipt] storage upload failed", upErr);
+    await releaseAiUse(claim.id);
     return { ok: false, error: "We couldn't save the photo. Please try again." };
   }
 
@@ -110,6 +116,7 @@ export async function createAndParseReceipt(userId: string, file: File): Promise
   } catch (e) {
     await prisma.receipt.update({ where: { id: receipt.id }, data: { status: "FAILED" } });
     console.error("[receipt] AI extraction failed", e);
+    await releaseAiUse(claim.id);
     return {
       ok: false,
       error: "We couldn't read this receipt just now. Try again in a minute, or with a flatter, well-lit photo.",

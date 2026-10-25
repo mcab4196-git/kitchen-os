@@ -12,6 +12,7 @@ import { convert, tidy } from "@/lib/units";
 import { classifyStatus } from "@/lib/expiry";
 import { getPreferences } from "./preferences";
 import { resolveIngredientByText } from "./reference";
+import { claimAiUse, releaseAiUse } from "./ai-usage";
 
 const SOON_STATUSES = new Set(["CRITICAL", "SOON", "EXPIRED"]);
 const TARGET = 3;
@@ -115,6 +116,9 @@ export async function generateSuggestions(
   const newIds: string[] = [];
 
   if (newCount > 0) {
+    // N6: only a round that actually calls the AI counts against the allowance.
+    const claim = await claimAiUse(userId, "DINNER_IDEAS");
+    if (!claim.ok) return { ok: false, error: claim.error };
     usedAI = true;
     let raw: unknown;
     try {
@@ -136,6 +140,7 @@ export async function generateSuggestions(
     } catch (e) {
       // ISSUE-008: log the details; the user gets a plain message.
       console.error("[recipes] AI generation failed", e);
+      await releaseAiUse(claim.id);
       // If we have at least one saved recipe, degrade gracefully to those.
       if (kept.length === 0) return { ok: false, error: "We couldn't get dinner ideas just now. Please try again in a minute." };
       raw = [];
@@ -375,6 +380,10 @@ export async function generateMealPlan(
     totalMinutes: (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0),
   }));
 
+  // N6: a plan always asks the AI for fresh candidates, so it always counts.
+  const claim = await claimAiUse(userId, "MEAL_PLAN");
+  if (!claim.ok) return { ok: false, error: claim.error };
+
   const newIds: string[] = [];
   try {
     const provider = await getAIProvider();
@@ -399,6 +408,7 @@ export async function generateMealPlan(
   } catch (e) {
     // Fall back to saved-only planning if the AI call fails; keep the details in the log.
     console.error("[plan] AI generation failed", e);
+    await releaseAiUse(claim.id);
   }
 
   const newRecipes = await prisma.recipe.findMany({ where: { id: { in: newIds } } });

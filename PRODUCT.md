@@ -57,12 +57,12 @@ Constraints:
 
 - AI output is never trusted. Availability, shortfalls and allergen exclusion are computed in code. Allergens are a
   hard filter.
-- The product is **free**, so AI calls (scans, dinner ideas, plans) must stay within firm per-user caps.
+- The product is **free**, so AI calls stay within firm per-user caps: 10 receipt scans, 20 rounds of dinner ideas
+  and 5 meal plans in any 24 hours, with a 30-second wait between requests for new ideas or plans (owner, 2026-10-25).
 - Users are public. One user's data or corrections must never change what another user sees.
 
 Open decisions (record, don't assume):
 
-- The numbers for the per-user AI caps.
 - Whether learned ingredient aliases stay shared across users or become per-user.
 - The AI provider's data policy for public users (Gemini's free tier may use inputs for training).
 - Privacy policy and terms of use (none exist yet).
